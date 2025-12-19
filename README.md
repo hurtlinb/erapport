@@ -18,19 +18,19 @@ cd ../client
 npm install
 ```
 
-### 2) Build the frontend
-
-```bash
-cd client
-npm run build
-```
-
-### 3) Run the server
+### 2) Run the backend
 
 ```bash
 cd server
 npm run dev
 ```
 
-The app runs on `http://localhost:3001` and serves both the UI and the API from a
-single port.
+### 3) Run the frontend
+
+```bash
+cd client
+npm run dev
+```
+
+The UI runs on `http://localhost:5173` and expects the API at
+`http://localhost:3001`.

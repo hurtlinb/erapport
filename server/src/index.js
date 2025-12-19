@@ -1,18 +1,12 @@
 import cors from "cors";
 import express from "express";
 import PDFDocument from "pdfkit";
-import path from "path";
-import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const clientDistPath = path.join(__dirname, "../../client/dist");
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
-app.use(express.static(clientDistPath));
 
 const formatDate = (value) => {
   if (!value) return "";
@@ -173,10 +167,6 @@ app.post("/api/report", (req, res) => {
     .text(student.remarks || "-", 48, cursorY + 22, { width: 490 });
 
   doc.end();
-});
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
 });
 
 app.listen(PORT, () => {
