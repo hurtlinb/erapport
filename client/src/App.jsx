@@ -142,7 +142,7 @@ function App() {
       alert("Please enter the student's name.");
       return;
     }
-    const response = await fetch("/api/report", {
+    const response = await fetch("http://localhost:3001/api/report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(draft)
