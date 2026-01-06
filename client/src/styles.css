@@ -360,6 +360,11 @@ textarea {
   margin: 0 0 8px;
 }
 
+.competency-row input[type="text"] {
+  width: 100%;
+  display: block;
+}
+
 .competency-tag {
   margin: 0;
   display: inline;
