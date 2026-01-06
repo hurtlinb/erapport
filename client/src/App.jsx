@@ -490,6 +490,7 @@ function App() {
             </div>
             <button
               className="button primary"
+              type="button"
               onClick={() => setIsTemplateModalOpen(true)}
             >
               Modify template
@@ -667,28 +668,9 @@ function App() {
                         <div>
                           <p className="competency-label">{taskLabel}</p>
                           <div className="competency-meta-row">
-                            <select
-                              className="competency-select"
-                              value={item.competencyId}
-                              onChange={(event) =>
-                                updateCompetency(
-                                  sectionIndex,
-                                  itemIndex,
-                                  "competencyId",
-                                  event.target.value
-                                )
-                              }
-                            >
-                              <option value="">No competency</option>
-                              {draft.competencyOptions?.map((option) => (
-                                <option key={option.code} value={option.code}>
-                                  {option.code} - {option.description}
-                                </option>
-                              ))}
-                            </select>
-                            {competencyLabel && (
-                              <p className="competency-meta">{competencyLabel}</p>
-                            )}
+                            <p className="competency-tag">
+                              {competencyLabel || "No competency linked"}
+                            </p>
                           </div>
                           <input
                             type="text"
