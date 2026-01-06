@@ -496,42 +496,52 @@ function App() {
               <div key={section.category} className="competency-section">
                 <h3>{section.category}</h3>
                 <div className="competency-table">
-                  {section.items.map((item, itemIndex) => (
-                    <div key={item.label} className="competency-row">
-                      <div>
-                        <p className="competency-label">{item.label}</p>
-                        <input
-                          type="text"
-                          value={item.comment}
+                  {section.items.map((item, itemIndex) => {
+                    const statusClass = item.status
+                      ? `status-${item.status.toLowerCase()}`
+                      : "status-empty";
+
+                    return (
+                      <div
+                        key={item.label}
+                        className={`competency-row ${statusClass}`}
+                      >
+                        <div>
+                          <p className="competency-label">{item.label}</p>
+                          <input
+                            type="text"
+                            value={item.comment}
+                            onChange={(event) =>
+                              updateCompetency(
+                                sectionIndex,
+                                itemIndex,
+                                "comment",
+                                event.target.value
+                              )
+                            }
+                            placeholder="Optional comment"
+                          />
+                        </div>
+                        <select
+                          className={`status-select ${statusClass}`}
+                          value={item.status}
                           onChange={(event) =>
                             updateCompetency(
                               sectionIndex,
                               itemIndex,
-                              "comment",
+                              "status",
                               event.target.value
                             )
                           }
-                          placeholder="Optional comment"
-                        />
+                        >
+                          <option value="">Select status</option>
+                          <option value="OK">OK</option>
+                          <option value="NOK">Needs improvement</option>
+                          <option value="NA">Not assessed</option>
+                        </select>
                       </div>
-                      <select
-                        value={item.status}
-                        onChange={(event) =>
-                          updateCompetency(
-                            sectionIndex,
-                            itemIndex,
-                            "status",
-                            event.target.value
-                          )
-                        }
-                      >
-                        <option value="">Select status</option>
-                        <option value="OK">OK</option>
-                        <option value="NOK">Needs improvement</option>
-                        <option value="NA">Not assessed</option>
-                      </select>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
