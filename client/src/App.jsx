@@ -790,12 +790,8 @@ function App() {
                         >
                           <option value="">Select status</option>
                           <option value={STATUS_VALUES.OK}>OK</option>
-                          <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>
-                            Needs improvement
-                          </option>
-                          <option value={STATUS_VALUES.NOT_ASSESSED}>
-                            Not assessed
-                          </option>
+                          <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>~</option>
+                          <option value={STATUS_VALUES.NOT_ASSESSED}>NOK</option>
                         </select>
                       </div>
                     );
