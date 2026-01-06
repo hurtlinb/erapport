@@ -60,6 +60,11 @@ const templateStorageKey = "erapport.template";
 const defaultTemplate = {
   moduleTitle: "123 - Activer les services d'un serveur",
   note: "",
+  evaluationType: "E1",
+  className: "",
+  teacher: "",
+  evaluationDate: "",
+  coachingDate: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
 };
@@ -122,6 +127,11 @@ const applyTemplateToStudent = (template, student) => ({
   ...student,
   moduleTitle: template.moduleTitle || "",
   note: template.note || "",
+  evaluationType: template.evaluationType || "",
+  className: template.className || "",
+  teacher: template.teacher || "",
+  evaluationDate: template.evaluationDate || "",
+  coachingDate: template.coachingDate || "",
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
@@ -130,10 +140,14 @@ const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
   name: "",
   cohort: "",
-  evaluationDate: "",
   moduleTitle: template.moduleTitle || "",
   note: template.note || "",
   remarks: "",
+  evaluationType: template.evaluationType || "",
+  className: template.className || "",
+  teacher: template.teacher || "",
+  evaluationDate: template.evaluationDate || "",
+  coachingDate: template.coachingDate || "",
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template)
 });
@@ -592,6 +606,36 @@ function App() {
               />
             </label>
             <label>
+              Evaluation type
+              <input
+                type="text"
+                value={draft.evaluationType}
+                readOnly
+                disabled
+                placeholder="E1, E2, or E3"
+              />
+            </label>
+            <label>
+              Class
+              <input
+                type="text"
+                value={draft.className}
+                readOnly
+                disabled
+                placeholder="Class set in template"
+              />
+            </label>
+            <label>
+              Teacher
+              <input
+                type="text"
+                value={draft.teacher}
+                readOnly
+                disabled
+                placeholder="Teacher set in template"
+              />
+            </label>
+            <label>
               Cohort / program
               <input
                 type="text"
@@ -605,9 +649,17 @@ function App() {
               <input
                 type="date"
                 value={draft.evaluationDate}
-                onChange={(event) =>
-                  handleStudentField("evaluationDate", event.target.value)
-                }
+                readOnly
+                disabled
+              />
+            </label>
+            <label>
+              Coaching date
+              <input
+                type="date"
+                value={draft.coachingDate}
+                readOnly
+                disabled
               />
             </label>
             <label>
@@ -752,6 +804,63 @@ function App() {
                     handleTemplateField("note", event.target.value)
                   }
                   placeholder="Text that will appear in the summary for new reports."
+                />
+              </label>
+            </div>
+            <div className="form-grid">
+              <label>
+                Evaluation type
+                <select
+                  value={template.evaluationType}
+                  onChange={(event) =>
+                    handleTemplateField("evaluationType", event.target.value)
+                  }
+                >
+                  <option value="E1">E1</option>
+                  <option value="E2">E2</option>
+                  <option value="E3">E3</option>
+                </select>
+              </label>
+              <label>
+                Class
+                <input
+                  type="text"
+                  value={template.className}
+                  onChange={(event) =>
+                    handleTemplateField("className", event.target.value)
+                  }
+                  placeholder="INFO-F12, LOG-B21..."
+                />
+              </label>
+              <label>
+                Teacher
+                <input
+                  type="text"
+                  value={template.teacher}
+                  onChange={(event) =>
+                    handleTemplateField("teacher", event.target.value)
+                  }
+                  placeholder="Prof. Martin"
+                />
+              </label>
+              <label>
+                Evaluation date
+                <input
+                  type="date"
+                  value={template.evaluationDate}
+                  onChange={(event) =>
+                    handleTemplateField("evaluationDate", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Coaching date
+                <input
+                  type="date"
+                  value={template.coachingDate}
+                  onChange={(event) =>
+                    handleTemplateField("coachingDate", event.target.value)
+                  }
                 />
               </label>
             </div>
