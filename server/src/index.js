@@ -140,12 +140,16 @@ app.post("/api/report", (req, res) => {
     .font("Helvetica")
     .fontSize(9)
     .fillColor(theme.text)
-    .rect(40, 92, 515, 60)
+    .rect(40, 92, 515, 110)
     .stroke(theme.border);
 
   drawKeyValue(doc, "Apprenant", student.name, 48, 100);
   drawKeyValue(doc, "Programme", student.cohort, 48, 114);
-  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, 128);
+  drawKeyValue(doc, "Classe", student.className || "", 48, 128);
+  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, 142);
+  drawKeyValue(doc, "Type d'évaluation", student.evaluationType || "", 48, 156);
+  drawKeyValue(doc, "Date d'évaluation", formatDate(student.evaluationDate), 48, 170);
+  drawKeyValue(doc, "Date de coaching", formatDate(student.coachingDate), 48, 184);
 
   doc
     .fontSize(9)
@@ -156,15 +160,18 @@ app.post("/api/report", (req, res) => {
     .text(student.score || "", 360, 118)
     .font("Helvetica");
 
+  const summaryTitleY = 214;
+  const summaryBodyY = summaryTitleY + 12;
+
   doc
     .fontSize(9)
     .fillColor(theme.text)
-    .text("Résumé", 40, 164)
+    .text("Résumé", 40, summaryTitleY)
     .fontSize(8)
     .fillColor(theme.muted)
-    .text(student.note || "-", 40, 176, { width: 515 });
+    .text(student.note || "-", 40, summaryBodyY, { width: 515 });
 
-  let cursorY = 210;
+  let cursorY = doc.y + 24;
   student.competencies?.forEach((section) => {
     if (cursorY > 700) {
       doc.addPage();
