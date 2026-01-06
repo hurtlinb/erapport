@@ -869,7 +869,7 @@ function App() {
                             <option value="">Select competency</option>
                             {template.competencyOptions?.map((option) => (
                               <option key={option.code} value={option.code}>
-                                {option.code} - {option.description}
+                                {option.code}
                               </option>
                             ))}
                           </select>
