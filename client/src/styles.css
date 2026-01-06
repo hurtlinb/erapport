@@ -362,15 +362,12 @@ textarea {
 
 .competency-tag {
   margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: #e2e8f0;
-  color: #475569;
+  display: inline;
+  padding: 0;
+  background: none;
+  color: #0f172a;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .status-select {
