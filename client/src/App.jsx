@@ -56,6 +56,26 @@ const DEFAULT_COMPETENCIES = [
 
 const storageKey = "erapport.students";
 const templateStorageKey = "erapport.template";
+const statusVersionKey = "erapport.statusVersion";
+
+const STATUS_VALUES = {
+  OK: "OK",
+  NEEDS_IMPROVEMENT: "~",
+  NOT_ASSESSED: "NOK"
+};
+
+const getStatusClass = (status) => {
+  if (status === STATUS_VALUES.OK) return "status-ok";
+  if (status === STATUS_VALUES.NEEDS_IMPROVEMENT) return "status-nok";
+  if (status === STATUS_VALUES.NOT_ASSESSED) return "status-na";
+  return "status-empty";
+};
+
+const migrateStatus = (status) => {
+  if (status === "NOK") return STATUS_VALUES.NEEDS_IMPROVEMENT;
+  if (status === "NA") return STATUS_VALUES.NOT_ASSESSED;
+  return status || "";
+};
 
 const defaultTemplate = {
   moduleTitle: "123 - Activer les services d'un serveur",
@@ -141,7 +161,27 @@ const buildStudentFromTemplate = (template) => ({
 function loadStudents() {
   try {
     const raw = localStorage.getItem(storageKey);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    const students = Array.isArray(parsed) ? parsed : [];
+    const shouldMigrateStatuses =
+      (localStorage.getItem(statusVersionKey) || "") !== "v2";
+
+    const normalizedStudents = students.map((student) => ({
+      ...student,
+      competencies: (student.competencies || []).map((section) => ({
+        ...section,
+        items: (section.items || []).map((item) => ({
+          ...item,
+          status: shouldMigrateStatuses ? migrateStatus(item.status) : item.status || ""
+        }))
+      }))
+    }));
+
+    if (shouldMigrateStatuses) {
+      localStorage.setItem(statusVersionKey, "v2");
+    }
+
+    return normalizedStudents;
   } catch (error) {
     console.error(error);
     return [];
@@ -656,9 +696,7 @@ function App() {
                       draft.competencyOptions
                     );
                     const taskLabel = item.task || item.label || "Task";
-                    const statusClass = item.status
-                      ? `status-${item.status.toLowerCase()}`
-                      : "status-empty";
+                    const statusClass = getStatusClass(item.status);
 
                     return (
                       <div
@@ -699,9 +737,13 @@ function App() {
                           }
                         >
                           <option value="">Select status</option>
-                          <option value="OK">OK</option>
-                          <option value="NOK">Needs improvement</option>
-                          <option value="NA">Not assessed</option>
+                          <option value={STATUS_VALUES.OK}>OK</option>
+                          <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>
+                            Needs improvement
+                          </option>
+                          <option value={STATUS_VALUES.NOT_ASSESSED}>
+                            Not assessed
+                          </option>
                         </select>
                       </div>
                     );
