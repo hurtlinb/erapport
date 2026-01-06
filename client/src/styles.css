@@ -312,7 +312,6 @@ textarea {
   padding: 12px;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
-  position: relative;
   --status-color: #f8fafc;
   --status-strong: #e2e8f0;
   background: linear-gradient(90deg, var(--status-color) 0, #fff 60%);
@@ -321,15 +320,6 @@ textarea {
 .competency-label {
   margin: 0 0 6px;
   font-weight: 600;
-}
-
-.competency-row::before {
-  content: "";
-  position: absolute;
-  inset: 10px auto 10px 10px;
-  width: 6px;
-  border-radius: 999px;
-  background: var(--status-strong);
 }
 
 .status-select {
