@@ -8,6 +8,21 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
+const theme = {
+  text: "#0f172a",
+  muted: "#334155",
+  border: "#e2e8f0",
+  primary: "#2563eb",
+  primaryLight: "#eff6ff",
+  surfaceMuted: "#f8fafc",
+  status: {
+    OK: { fill: "#dcfce7", text: "#16a34a", border: "#16a34a" },
+    NOK: { fill: "#ffedd5", text: "#f97316", border: "#f97316" },
+    NA: { fill: "#fecdd3", text: "#e11d48", border: "#e11d48" },
+    DEFAULT: { fill: "#f8fafc", text: "#0f172a", border: "#e2e8f0" }
+  }
+};
+
 const formatDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -17,15 +32,15 @@ const formatDate = (value) => {
 
 const getStatusStyle = (status) => {
   if (status === "OK") {
-    return { fill: "#bbf7d0", text: "#166534" };
+    return theme.status.OK;
   }
   if (status === "NOK") {
-    return { fill: "#fed7aa", text: "#9a3412" };
+    return theme.status.NOK;
   }
   if (status === "NA") {
-    return { fill: "#fecdd3", text: "#9f1239" };
+    return theme.status.NA;
   }
-  return { fill: "#f8fafc", text: "#0f172a" };
+  return theme.status.DEFAULT;
 };
 
 const getCompetencyLabel = (item, competencyOptions = []) => {
@@ -43,7 +58,7 @@ const getCompetencyLabel = (item, competencyOptions = []) => {
 const drawKeyValue = (doc, label, value, x, y) => {
   doc
     .fontSize(9)
-    .fillColor("#0f172a")
+    .fillColor(theme.text)
     .text(label, x, y)
     .font("Helvetica-Bold")
     .text(value || "-", x + 140, y)
@@ -53,8 +68,8 @@ const drawKeyValue = (doc, label, value, x, y) => {
 const drawSectionHeader = (doc, title, y) => {
   doc
     .roundedRect(40, y, 515, 18, 4)
-    .fillAndStroke("#fde68a", "#f59e0b")
-    .fillColor("#0f172a")
+    .fillAndStroke(theme.primaryLight, theme.primary)
+    .fillColor(theme.text)
     .fontSize(10)
     .font("Helvetica-Bold")
     .text(title, 48, y + 4);
@@ -65,20 +80,20 @@ const drawCompetencyRow = (doc, task, competency, status, comment, y) => {
   const statusStyle = getStatusStyle(status);
   doc
     .rect(40, y, 260, 18)
-    .stroke("#cbd5f5")
+    .stroke(theme.border)
     .rect(300, y, 140, 18)
-    .stroke("#cbd5f5")
+    .stroke(theme.border)
     .rect(440, y, 70, 18)
-    .stroke("#cbd5f5")
+    .stroke(theme.border)
     .rect(510, y, 45, 18)
-    .fillAndStroke(statusStyle.fill, "#cbd5f5");
+    .fillAndStroke(statusStyle.fill, statusStyle.border || theme.border);
   doc
     .fontSize(8)
-    .fillColor("#0f172a")
+    .fillColor(theme.text)
     .text(task, 44, y + 4, { width: 252 })
     .text(competency, 304, y + 4, { width: 132 });
   doc
-    .fillColor("#334155")
+    .fillColor(theme.muted)
     .text(comment || "-", 444, y + 4, { width: 62 });
   doc
     .fillColor(statusStyle.text)
@@ -101,6 +116,7 @@ app.post("/api/report", (req, res) => {
   doc
     .font("Helvetica-Bold")
     .fontSize(14)
+    .fillColor(theme.text)
     .text("Rapport d'évaluation sommative", 40, 40)
     .font("Helvetica")
     .fontSize(9)
@@ -108,8 +124,8 @@ app.post("/api/report", (req, res) => {
 
   doc
     .roundedRect(40, 64, 515, 24, 6)
-    .fillAndStroke("#fcd34d", "#f59e0b")
-    .fillColor("#0f172a")
+    .fillAndStroke(theme.primaryLight, theme.primary)
+    .fillColor(theme.text)
     .fontSize(10)
     .font("Helvetica-Bold")
     .text(student.moduleTitle || "Module", 48, 72);
@@ -117,9 +133,9 @@ app.post("/api/report", (req, res) => {
   doc
     .font("Helvetica")
     .fontSize(9)
-    .fillColor("#0f172a")
+    .fillColor(theme.text)
     .rect(40, 92, 515, 60)
-    .stroke("#cbd5f5");
+    .stroke(theme.border);
 
   drawKeyValue(doc, "Apprenant", student.name, 48, 100);
   drawKeyValue(doc, "Programme", student.cohort, 48, 114);
@@ -127,7 +143,7 @@ app.post("/api/report", (req, res) => {
 
   doc
     .fontSize(9)
-    .fillColor("#0f172a")
+    .fillColor(theme.text)
     .text("Note du module", 360, 104)
     .font("Helvetica-Bold")
     .fontSize(16)
@@ -136,10 +152,10 @@ app.post("/api/report", (req, res) => {
 
   doc
     .fontSize(9)
-    .fillColor("#0f172a")
+    .fillColor(theme.text)
     .text("Résumé", 40, 164)
     .fontSize(8)
-    .fillColor("#334155")
+    .fillColor(theme.muted)
     .text(student.note || "-", 40, 176, { width: 515 });
 
   let cursorY = 210;
@@ -153,15 +169,15 @@ app.post("/api/report", (req, res) => {
 
     doc
       .rect(40, cursorY, 260, 16)
-      .stroke("#cbd5f5")
+      .fillAndStroke(theme.surfaceMuted, theme.border)
       .rect(300, cursorY, 140, 16)
-      .stroke("#cbd5f5")
+      .fillAndStroke(theme.surfaceMuted, theme.border)
       .rect(440, cursorY, 70, 16)
-      .stroke("#cbd5f5")
+      .fillAndStroke(theme.surfaceMuted, theme.border)
       .rect(510, cursorY, 45, 16)
-      .stroke("#cbd5f5")
+      .fillAndStroke(theme.surfaceMuted, theme.border)
       .fontSize(8)
-      .fillColor("#0f172a")
+      .fillColor(theme.text)
       .text("Tâche", 44, cursorY + 4)
       .text("Compétence", 304, cursorY + 4)
       .text("Commentaire", 444, cursorY + 4)
@@ -200,14 +216,14 @@ app.post("/api/report", (req, res) => {
 
   doc
     .roundedRect(40, cursorY, 515, 70, 6)
-    .fillAndStroke("#fee2e2", "#fecaca")
-    .fillColor("#0f172a")
+    .fillAndStroke(theme.primaryLight, theme.primary)
+    .fillColor(theme.text)
     .fontSize(9)
     .font("Helvetica-Bold")
     .text("Remarques", 48, cursorY + 8)
     .font("Helvetica")
     .fontSize(8)
-    .fillColor("#334155")
+    .fillColor(theme.muted)
     .text(student.remarks || "-", 48, cursorY + 22, { width: 490 });
 
   doc.end();
