@@ -262,6 +262,38 @@ function App() {
     return students.length === 1 ? "1 student" : `${students.length} students`;
   }, [students.length]);
 
+  const persistDraftChanges = (updater) => {
+    setDraft((prevDraft) => {
+      const nextDraft =
+        typeof updater === "function" ? updater(prevDraft) : updater;
+
+      setStudents((prevStudents) => {
+        const exists = prevStudents.some(
+          (student) => student.id === nextDraft.id
+        );
+
+        if (exists) {
+          return prevStudents.map((student) =>
+            student.id === nextDraft.id ? { ...nextDraft } : student
+          );
+        }
+
+        if (!nextDraft.name.trim()) {
+          return prevStudents;
+        }
+
+        return [...prevStudents, { ...nextDraft }];
+      });
+
+      if (nextDraft.name.trim()) {
+        setSelectedId(nextDraft.id);
+        setIsEditing(true);
+      }
+
+      return nextDraft;
+    });
+  };
+
   const templateCompetencyCount = useMemo(
     () => template.competencyOptions?.length || 0,
     [template.competencyOptions]
@@ -276,14 +308,14 @@ function App() {
   }, [template.competencies]);
 
   const handleStudentField = (field, value) => {
-    setDraft((prev) => ({
+    persistDraftChanges((prev) => ({
       ...prev,
       [field]: value
     }));
   };
 
   const updateCompetency = (sectionIndex, itemIndex, field, value) => {
-    setDraft((prev) => ({
+    persistDraftChanges((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
@@ -295,23 +327,6 @@ function App() {
         };
       })
     }));
-  };
-
-  const handleSaveStudent = () => {
-    if (!draft.name.trim()) {
-      alert("Please enter the student's name.");
-      return;
-    }
-    setStudents((prev) => {
-      const exists = prev.some((student) => student.id === draft.id);
-      if (exists) {
-        return prev.map((student) =>
-          student.id === draft.id ? { ...draft } : student
-        );
-      }
-      return [...prev, { ...draft }];
-    });
-    setSelectedId(draft.id);
   };
 
   const handleDeleteStudent = (id) => {
@@ -625,9 +640,6 @@ function App() {
           <div className="panel-header">
             <h2>{isEditing ? "Edit report" : "New report"}</h2>
             <div className="actions">
-              <button className="button" onClick={handleSaveStudent}>
-                Save student
-              </button>
               <button className="button primary" onClick={handleGeneratePdf}>
                 Generate PDF
               </button>
