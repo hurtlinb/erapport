@@ -28,6 +28,23 @@ const getStatusStyle = (status) => {
   return { fill: "#f8fafc", text: "#0f172a" };
 };
 
+const buildCompetencyLabel = (item, competencyOptions = []) => {
+  const taskLabel = item.task || item.label || "";
+  const option = competencyOptions.find(
+    (candidate) => candidate.code === item.competencyId
+  );
+
+  if (option && taskLabel) {
+    return `${taskLabel} (${option.code} - ${option.description})`;
+  }
+
+  if (option) {
+    return `${option.code} - ${option.description}`;
+  }
+
+  return taskLabel || "-";
+};
+
 const drawKeyValue = (doc, label, value, x, y) => {
   doc
     .fontSize(9)
@@ -156,7 +173,17 @@ app.post("/api/report", (req, res) => {
         doc.addPage();
         cursorY = 40;
       }
-      drawCompetencyRow(doc, item.label, item.status, item.comment, cursorY);
+      const competencyLabel = buildCompetencyLabel(
+        item,
+        student.competencyOptions
+      );
+      drawCompetencyRow(
+        doc,
+        competencyLabel,
+        item.status,
+        item.comment,
+        cursorY
+      );
       cursorY += 18;
     });
 

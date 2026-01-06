@@ -1,28 +1,55 @@
 import { useEffect, useMemo, useState } from "react";
 
+const DEFAULT_COMPETENCY_OPTIONS = [
+  {
+    code: "OO1",
+    description:
+      "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+  },
+  {
+    code: "OO2",
+    description:
+      "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+  },
+  {
+    code: "OO3",
+    description:
+      "Valider le fonctionnement des services déployés et documenter la configuration."
+  }
+];
+
 const DEFAULT_COMPETENCIES = [
   {
     category: "Active Directory",
     items: [
-      "Explain the role of a domain controller",
-      "Create users and groups in an OU",
-      "Join a workstation to the domain"
+      {
+        task: "Explain the role of a domain controller",
+        competencyId: "OO1"
+      },
+      {
+        task: "Create users and groups in an OU",
+        competencyId: "OO1"
+      },
+      {
+        task: "Join a workstation to the domain",
+        competencyId: "OO3"
+      }
     ]
   },
   {
     category: "DNS",
     items: [
-      "Create forward lookup zones",
-      "Configure A and CNAME records",
-      "Verify name resolution"
+      { task: "Create forward lookup zones", competencyId: "OO2" },
+      { task: "Configure A and CNAME records", competencyId: "OO2" },
+      { task: "Verify name resolution", competencyId: "OO3" }
     ]
   },
   {
     category: "DHCP",
     items: [
-      "Create a scope with options",
-      "Reserve an address",
-      "Validate client lease"
+      { task: "Create a scope with options", competencyId: "OO2" },
+      { task: "Reserve an address", competencyId: "OO2" },
+      { task: "Validate client lease", competencyId: "OO3" }
     ]
   }
 ];
@@ -33,7 +60,18 @@ const templateStorageKey = "erapport.template";
 const defaultTemplate = {
   moduleTitle: "123 - Activer les services d'un serveur",
   note: "",
+  competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
+};
+
+const normalizeTemplateItem = (item) => {
+  if (typeof item === "string") {
+    return { task: item, competencyId: "" };
+  }
+  return {
+    task: item?.task || "",
+    competencyId: item?.competencyId || ""
+  };
 };
 
 const mapTemplateCompetencies = (template, existingCompetencies = []) => {
@@ -44,15 +82,22 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
       (candidate) => candidate.category === section.category
     );
 
+    const items = section.items || [];
+
     return {
       category: section.category,
-      items: section.items.map((label) => {
-        const existingItem = existingSection?.items?.find(
-          (candidate) => candidate.label === label
-        );
+      items: items.map((item) => {
+        const normalizedItem = normalizeTemplateItem(item);
+        const existingItem = existingSection?.items?.find((candidate) => {
+          return (
+            candidate.task === normalizedItem.task ||
+            candidate.label === normalizedItem.task
+          );
+        });
 
         return {
-          label,
+          task: normalizedItem.task,
+          competencyId: normalizedItem.competencyId || existingItem?.competencyId || "",
           status: existingItem?.status ?? "",
           comment: existingItem?.comment || ""
         };
@@ -61,10 +106,23 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
   });
 };
 
+const getCompetencyLabel = (item, competencyOptions = []) => {
+  const option = competencyOptions.find(
+    (candidate) => candidate.code === item.competencyId
+  );
+
+  if (option) {
+    return `${option.code} - ${option.description}`;
+  }
+
+  return item.task || item.label || "";
+};
+
 const applyTemplateToStudent = (template, student) => ({
   ...student,
   moduleTitle: template.moduleTitle || "",
   note: template.note || "",
+  competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
 
@@ -76,6 +134,7 @@ const buildStudentFromTemplate = (template) => ({
   moduleTitle: template.moduleTitle || "",
   note: template.note || "",
   remarks: "",
+  competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template)
 });
 
@@ -97,7 +156,14 @@ function App() {
   const [template, setTemplate] = useState(() => {
     try {
       const raw = localStorage.getItem(templateStorageKey);
-      return raw ? JSON.parse(raw) : defaultTemplate;
+      if (!raw) return defaultTemplate;
+      const parsed = JSON.parse(raw);
+      return {
+        ...defaultTemplate,
+        ...parsed,
+        competencyOptions: parsed.competencyOptions || defaultTemplate.competencyOptions,
+        competencies: parsed.competencies || defaultTemplate.competencies
+      };
     } catch (error) {
       console.error(error);
       return defaultTemplate;
@@ -124,7 +190,7 @@ function App() {
 
   useEffect(() => {
     if (selectedStudent) {
-      setDraft(selectedStudent);
+      setDraft(applyTemplateToStudent(template, selectedStudent));
       setIsEditing(true);
     } else {
       setDraft(buildStudentFromTemplate(template));
@@ -143,9 +209,15 @@ function App() {
     return students.length === 1 ? "1 student" : `${students.length} students`;
   }, [students.length]);
 
+  const templateCompetencyCount = useMemo(
+    () => template.competencyOptions?.length || 0,
+    [template.competencyOptions]
+  );
+
   const templateTaskCount = useMemo(() => {
-    return template.competencies.reduce(
-      (total, section) => total + section.items.length,
+    const sections = template.competencies || [];
+    return sections.reduce(
+      (total, section) => total + (section.items?.length || 0),
       0
     );
   }, [template.competencies]);
@@ -160,11 +232,11 @@ function App() {
   const updateCompetency = (sectionIndex, itemIndex, field, value) => {
     setDraft((prev) => ({
       ...prev,
-      competencies: prev.competencies.map((section, sIndex) => {
+      competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
         return {
           ...section,
-          items: section.items.map((item, iIndex) =>
+          items: (section.items || []).map((item, iIndex) =>
             iIndex === itemIndex ? { ...item, [field]: value } : item
           )
         };
@@ -238,22 +310,29 @@ function App() {
   const handleTemplateCategoryChange = (sectionIndex, value) => {
     setTemplate((prev) => ({
       ...prev,
-      competencies: prev.competencies.map((section, sIndex) =>
+      competencies: (prev.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex ? { ...section, category: value } : section
       )
     }));
   };
 
-  const handleTemplateTaskChange = (sectionIndex, itemIndex, value) => {
+  const handleTemplateTaskFieldChange = (
+    sectionIndex,
+    itemIndex,
+    field,
+    value
+  ) => {
     setTemplate((prev) => ({
       ...prev,
-      competencies: prev.competencies.map((section, sIndex) => {
+      competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
         return {
           ...section,
-          items: section.items.map((item, iIndex) =>
-            iIndex === itemIndex ? value : item
-          )
+          items: (section.items || []).map((item, iIndex) => {
+            if (iIndex !== itemIndex) return item;
+            const normalizedItem = normalizeTemplateItem(item);
+            return { ...normalizedItem, [field]: value };
+          })
         };
       })
     }));
@@ -263,8 +342,16 @@ function App() {
     setTemplate((prev) => ({
       ...prev,
       competencies: [
-        ...prev.competencies,
-        { category: "New category", items: ["New task"] }
+        ...(prev.competencies || []),
+        {
+          category: "New category",
+          items: [
+            {
+              task: "New task",
+              competencyId: prev.competencyOptions?.[0]?.code || ""
+            }
+          ]
+        }
       ]
     }));
   };
@@ -272,16 +359,74 @@ function App() {
   const handleRemoveCategory = (sectionIndex) => {
     setTemplate((prev) => ({
       ...prev,
-      competencies: prev.competencies.filter((_, index) => index !== sectionIndex)
+      competencies: (prev.competencies || []).filter(
+        (_, index) => index !== sectionIndex
+      )
     }));
+  };
+
+  const handleAddCompetencyOption = () => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencyOptions: [
+        ...(prev.competencyOptions || []),
+        {
+          code: `OO${(prev.competencyOptions?.length || 0) + 1}`,
+          description: "Nouvelle compétence"
+        }
+      ]
+    }));
+  };
+
+  const handleCompetencyOptionChange = (index, field, value) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencyOptions: (prev.competencyOptions || []).map(
+        (option, optIndex) =>
+          optIndex === index ? { ...option, [field]: value } : option
+      )
+    }));
+  };
+
+  const handleRemoveCompetencyOption = (index) => {
+    setTemplate((prev) => {
+      const removedCode = prev.competencyOptions?.[index]?.code;
+      const updatedOptions = (prev.competencyOptions || []).filter(
+        (_, optIndex) => optIndex !== index
+      );
+
+      return {
+        ...prev,
+        competencyOptions: updatedOptions,
+        competencies: (prev.competencies || []).map((section) => ({
+          ...section,
+          items: (section.items || []).map((item) => {
+            const normalizedItem = normalizeTemplateItem(item);
+            if (normalizedItem.competencyId === removedCode) {
+              return { ...normalizedItem, competencyId: "" };
+            }
+            return normalizedItem;
+          })
+        }))
+      };
+    });
   };
 
   const handleAddTask = (sectionIndex) => {
     setTemplate((prev) => ({
       ...prev,
-      competencies: prev.competencies.map((section, sIndex) =>
+      competencies: (prev.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex
-          ? { ...section, items: [...section.items, "New task"] }
+          ? {
+              ...section,
+              items: [
+                ...(section.items || []),
+                {
+                  task: "New task",
+                  competencyId: prev.competencyOptions?.[0]?.code || ""
+                }
+              ]
+            }
           : section
       )
     }));
@@ -290,11 +435,13 @@ function App() {
   const handleRemoveTask = (sectionIndex, itemIndex) => {
     setTemplate((prev) => ({
       ...prev,
-      competencies: prev.competencies.map((section, sIndex) => {
+      competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
         return {
           ...section,
-          items: section.items.filter((_, iIndex) => iIndex !== itemIndex)
+          items: (section.items || []).filter(
+            (_, iIndex) => iIndex !== itemIndex
+          )
         };
       })
     }));
@@ -357,8 +504,14 @@ function App() {
               </span>
             </div>
             <div className="summary-pill">
+              <span className="pill-label">Competencies</span>
+              <span className="pill-value">{templateCompetencyCount}</span>
+            </div>
+            <div className="summary-pill">
               <span className="pill-label">Categories</span>
-              <span className="pill-value">{template.competencies.length}</span>
+              <span className="pill-value">
+                {(template.competencies || []).length}
+              </span>
             </div>
             <div className="summary-pill">
               <span className="pill-label">Tasks</span>
@@ -492,22 +645,30 @@ function App() {
           </div>
 
           <div className="competency-grid">
-            {draft.competencies.map((section, sectionIndex) => (
+            {(draft.competencies || []).map((section, sectionIndex) => (
               <div key={section.category} className="competency-section">
                 <h3>{section.category}</h3>
                 <div className="competency-table">
-                  {section.items.map((item, itemIndex) => {
+                  {(section.items || []).map((item, itemIndex) => {
+                    const competencyLabel = getCompetencyLabel(
+                      item,
+                      draft.competencyOptions
+                    );
+                    const taskLabel = item.task || item.label || "Task";
                     const statusClass = item.status
                       ? `status-${item.status.toLowerCase()}`
                       : "status-empty";
 
                     return (
                       <div
-                        key={item.label}
+                        key={`${item.task}-${itemIndex}`}
                         className={`competency-row ${statusClass}`}
                       >
                         <div>
-                          <p className="competency-label">{item.label}</p>
+                          <p className="competency-label">{taskLabel}</p>
+                          {competencyLabel && (
+                            <p className="competency-meta">{competencyLabel}</p>
+                          )}
                           <input
                             type="text"
                             value={item.comment}
@@ -593,7 +754,63 @@ function App() {
             </div>
 
             <div className="template-competency-grid">
-              {template.competencies.map((section, sectionIndex) => (
+              <div className="template-competency">
+                <div className="template-competency-header">
+                  <div className="category-name">
+                    <span className="badge">Competency list</span>
+                    <p className="helper-text">
+                      Configure numbered competencies available for every task.
+                    </p>
+                  </div>
+                  <button
+                    className="button ghost"
+                    onClick={handleAddCompetencyOption}
+                  >
+                    + Add competency
+                  </button>
+                </div>
+                <div className="template-tasks">
+                  {template.competencyOptions?.map((option, index) => (
+                    <div key={option.code} className="template-task-row">
+                      <input
+                        type="text"
+                        value={option.code}
+                        onChange={(event) =>
+                          handleCompetencyOptionChange(
+                            index,
+                            "code",
+                            event.target.value
+                          )
+                        }
+                        placeholder="OO1"
+                      />
+                      <textarea
+                        rows="2"
+                        value={option.description}
+                        onChange={(event) =>
+                          handleCompetencyOptionChange(
+                            index,
+                            "description",
+                            event.target.value
+                          )
+                        }
+                        placeholder="Définir la configuration..."
+                      />
+                      <button
+                        className="button text"
+                        onClick={() => handleRemoveCompetencyOption(index)}
+                        aria-label="Remove competency"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="template-competency-grid">
+              {(template.competencies || []).map((section, sectionIndex) => (
                 <div key={sectionIndex} className="template-competency">
                   <div className="template-competency-header">
                     <div className="category-name">
@@ -619,30 +836,52 @@ function App() {
                     </button>
                   </div>
                   <div className="template-tasks">
-                    {section.items.map((item, itemIndex) => (
-                      <div key={itemIndex} className="template-task-row">
-                        <input
-                          type="text"
-                          value={item}
-                          onChange={(event) =>
-                            handleTemplateTaskChange(
-                              sectionIndex,
-                              itemIndex,
-                              event.target.value
-                            )
-                          }
-                        />
-                        <button
-                          className="button text"
-                          onClick={() =>
-                            handleRemoveTask(sectionIndex, itemIndex)
-                          }
-                          aria-label="Remove task"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                    {section.items.map((item, itemIndex) => {
+                      const normalizedItem = normalizeTemplateItem(item);
+                      return (
+                        <div key={itemIndex} className="template-task-row">
+                          <input
+                            type="text"
+                            value={normalizedItem.task}
+                            onChange={(event) =>
+                              handleTemplateTaskFieldChange(
+                                sectionIndex,
+                                itemIndex,
+                                "task",
+                                event.target.value
+                              )
+                            }
+                          />
+                          <select
+                            value={normalizedItem.competencyId}
+                            onChange={(event) =>
+                              handleTemplateTaskFieldChange(
+                                sectionIndex,
+                                itemIndex,
+                                "competencyId",
+                                event.target.value
+                              )
+                            }
+                          >
+                            <option value="">Select competency</option>
+                            {template.competencyOptions?.map((option) => (
+                              <option key={option.code} value={option.code}>
+                                {option.code} - {option.description}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            className="button text"
+                            onClick={() =>
+                              handleRemoveTask(sectionIndex, itemIndex)
+                            }
+                            aria-label="Remove task"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      );
+                    })}
                     <button
                       className="button ghost"
                       onClick={() => handleAddTask(sectionIndex)}
