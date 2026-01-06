@@ -15,6 +15,19 @@ const formatDate = (value) => {
   return date.toLocaleDateString("fr-FR");
 };
 
+const getStatusStyle = (status) => {
+  if (status === "OK") {
+    return { fill: "#bbf7d0", text: "#166534" };
+  }
+  if (status === "NOK") {
+    return { fill: "#fed7aa", text: "#9a3412" };
+  }
+  if (status === "NA") {
+    return { fill: "#fecdd3", text: "#9f1239" };
+  }
+  return { fill: "#f8fafc", text: "#0f172a" };
+};
+
 const drawKeyValue = (doc, label, value, x, y) => {
   doc
     .fontSize(9)
@@ -37,13 +50,14 @@ const drawSectionHeader = (doc, title, y) => {
 };
 
 const drawCompetencyRow = (doc, label, status, comment, y) => {
+  const statusStyle = getStatusStyle(status);
   doc
     .rect(40, y, 400, 18)
     .stroke("#cbd5f5")
     .rect(440, y, 70, 18)
     .stroke("#cbd5f5")
     .rect(510, y, 45, 18)
-    .stroke("#cbd5f5");
+    .fillAndStroke(statusStyle.fill, "#cbd5f5");
   doc
     .fontSize(8)
     .fillColor("#0f172a")
@@ -52,7 +66,7 @@ const drawCompetencyRow = (doc, label, status, comment, y) => {
     .fillColor("#334155")
     .text(comment || "-", 444, y + 4, { width: 62 });
   doc
-    .fillColor("#0f172a")
+    .fillColor(statusStyle.text)
     .font("Helvetica-Bold")
     .text(status || "-", 515, y + 4, { width: 40, align: "center" });
   doc.font("Helvetica");
