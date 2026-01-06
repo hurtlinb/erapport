@@ -364,13 +364,20 @@ function App() {
             {template.competencies.map((section, sectionIndex) => (
               <div key={sectionIndex} className="template-competency">
                 <div className="template-competency-header">
-                  <input
-                    type="text"
-                    value={section.category}
-                    onChange={(event) =>
-                      handleTemplateCategoryChange(sectionIndex, event.target.value)
-                    }
-                  />
+                  <div className="category-name">
+                    <span className="badge">Category</span>
+                    <input
+                      type="text"
+                      className="category-input"
+                      value={section.category}
+                      onChange={(event) =>
+                        handleTemplateCategoryChange(
+                          sectionIndex,
+                          event.target.value
+                        )
+                      }
+                    />
+                  </div>
                   <button
                     className="button text"
                     onClick={() => handleRemoveCategory(sectionIndex)}
