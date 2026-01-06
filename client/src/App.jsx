@@ -27,25 +27,35 @@ const DEFAULT_COMPETENCIES = [
   }
 ];
 
-const emptyStudent = {
-  id: "",
-  name: "",
-  cohort: "",
-  evaluationDate: "",
+const storageKey = "erapport.students";
+const templateStorageKey = "erapport.template";
+
+const defaultTemplate = {
   moduleTitle: "123 - Activer les services d'un serveur",
   note: "",
-  remarks: "",
-  competencies: DEFAULT_COMPETENCIES.map((section) => ({
+  competencies: DEFAULT_COMPETENCIES
+};
+
+const mapTemplateCompetencies = (template) =>
+  template.competencies.map((section) => ({
     category: section.category,
     items: section.items.map((label) => ({
       label,
       status: "OK",
       comment: ""
     }))
-  }))
-};
+  }));
 
-const storageKey = "erapport.students";
+const buildStudentFromTemplate = (template) => ({
+  id: crypto.randomUUID(),
+  name: "",
+  cohort: "",
+  evaluationDate: "",
+  moduleTitle: template.moduleTitle || "",
+  note: template.note || "",
+  remarks: "",
+  competencies: mapTemplateCompetencies(template)
+});
 
 function loadStudents() {
   try {
@@ -62,9 +72,18 @@ function saveStudents(students) {
 }
 
 function App() {
+  const [template, setTemplate] = useState(() => {
+    try {
+      const raw = localStorage.getItem(templateStorageKey);
+      return raw ? JSON.parse(raw) : defaultTemplate;
+    } catch (error) {
+      console.error(error);
+      return defaultTemplate;
+    }
+  });
   const [students, setStudents] = useState(() => loadStudents());
   const [selectedId, setSelectedId] = useState(students[0]?.id || "");
-  const [draft, setDraft] = useState(emptyStudent);
+  const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
   const selectedStudent = students.find((student) => student.id === selectedId);
 
@@ -73,14 +92,22 @@ function App() {
   }, [students]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem(templateStorageKey, JSON.stringify(template));
+    } catch (error) {
+      console.error(error);
+    }
+  }, [template]);
+
+  useEffect(() => {
     if (selectedStudent) {
       setDraft(selectedStudent);
       setIsEditing(true);
     } else {
-      setDraft({ ...emptyStudent, id: crypto.randomUUID() });
+      setDraft(buildStudentFromTemplate(template));
       setIsEditing(false);
     }
-  }, [selectedStudent]);
+  }, [selectedStudent, template]);
 
   const studentCountLabel = useMemo(() => {
     return students.length === 1 ? "1 student" : `${students.length} students`;
@@ -164,6 +191,87 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleTemplateField = (field, value) => {
+    setTemplate((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTemplateCategoryChange = (sectionIndex, value) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: prev.competencies.map((section, sIndex) =>
+        sIndex === sectionIndex ? { ...section, category: value } : section
+      )
+    }));
+  };
+
+  const handleTemplateTaskChange = (sectionIndex, itemIndex, value) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: prev.competencies.map((section, sIndex) => {
+        if (sIndex !== sectionIndex) return section;
+        return {
+          ...section,
+          items: section.items.map((item, iIndex) =>
+            iIndex === itemIndex ? value : item
+          )
+        };
+      })
+    }));
+  };
+
+  const handleAddCategory = () => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: [
+        ...prev.competencies,
+        { category: "New category", items: ["New task"] }
+      ]
+    }));
+  };
+
+  const handleRemoveCategory = (sectionIndex) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: prev.competencies.filter((_, index) => index !== sectionIndex)
+    }));
+  };
+
+  const handleAddTask = (sectionIndex) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: prev.competencies.map((section, sIndex) =>
+        sIndex === sectionIndex
+          ? { ...section, items: [...section.items, "New task"] }
+          : section
+      )
+    }));
+  };
+
+  const handleRemoveTask = (sectionIndex, itemIndex) => {
+    setTemplate((prev) => ({
+      ...prev,
+      competencies: prev.competencies.map((section, sIndex) => {
+        if (sIndex !== sectionIndex) return section;
+        return {
+          ...section,
+          items: section.items.filter((_, iIndex) => iIndex !== itemIndex)
+        };
+      })
+    }));
+  };
+
+  const handleApplyTemplate = () => {
+    setDraft((prev) => ({
+      ...prev,
+      moduleTitle: template.moduleTitle,
+      note: template.note,
+      competencies: mapTemplateCompetencies(template)
+    }));
+  };
+
   return (
     <div className="app">
       <header className="hero">
@@ -188,6 +296,103 @@ function App() {
       </header>
 
       <main className="layout">
+        <section className="panel template-panel">
+          <div className="panel-header">
+            <div>
+              <h2>Report template</h2>
+              <p className="helper-text">
+                Configure the shared information and task list used for every new
+                report.
+              </p>
+            </div>
+            <button className="button primary" onClick={handleApplyTemplate}>
+              Apply to current report
+            </button>
+          </div>
+
+          <div className="form-grid">
+            <label>
+              Default module title
+              <input
+                type="text"
+                value={template.moduleTitle}
+                onChange={(event) =>
+                  handleTemplateField("moduleTitle", event.target.value)
+                }
+                placeholder="123 - Activer les services d'un serveur"
+              />
+            </label>
+            <label>
+              Default summary
+              <textarea
+                rows="2"
+                value={template.note}
+                onChange={(event) => handleTemplateField("note", event.target.value)}
+                placeholder="Text that will appear in the summary for new reports."
+              />
+            </label>
+          </div>
+
+          <div className="template-competency-grid">
+            {template.competencies.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="template-competency">
+                <div className="template-competency-header">
+                  <input
+                    type="text"
+                    value={section.category}
+                    onChange={(event) =>
+                      handleTemplateCategoryChange(sectionIndex, event.target.value)
+                    }
+                  />
+                  <button
+                    className="button text"
+                    onClick={() => handleRemoveCategory(sectionIndex)}
+                    aria-label="Remove category"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="template-tasks">
+                  {section.items.map((item, itemIndex) => (
+                    <div key={itemIndex} className="template-task-row">
+                      <input
+                        type="text"
+                        value={item}
+                        onChange={(event) =>
+                          handleTemplateTaskChange(
+                            sectionIndex,
+                            itemIndex,
+                            event.target.value
+                          )
+                        }
+                      />
+                      <button
+                        className="button text"
+                        onClick={() => handleRemoveTask(sectionIndex, itemIndex)}
+                        aria-label="Remove task"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    className="button ghost"
+                    onClick={() => handleAddTask(sectionIndex)}
+                  >
+                    + Add task
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="actions align-start">
+            <button className="button ghost" onClick={handleAddCategory}>
+              + Add category
+            </button>
+          </div>
+        </section>
+
         <section className="panel">
           <div className="panel-header">
             <h2>Student list</h2>

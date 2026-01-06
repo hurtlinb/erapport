@@ -75,6 +75,18 @@ h1 {
   gap: 24px;
 }
 
+.template-panel {
+  grid-column: 1 / -1;
+  gap: 16px;
+}
+
+.helper-text {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 13px;
+}
+
 .panel {
   background: #fff;
   border-radius: 20px;
@@ -105,6 +117,10 @@ h1 {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.actions.align-start {
+  justify-content: flex-start;
 }
 
 .button {
@@ -196,6 +212,44 @@ select {
   padding: 10px 12px;
   font-size: 14px;
   font-family: inherit;
+}
+
+.template-competency-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.template-competency {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.template-competency-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.template-competency-header input {
+  flex: 1;
+}
+
+.template-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-task-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
 }
 
 textarea {
