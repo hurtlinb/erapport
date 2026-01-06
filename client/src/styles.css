@@ -352,8 +352,20 @@ textarea {
   font-weight: 600;
 }
 
-.competency-meta {
+.competency-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 8px;
+}
+
+.competency-select {
+  min-width: 180px;
+}
+
+.competency-meta {
+  margin: 0;
   color: #64748b;
   font-size: 13px;
 }
