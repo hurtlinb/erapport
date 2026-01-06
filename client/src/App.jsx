@@ -53,7 +53,7 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
 
         return {
           label,
-          status: existingItem?.status || "OK",
+          status: existingItem?.status ?? "",
           comment: existingItem?.comment || ""
         };
       })
@@ -580,6 +580,7 @@ function App() {
                           )
                         }
                       >
+                        <option value="">Select status</option>
                         <option value="OK">OK</option>
                         <option value="NOK">Needs improvement</option>
                         <option value="NA">Not assessed</option>
