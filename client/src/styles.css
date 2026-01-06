@@ -261,7 +261,8 @@ select {
 .template-competency-header {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .template-competency-header input {
@@ -304,9 +305,9 @@ select {
 
 .template-task-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr auto;
   gap: 8px;
-  align-items: center;
+  align-items: start;
 }
 
 textarea {
@@ -349,6 +350,12 @@ textarea {
 .competency-label {
   margin: 0 0 6px;
   font-weight: 600;
+}
+
+.competency-meta {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .status-select {
