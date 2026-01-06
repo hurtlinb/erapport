@@ -107,6 +107,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(students[0]?.id || "");
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const selectedStudent = students.find((student) => student.id === selectedId);
 
   useEffect(() => {
@@ -141,6 +142,13 @@ function App() {
   const studentCountLabel = useMemo(() => {
     return students.length === 1 ? "1 student" : `${students.length} students`;
   }, [students.length]);
+
+  const templateTaskCount = useMemo(() => {
+    return template.competencies.reduce(
+      (total, section) => total + section.items.length,
+      0
+    );
+  }, [template.competencies]);
 
   const handleStudentField = (field, value) => {
     setDraft((prev) => ({
@@ -297,6 +305,7 @@ function App() {
       prev.map((student) => applyTemplateToStudent(template, student))
     );
     setDraft((prev) => applyTemplateToStudent(template, prev));
+    setIsTemplateModalOpen(false);
   };
 
   return (
@@ -332,99 +341,35 @@ function App() {
                 report.
               </p>
             </div>
-            <button className="button primary" onClick={handleApplyTemplate}>
-              Apply to all reports
+            <button
+              className="button primary"
+              onClick={() => setIsTemplateModalOpen(true)}
+            >
+              Modify template
             </button>
           </div>
 
-          <div className="form-grid">
-            <label>
-              Default module title
-              <input
-                type="text"
-                value={template.moduleTitle}
-                onChange={(event) =>
-                  handleTemplateField("moduleTitle", event.target.value)
-                }
-                placeholder="123 - Activer les services d'un serveur"
-              />
-            </label>
-            <label>
-              Default summary
-              <textarea
-                rows="2"
-                value={template.note}
-                onChange={(event) => handleTemplateField("note", event.target.value)}
-                placeholder="Text that will appear in the summary for new reports."
-              />
-            </label>
+          <div className="template-summary">
+            <div className="summary-pill">
+              <span className="pill-label">Module</span>
+              <span className="pill-value">
+                {template.moduleTitle || "Not set"}
+              </span>
+            </div>
+            <div className="summary-pill">
+              <span className="pill-label">Categories</span>
+              <span className="pill-value">{template.competencies.length}</span>
+            </div>
+            <div className="summary-pill">
+              <span className="pill-label">Tasks</span>
+              <span className="pill-value">{templateTaskCount}</span>
+            </div>
           </div>
 
-          <div className="template-competency-grid">
-            {template.competencies.map((section, sectionIndex) => (
-              <div key={sectionIndex} className="template-competency">
-                <div className="template-competency-header">
-                  <div className="category-name">
-                    <span className="badge">Category</span>
-                    <input
-                      type="text"
-                      className="category-input"
-                      value={section.category}
-                      onChange={(event) =>
-                        handleTemplateCategoryChange(
-                          sectionIndex,
-                          event.target.value
-                        )
-                      }
-                    />
-                  </div>
-                  <button
-                    className="button text"
-                    onClick={() => handleRemoveCategory(sectionIndex)}
-                    aria-label="Remove category"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="template-tasks">
-                  {section.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="template-task-row">
-                      <input
-                        type="text"
-                        value={item}
-                        onChange={(event) =>
-                          handleTemplateTaskChange(
-                            sectionIndex,
-                            itemIndex,
-                            event.target.value
-                          )
-                        }
-                      />
-                      <button
-                        className="button text"
-                        onClick={() => handleRemoveTask(sectionIndex, itemIndex)}
-                        aria-label="Remove task"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    className="button ghost"
-                    onClick={() => handleAddTask(sectionIndex)}
-                  >
-                    + Add task
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="actions align-start">
-            <button className="button ghost" onClick={handleAddCategory}>
-              + Add category
-            </button>
-          </div>
+          <p className="helper-text">
+            Use the Modify template button to edit details, update competencies, and
+            apply them to all existing reports.
+          </p>
         </section>
 
         <section className="panel">
@@ -603,6 +548,129 @@ function App() {
           </div>
         </section>
       </main>
+
+      {isTemplateModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div className="modal-header">
+              <div>
+                <h2>Modify template</h2>
+                <p className="helper-text">
+                  Edit the default module info and competencies for new reports.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsTemplateModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="form-grid">
+              <label>
+                Default module title
+                <input
+                  type="text"
+                  value={template.moduleTitle}
+                  onChange={(event) =>
+                    handleTemplateField("moduleTitle", event.target.value)
+                  }
+                  placeholder="123 - Activer les services d'un serveur"
+                />
+              </label>
+              <label>
+                Default summary
+                <textarea
+                  rows="2"
+                  value={template.note}
+                  onChange={(event) =>
+                    handleTemplateField("note", event.target.value)
+                  }
+                  placeholder="Text that will appear in the summary for new reports."
+                />
+              </label>
+            </div>
+
+            <div className="template-competency-grid">
+              {template.competencies.map((section, sectionIndex) => (
+                <div key={sectionIndex} className="template-competency">
+                  <div className="template-competency-header">
+                    <div className="category-name">
+                      <span className="badge">Category</span>
+                      <input
+                        type="text"
+                        className="category-input"
+                        value={section.category}
+                        onChange={(event) =>
+                          handleTemplateCategoryChange(
+                            sectionIndex,
+                            event.target.value
+                          )
+                        }
+                      />
+                    </div>
+                    <button
+                      className="button text"
+                      onClick={() => handleRemoveCategory(sectionIndex)}
+                      aria-label="Remove category"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="template-tasks">
+                    {section.items.map((item, itemIndex) => (
+                      <div key={itemIndex} className="template-task-row">
+                        <input
+                          type="text"
+                          value={item}
+                          onChange={(event) =>
+                            handleTemplateTaskChange(
+                              sectionIndex,
+                              itemIndex,
+                              event.target.value
+                            )
+                          }
+                        />
+                        <button
+                          className="button text"
+                          onClick={() =>
+                            handleRemoveTask(sectionIndex, itemIndex)
+                          }
+                          aria-label="Remove task"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      className="button ghost"
+                      onClick={() => handleAddTask(sectionIndex)}
+                    >
+                      + Add task
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="actions align-start modal-actions">
+              <div className="action-row">
+                <button className="button ghost" onClick={handleAddCategory}>
+                  + Add category
+                </button>
+                <button className="button primary" onClick={handleApplyTemplate}>
+                  Apply to all reports
+                </button>
+              </div>
+              <p className="helper-text">
+                Applying will update every existing student report with the latest
+                template values.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
