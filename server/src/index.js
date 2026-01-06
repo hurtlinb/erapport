@@ -17,10 +17,16 @@ const theme = {
   surfaceMuted: "#f8fafc",
   status: {
     OK: { fill: "#dcfce7", text: "#16a34a", border: "#16a34a" },
-    NOK: { fill: "#ffedd5", text: "#f97316", border: "#f97316" },
-    NA: { fill: "#fecdd3", text: "#e11d48", border: "#e11d48" },
+    NEEDS_IMPROVEMENT: { fill: "#ffedd5", text: "#f97316", border: "#f97316" },
+    NOT_ASSESSED: { fill: "#fecdd3", text: "#e11d48", border: "#e11d48" },
     DEFAULT: { fill: "#f8fafc", text: "#0f172a", border: "#e2e8f0" }
   }
+};
+
+const STATUS_VALUES = {
+  OK: "OK",
+  NEEDS_IMPROVEMENT: "~",
+  NOT_ASSESSED: "NOK"
 };
 
 const formatDate = (value) => {
@@ -31,14 +37,14 @@ const formatDate = (value) => {
 };
 
 const getStatusStyle = (status) => {
-  if (status === "OK") {
+  if (status === STATUS_VALUES.OK) {
     return theme.status.OK;
   }
-  if (status === "NOK") {
-    return theme.status.NOK;
+  if (status === STATUS_VALUES.NEEDS_IMPROVEMENT) {
+    return theme.status.NEEDS_IMPROVEMENT;
   }
-  if (status === "NA") {
-    return theme.status.NA;
+  if (status === STATUS_VALUES.NOT_ASSESSED) {
+    return theme.status.NOT_ASSESSED;
   }
   return theme.status.DEFAULT;
 };
