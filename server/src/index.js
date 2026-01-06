@@ -144,12 +144,11 @@ app.post("/api/report", (req, res) => {
     .stroke(theme.border);
 
   drawKeyValue(doc, "Apprenant", student.name, 48, 100);
-  drawKeyValue(doc, "Programme", student.cohort, 48, 114);
-  drawKeyValue(doc, "Classe", student.className || "", 48, 128);
-  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, 142);
-  drawKeyValue(doc, "Type d'évaluation", student.evaluationType || "", 48, 156);
-  drawKeyValue(doc, "Date d'évaluation", formatDate(student.evaluationDate), 48, 170);
-  drawKeyValue(doc, "Date de coaching", formatDate(student.coachingDate), 48, 184);
+  drawKeyValue(doc, "Classe", student.className || "", 48, 114);
+  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, 128);
+  drawKeyValue(doc, "Type d'évaluation", student.evaluationType || "", 48, 142);
+  drawKeyValue(doc, "Date d'évaluation", formatDate(student.evaluationDate), 48, 156);
+  drawKeyValue(doc, "Date de coaching", formatDate(student.coachingDate), 48, 170);
 
   doc
     .fontSize(9)
