@@ -311,13 +311,50 @@ textarea {
   align-items: center;
   padding: 12px;
   border-radius: 14px;
-  background: #f8fafc;
   border: 1px solid #e2e8f0;
+  position: relative;
+  --status-color: #f8fafc;
+  --status-strong: #e2e8f0;
+  background: linear-gradient(90deg, var(--status-color) 0, #fff 60%);
 }
 
 .competency-label {
   margin: 0 0 6px;
   font-weight: 600;
+}
+
+.competency-row::before {
+  content: "";
+  position: absolute;
+  inset: 10px auto 10px 10px;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--status-strong);
+}
+
+.status-select {
+  --status-color: #f8fafc;
+  --status-strong: #e2e8f0;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(90deg, var(--status-color) 0, #fff 60%);
+}
+
+.status-ok,
+.status-select.status-ok {
+  --status-color: #bbf7d0;
+  --status-strong: #16a34a;
+}
+
+.status-nok,
+.status-select.status-nok {
+  --status-color: #fed7aa;
+  --status-strong: #ea580c;
+}
+
+.status-na,
+.status-select.status-na {
+  --status-color: #fecdd3;
+  --status-strong: #e11d48;
 }
 
 @media (max-width: 900px) {
