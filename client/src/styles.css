@@ -239,6 +239,34 @@ select {
   flex: 1;
 }
 
+.category-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.category-input {
+  border: 1.5px solid #2563eb;
+  background: linear-gradient(180deg, #eff6ff 0%, #fff 100%);
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .template-tasks {
   display: flex;
   flex-direction: column;
