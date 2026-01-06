@@ -159,7 +159,6 @@ const applyTemplateToStudent = (template, student) => ({
 const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
   name: "",
-  cohort: "",
   moduleTitle: template.moduleTitle || "",
   note: template.note || "",
   remarks: "",
@@ -604,7 +603,7 @@ function App() {
                 <div>
                   <p className="student-name">{student.name}</p>
                   <p className="student-meta">
-                    {student.cohort || "No cohort"} •{" "}
+                    {student.className || "No class"} •{" "}
                     {student.evaluationDate || "No date"}
                   </p>
                 </div>
@@ -673,15 +672,6 @@ function App() {
                 readOnly
                 disabled
                 placeholder="Teacher set in template"
-              />
-            </label>
-            <label>
-              Cohort / program
-              <input
-                type="text"
-                value={draft.cohort}
-                onChange={(event) => handleStudentField("cohort", event.target.value)}
-                placeholder="INFO-F12"
               />
             </label>
             <label>
