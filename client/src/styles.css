@@ -360,14 +360,17 @@ textarea {
   margin: 0 0 8px;
 }
 
-.competency-select {
-  min-width: 180px;
-}
-
-.competency-meta {
+.competency-tag {
   margin: 0;
-  color: #64748b;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .status-select {
@@ -393,6 +396,26 @@ textarea {
 .status-select.status-na {
   --status-color: #fecdd3;
   --status-strong: #e11d48;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.modal {
+  width: min(1080px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
 
 .modal-header {
