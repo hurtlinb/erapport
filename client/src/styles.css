@@ -366,14 +366,14 @@ textarea {
 
 .competency-row.status-nok,
 .status-select.status-nok {
-  --status-color: #fee2e2;
-  --status-strong: #dc2626;
+  --status-color: #ffedd5;
+  --status-strong: #f97316;
 }
 
 .competency-row.status-na,
 .status-select.status-na {
-  --status-color: #e2e8f0;
-  --status-strong: #94a3b8;
+  --status-color: #fecdd3;
+  --status-strong: #e11d48;
 }
 
 .modal-header {
