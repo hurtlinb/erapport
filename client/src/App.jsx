@@ -36,15 +36,37 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const mapTemplateCompetencies = (template) =>
-  template.competencies.map((section) => ({
-    category: section.category,
-    items: section.items.map((label) => ({
-      label,
-      status: "OK",
-      comment: ""
-    }))
-  }));
+const mapTemplateCompetencies = (template, existingCompetencies = []) => {
+  const competencies = template?.competencies ?? [];
+
+  return competencies.map((section) => {
+    const existingSection = existingCompetencies.find(
+      (candidate) => candidate.category === section.category
+    );
+
+    return {
+      category: section.category,
+      items: section.items.map((label) => {
+        const existingItem = existingSection?.items?.find(
+          (candidate) => candidate.label === label
+        );
+
+        return {
+          label,
+          status: existingItem?.status || "OK",
+          comment: existingItem?.comment || ""
+        };
+      })
+    };
+  });
+};
+
+const applyTemplateToStudent = (template, student) => ({
+  ...student,
+  moduleTitle: template.moduleTitle || "",
+  note: template.note || "",
+  competencies: mapTemplateCompetencies(template, student.competencies)
+});
 
 const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
@@ -108,6 +130,13 @@ function App() {
       setIsEditing(false);
     }
   }, [selectedStudent, template]);
+
+  useEffect(() => {
+    setStudents((prev) =>
+      prev.map((student) => applyTemplateToStudent(template, student))
+    );
+    setDraft((prev) => applyTemplateToStudent(template, prev));
+  }, [template]);
 
   const studentCountLabel = useMemo(() => {
     return students.length === 1 ? "1 student" : `${students.length} students`;
@@ -264,12 +293,10 @@ function App() {
   };
 
   const handleApplyTemplate = () => {
-    setDraft((prev) => ({
-      ...prev,
-      moduleTitle: template.moduleTitle,
-      note: template.note,
-      competencies: mapTemplateCompetencies(template)
-    }));
+    setStudents((prev) =>
+      prev.map((student) => applyTemplateToStudent(template, student))
+    );
+    setDraft((prev) => applyTemplateToStudent(template, prev));
   };
 
   return (
@@ -306,7 +333,7 @@ function App() {
               </p>
             </div>
             <button className="button primary" onClick={handleApplyTemplate}>
-              Apply to current report
+              Apply to all reports
             </button>
           </div>
 
