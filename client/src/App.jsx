@@ -707,9 +707,8 @@ function App() {
               <input
                 type="text"
                 value={draft.moduleTitle}
-                onChange={(event) =>
-                  handleStudentField("moduleTitle", event.target.value)
-                }
+                readOnly
+                disabled
               />
             </label>
           </div>
@@ -827,7 +826,7 @@ function App() {
 
             <div className="form-grid">
               <label>
-                Default module title
+                Module title
                 <input
                   type="text"
                   value={template.moduleTitle}
