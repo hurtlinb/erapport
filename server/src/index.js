@@ -28,21 +28,16 @@ const getStatusStyle = (status) => {
   return { fill: "#f8fafc", text: "#0f172a" };
 };
 
-const buildCompetencyLabel = (item, competencyOptions = []) => {
-  const taskLabel = item.task || item.label || "";
+const getCompetencyLabel = (item, competencyOptions = []) => {
   const option = competencyOptions.find(
     (candidate) => candidate.code === item.competencyId
   );
-
-  if (option && taskLabel) {
-    return `${taskLabel} (${option.code} - ${option.description})`;
-  }
 
   if (option) {
     return `${option.code} - ${option.description}`;
   }
 
-  return taskLabel || "-";
+  return "-";
 };
 
 const drawKeyValue = (doc, label, value, x, y) => {
@@ -66,10 +61,12 @@ const drawSectionHeader = (doc, title, y) => {
   doc.font("Helvetica");
 };
 
-const drawCompetencyRow = (doc, label, status, comment, y) => {
+const drawCompetencyRow = (doc, task, competency, status, comment, y) => {
   const statusStyle = getStatusStyle(status);
   doc
-    .rect(40, y, 400, 18)
+    .rect(40, y, 260, 18)
+    .stroke("#cbd5f5")
+    .rect(300, y, 140, 18)
     .stroke("#cbd5f5")
     .rect(440, y, 70, 18)
     .stroke("#cbd5f5")
@@ -78,7 +75,8 @@ const drawCompetencyRow = (doc, label, status, comment, y) => {
   doc
     .fontSize(8)
     .fillColor("#0f172a")
-    .text(label, 44, y + 4, { width: 392 });
+    .text(task, 44, y + 4, { width: 252 })
+    .text(competency, 304, y + 4, { width: 132 });
   doc
     .fillColor("#334155")
     .text(comment || "-", 444, y + 4, { width: 62 });
@@ -154,7 +152,9 @@ app.post("/api/report", (req, res) => {
     cursorY += 24;
 
     doc
-      .rect(40, cursorY, 400, 16)
+      .rect(40, cursorY, 260, 16)
+      .stroke("#cbd5f5")
+      .rect(300, cursorY, 140, 16)
       .stroke("#cbd5f5")
       .rect(440, cursorY, 70, 16)
       .stroke("#cbd5f5")
@@ -162,7 +162,8 @@ app.post("/api/report", (req, res) => {
       .stroke("#cbd5f5")
       .fontSize(8)
       .fillColor("#0f172a")
-      .text("Compétence", 44, cursorY + 4)
+      .text("Tâche", 44, cursorY + 4)
+      .text("Compétence", 304, cursorY + 4)
       .text("Commentaire", 444, cursorY + 4)
       .text("Éval", 515, cursorY + 4, { width: 40, align: "center" });
 
@@ -173,12 +174,14 @@ app.post("/api/report", (req, res) => {
         doc.addPage();
         cursorY = 40;
       }
-      const competencyLabel = buildCompetencyLabel(
+      const taskLabel = item.task || item.label || "-";
+      const competencyLabel = getCompetencyLabel(
         item,
         student.competencyOptions
       );
       drawCompetencyRow(
         doc,
+        taskLabel,
         competencyLabel,
         item.status,
         item.comment,
