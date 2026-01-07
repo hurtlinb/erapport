@@ -153,25 +153,29 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
 };
 
 const normalizeModuleTemplates = (module, schoolYearLabel) => {
-  const baseTemplates =
-    module.templates && typeof module.templates === "object"
-      ? { ...module.templates }
-      : {};
-  if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
+  const hasExplicitTemplates =
+    module.templates && typeof module.templates === "object";
+  const baseTemplates = hasExplicitTemplates ? { ...module.templates } : {};
+  if (!hasExplicitTemplates && module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
     baseTemplates[EVALUATION_TYPES[0]] = module.template;
   }
 
   const normalizedTemplates = {};
-  const defaultType = EVALUATION_TYPES[0];
-  normalizedTemplates[defaultType] = normalizeTemplate(
-    baseTemplates[defaultType] || {},
-    module,
-    schoolYearLabel,
-    defaultType
+  const templateTypes = Object.keys(baseTemplates).filter((type) =>
+    EVALUATION_TYPES.includes(type)
   );
+  if (templateTypes.length === 0) {
+    const defaultType = EVALUATION_TYPES[0];
+    normalizedTemplates[defaultType] = normalizeTemplate(
+      {},
+      module,
+      schoolYearLabel,
+      defaultType
+    );
+    return normalizedTemplates;
+  }
 
-  EVALUATION_TYPES.slice(1).forEach((type) => {
-    if (!baseTemplates[type]) return;
+  templateTypes.forEach((type) => {
     normalizedTemplates[type] = normalizeTemplate(
       baseTemplates[type] || {},
       module,
@@ -188,7 +192,7 @@ const getAvailableEvaluationTypes = (module) => {
   const availableTypes = EVALUATION_TYPES.filter((type) =>
     Boolean(module.templates[type])
   );
-  return availableTypes.length ? availableTypes : [EVALUATION_TYPES[0]];
+  return availableTypes.length ? availableTypes : [];
 };
 
 const isEvaluationTypeAvailable = (module, type) =>
@@ -1114,6 +1118,57 @@ function App() {
     }
   };
 
+  const handleRemoveReportType = (evaluationType) => {
+    if (!activeModule || !activeSchoolYear) return;
+    const availableTypes = getAvailableEvaluationTypes(activeModule);
+    if (!availableTypes.includes(evaluationType)) return;
+
+    const isLastType = availableTypes.length === 1;
+    const confirmMessage = isLastType
+      ? "Delete this report type? This is the last report type and will delete the entire module and all related students."
+      : "Delete this report type and all related students?";
+    if (!confirm(confirmMessage)) return;
+
+    setStudents((prev) =>
+      prev.filter((student) => {
+        if (student.moduleId !== activeModuleId) return true;
+        if (isLastType) return false;
+        return getStudentEvaluationType(student) !== evaluationType;
+      })
+    );
+
+    setSchoolYears((prev) =>
+      prev.map((year) => {
+        if (year.id !== activeSchoolYearId) return year;
+        if (isLastType) {
+          return {
+            ...year,
+            modules: year.modules.filter((module) => module.id !== activeModuleId)
+          };
+        }
+        return {
+          ...year,
+          modules: year.modules.map((module) => {
+            if (module.id !== activeModuleId) return module;
+            const templates = { ...(module.templates || {}) };
+            delete templates[evaluationType];
+            return {
+              ...module,
+              templates
+            };
+          })
+        };
+      })
+    );
+
+    if (activeEvaluationType === evaluationType) {
+      const remainingTypes = availableTypes.filter(
+        (type) => type !== evaluationType
+      );
+      setActiveEvaluationType(remainingTypes[0] || EVALUATION_TYPES[0]);
+    }
+  };
+
   const handleApplyTemplate = () => {
     setStudents((prev) =>
       prev.map((student) =>
@@ -1241,6 +1296,18 @@ function App() {
                 );
               })}
             </fieldset>
+            <div className="module-actions">
+              <button
+                className="button danger"
+                type="button"
+                onClick={() => handleRemoveReportType(activeEvaluationType)}
+                disabled={
+                  !isEvaluationTypeAvailable(activeModule, activeEvaluationType)
+                }
+              >
+                Remove {activeEvaluationType} report
+              </button>
+            </div>
           </div>
         </section>
 
