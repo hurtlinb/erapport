@@ -226,7 +226,6 @@ function App() {
   const [selectedId, setSelectedId] = useState(students[0]?.id || "");
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
-  const [isNewStudent, setIsNewStudent] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const selectedStudent = students.find((student) => student.id === selectedId);
 
@@ -245,13 +244,12 @@ function App() {
   useEffect(() => {
     if (selectedStudent) {
       setDraft(applyTemplateToStudent(template, selectedStudent));
-      setIsEditing(!isNewStudent);
+      setIsEditing(true);
     } else {
       setDraft(buildStudentFromTemplate(template));
       setIsEditing(false);
-      setIsNewStudent(false);
     }
-  }, [selectedStudent, template, isNewStudent]);
+  }, [selectedStudent, template]);
 
   useEffect(() => {
     setStudents((prev) =>
@@ -289,6 +287,7 @@ function App() {
 
       if (nextDraft.name.trim()) {
         setSelectedId(nextDraft.id);
+        setIsEditing(true);
       }
 
       return nextDraft;
@@ -340,7 +339,6 @@ function App() {
 
   const handleNewStudent = () => {
     setSelectedId("");
-    setIsNewStudent(true);
   };
 
   const handleGeneratePdf = async () => {
@@ -368,7 +366,6 @@ function App() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    setIsNewStudent(false);
   };
 
   const handleTemplateField = (field, value) => {
@@ -616,10 +613,7 @@ function App() {
                     ? "student-card active"
                     : "student-card"
                 }
-                onClick={() => {
-                  setSelectedId(student.id);
-                  setIsNewStudent(false);
-                }}
+                onClick={() => setSelectedId(student.id)}
               >
                 <div>
                   <p className="student-name">{student.name}</p>
@@ -658,7 +652,6 @@ function App() {
               <input
                 type="text"
                 value={draft.name}
-                readOnly={isEditing}
                 onChange={(event) => handleStudentField("name", event.target.value)}
                 placeholder="Barbara Ayoub"
               />
