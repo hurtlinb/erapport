@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
   {
@@ -97,11 +97,7 @@ const TASK_EVALUATION_METHODS = [
   { value: "Documentation", label: "📚 Documentation" }
 ];
 const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
-
-const storageKey = "erapport.students";
-const templateStorageKey = "erapport.template";
-const moduleStorageKey = "erapport.modules";
-const statusVersionKey = "erapport.statusVersion";
+const API_BASE_URL = "http://localhost:3001";
 
 const STATUS_VALUES = {
   OK: "OK",
@@ -121,12 +117,6 @@ const getStudentNoteClass = (note) => {
   if ([4, 5, 6].includes(numericNote)) return "note-ok";
   if ([1, 2, 3].includes(numericNote)) return "note-nok";
   return "";
-};
-
-const migrateStatus = (status) => {
-  if (status === "NOK") return STATUS_VALUES.NEEDS_IMPROVEMENT;
-  if (status === "NA") return STATUS_VALUES.NOT_ASSESSED;
-  return status || "";
 };
 
 const defaultTemplate = {
@@ -272,107 +262,24 @@ const buildStudentFromTemplate = (template) => ({
   competencies: mapTemplateCompetencies(template)
 });
 
-function loadStudents() {
-  try {
-    const raw = localStorage.getItem(storageKey);
-    const parsed = raw ? JSON.parse(raw) : [];
-    const students = Array.isArray(parsed) ? parsed : [];
-    const shouldMigrateStatuses =
-      (localStorage.getItem(statusVersionKey) || "") !== "v2";
-
-    const normalizedStudents = students.map((student) => ({
-      ...student,
-      firstname: student.firstname || "",
-      email: student.email || "",
-      competencies: (student.competencies || []).map((section) => ({
-        ...section,
-        items: (section.items || []).map((item) => ({
-          ...item,
-          status: shouldMigrateStatuses ? migrateStatus(item.status) : item.status || ""
-        }))
-      }))
-    }));
-
-    if (shouldMigrateStatuses) {
-      localStorage.setItem(statusVersionKey, "v2");
-    }
-
-    return normalizedStudents;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-}
-
-function saveStudents(students) {
-  localStorage.setItem(storageKey, JSON.stringify(students));
-}
-
-function loadModules() {
-  try {
-    const legacyTemplate = (() => {
-      try {
-        const raw = localStorage.getItem(templateStorageKey);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        return {
-          ...defaultTemplate,
-          ...parsed,
-          competencyOptions:
-            parsed.competencyOptions || defaultTemplate.competencyOptions,
-          competencies: parsed.competencies || defaultTemplate.competencies
-        };
-      } catch (error) {
-        console.error(error);
-        return null;
-      }
-    })();
-    const raw = localStorage.getItem(moduleStorageKey);
-    const parsed = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      return [buildDefaultModule({}, legacyTemplate || {})];
-    }
-    return parsed.map((module) => ({
-      id: module.id || crypto.randomUUID(),
-      title: module.title || "",
-      schoolYear: module.schoolYear || "",
-      template: normalizeTemplate(
-        module.template || legacyTemplate || {},
-        {
-          id: module.id || crypto.randomUUID(),
-          title: module.title || "",
-          schoolYear: module.schoolYear || ""
-        }
-      )
-    }));
-  } catch (error) {
-    console.error(error);
-    return [buildDefaultModule()];
-  }
-}
-
-function saveModules(modules) {
-  localStorage.setItem(moduleStorageKey, JSON.stringify(modules));
-}
-
 function App() {
-  const initialModules = useMemo(() => loadModules(), []);
-  const [modules, setModules] = useState(initialModules);
-  const [template, setTemplate] = useState(
-    initialModules[0]?.template || defaultTemplate
+  const [modules, setModules] = useState([]);
+  const [template, setTemplate] = useState(defaultTemplate);
+  const [activeModuleId, setActiveModuleId] = useState("");
+  const [students, setStudents] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [draft, setDraft] = useState(() =>
+    buildStudentFromTemplate(defaultTemplate)
   );
-  const [activeModuleId, setActiveModuleId] = useState(
-    () => template.moduleId || initialModules[0]?.id || ""
-  );
-  const [students, setStudents] = useState(() => loadStudents());
-  const [selectedId, setSelectedId] = useState(students[0]?.id || "");
-  const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [importStudentText, setImportStudentText] = useState("");
   const [importStudentError, setImportStudentError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const isHydratedRef = useRef(false);
   const moduleStudents = useMemo(
     () => students.filter((student) => student.moduleId === activeModuleId),
     [activeModuleId, students]
@@ -382,12 +289,46 @@ function App() {
   );
 
   useEffect(() => {
-    saveStudents(students);
-  }, [students]);
+    const loadState = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/state`);
+        if (!response.ok) {
+          throw new Error("Unable to fetch stored data.");
+        }
+        const data = await response.json();
+        setModules(data.modules || []);
+        setStudents(data.students || []);
+        setLoadError("");
+        isHydratedRef.current = true;
+      } catch (error) {
+        console.error(error);
+        setLoadError(
+          "Unable to load saved data from the server. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadState();
+  }, []);
 
   useEffect(() => {
-    saveModules(modules);
-  }, [modules]);
+    if (!isHydratedRef.current) return;
+    const persistState = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/api/state`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ modules, students })
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    persistState();
+  }, [modules, students]);
 
   useEffect(() => {
     if (selectedStudent) {
@@ -606,7 +547,7 @@ function App() {
       alert("Please enter the student's name.");
       return;
     }
-    const response = await fetch("http://localhost:3001/api/report", {
+    const response = await fetch(`${API_BASE_URL}/api/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(draft)
@@ -837,6 +778,16 @@ function App() {
     setIsTemplateModalOpen(false);
   };
 
+  if (isLoading) {
+    return (
+      <div className="app">
+        <main className="layout">
+          <p className="helper-text">Loading data from the server...</p>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="hero">
@@ -865,6 +816,11 @@ function App() {
       </header>
 
       <main className="layout">
+        {loadError && (
+          <p className="helper-text error-text" role="alert">
+            {loadError}
+          </p>
+        )}
         <section className="panel template-panel">
           <div className="panel-header">
             <div>

@@ -4,12 +4,22 @@ import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
 import { fileURLToPath } from "url";
+import { loadState, saveState } from "./dataStore.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
+
+app.get("/api/state", (req, res) => {
+  res.json(loadState());
+});
+
+app.put("/api/state", (req, res) => {
+  const updatedState = saveState(req.body);
+  res.json(updatedState);
+});
 
 const theme = {
   text: "#0f172a",
