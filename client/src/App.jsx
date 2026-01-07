@@ -233,6 +233,7 @@ const applyTemplateToStudent = (template, student) => ({
 const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
   name: "",
+  email: "",
   moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
@@ -343,9 +344,9 @@ function App() {
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [isNewStudentModalOpen, setIsNewStudentModalOpen] = useState(false);
-  const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentError, setNewStudentError] = useState("");
+  const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
+  const [importStudentText, setImportStudentText] = useState("");
+  const [importStudentError, setImportStudentError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const moduleStudents = useMemo(
     () => students.filter((student) => student.moduleId === activeModuleId),
@@ -521,31 +522,57 @@ function App() {
     }
   };
 
-  const handleNewStudent = () => {
-    setNewStudentName("");
-    setNewStudentError("");
-    setIsNewStudentModalOpen(true);
+  const handleImportStudents = () => {
+    setImportStudentText("");
+    setImportStudentError("");
+    setIsImportStudentModalOpen(true);
   };
 
-  const handleCreateStudent = (event) => {
+  const parseImportLines = (text) => {
+    const rows = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (!rows.length) return [];
+
+    const headerRow = rows[0].toLowerCase();
+    const hasHeader =
+      headerRow.includes("nom") && headerRow.includes("prenom");
+
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+
+    return dataRows
+      .map((row) => row.split("\t").map((value) => value.trim()))
+      .filter((columns) => columns.length >= 2);
+  };
+
+  const handleCreateStudentsFromImport = (event) => {
     if (event?.preventDefault) {
       event.preventDefault();
     }
-    const trimmedName = newStudentName.trim();
-    if (!trimmedName) {
-      setNewStudentError("Please enter a student name.");
+
+    const rows = parseImportLines(importStudentText);
+
+    if (!rows.length) {
+      setImportStudentError(
+        "Paste at least one row with a last name and first name."
+      );
       return;
     }
-    const newStudent = {
+
+    const importedStudents = rows.map(([lastName, firstName, email]) => ({
       ...buildStudentFromTemplate(template),
-      name: trimmedName
-    };
-    setStudents((prev) => [...prev, newStudent]);
-    setSelectedId(newStudent.id);
+      name: `${firstName} ${lastName}`.trim(),
+      email: email || ""
+    }));
+
+    setStudents((prev) => [...prev, ...importedStudents]);
+    setSelectedId(importedStudents[0]?.id || "");
     setIsEditing(true);
-    setIsNewStudentModalOpen(false);
-    setNewStudentName("");
-    setNewStudentError("");
+    setIsImportStudentModalOpen(false);
+    setImportStudentText("");
+    setImportStudentError("");
   };
 
   const handleGeneratePdf = async () => {
@@ -897,14 +924,14 @@ function App() {
         <section className="panel">
           <div className="panel-header">
             <h2>Student list</h2>
-            <button className="button ghost" onClick={handleNewStudent}>
-              + New student
+            <button className="button ghost" onClick={handleImportStudents}>
+              Import students
             </button>
           </div>
           <ul className="student-list">
             {moduleStudents.length === 0 && (
               <li className="empty">
-                No students yet for this module. Add one to get started.
+                No students yet for this module. Import a list to get started.
               </li>
             )}
             {moduleStudents.map((student) => (
@@ -1187,51 +1214,51 @@ function App() {
         </section>
       </main>
 
-      {isNewStudentModalOpen && (
+      {isImportStudentModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
           <div className="modal modal--compact">
             <div className="modal-header">
               <div>
-                <h2>New student</h2>
+                <h2>Import students</h2>
                 <p className="helper-text">
-                  Enter the student name to start a new report.
+                  Paste rows from Excel with columns: nom, prenom, email.
                 </p>
               </div>
               <button
                 className="button ghost"
-                onClick={() => setIsNewStudentModalOpen(false)}
+                onClick={() => setIsImportStudentModalOpen(false)}
               >
                 Close
               </button>
             </div>
-            <form onSubmit={handleCreateStudent}>
+            <form onSubmit={handleCreateStudentsFromImport}>
               <label>
-                Student name
-                <input
-                  type="text"
-                  value={newStudentName}
+                Student list
+                <textarea
+                  rows="6"
+                  value={importStudentText}
                   onChange={(event) => {
-                    setNewStudentName(event.target.value);
-                    setNewStudentError("");
+                    setImportStudentText(event.target.value);
+                    setImportStudentError("");
                   }}
-                  placeholder="e.g. Alex Dupont"
+                  placeholder="nom	prenom	email"
                   autoFocus
                 />
               </label>
-              {newStudentError && (
-                <p className="helper-text error-text">{newStudentError}</p>
+              {importStudentError && (
+                <p className="helper-text error-text">{importStudentError}</p>
               )}
               <div className="actions align-start modal-actions">
                 <div className="action-row">
                   <button
                     type="button"
                     className="button ghost"
-                    onClick={() => setIsNewStudentModalOpen(false)}
+                    onClick={() => setIsImportStudentModalOpen(false)}
                   >
                     Cancel
                   </button>
                   <button type="submit" className="button primary">
-                    Create student
+                    Import students
                   </button>
                 </div>
               </div>
