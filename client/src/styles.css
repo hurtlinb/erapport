@@ -459,6 +459,10 @@ textarea {
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
 
+.modal--compact {
+  width: min(520px, 100%);
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -477,6 +481,11 @@ textarea {
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.error-text {
+  color: #dc2626;
+  margin-top: 6px;
 }
 
 @media (max-width: 900px) {
