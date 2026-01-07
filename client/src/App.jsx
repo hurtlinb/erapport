@@ -802,13 +802,18 @@ function App() {
                 report.
               </p>
             </div>
-            <button
-              className="button primary"
-              type="button"
-              onClick={() => setIsTemplateModalOpen(true)}
-            >
-              Modify template
-            </button>
+            <div className="actions">
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => setIsTemplateModalOpen(true)}
+              >
+                Modify template
+              </button>
+              <button className="button primary" onClick={handleAddModule}>
+                New module
+              </button>
+            </div>
           </div>
 
           <div className="module-selector">
@@ -832,9 +837,6 @@ function App() {
                 })}
               </select>
             </label>
-            <button className="button ghost" onClick={handleAddModule}>
-              New module
-            </button>
             <p className="helper-text">
               Switch modules to load their specific template and student list.
             </p>
