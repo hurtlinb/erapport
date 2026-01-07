@@ -1051,6 +1051,52 @@ function App() {
             </label>
           </div>
 
+          <div className="report-summary">
+            <div className="report-summary-header">
+              <h3>Summary</h3>
+              <p className="helper-text">
+                Categories and tasks overview (read-only).
+              </p>
+            </div>
+            {(draft.competencies || []).length ? (
+              <div className="report-summary-grid">
+                {(draft.competencies || []).map((section, sectionIndex) => (
+                  <div
+                    key={`${section.category}-${sectionIndex}`}
+                    className="report-summary-card"
+                  >
+                    <p className="summary-category">{section.category}</p>
+                    <ul className="summary-task-list">
+                      {(section.items || []).map((item, itemIndex) => {
+                        const taskLabel = item.task || item.label || "Task";
+                        return <li key={`${taskLabel}-${itemIndex}`}>{taskLabel}</li>;
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="helper-text">No categories yet.</p>
+            )}
+          </div>
+
+          <div className="note-row">
+            <label>
+              Note
+              <select
+                value={draft.note}
+                onChange={(event) => handleStudentField("note", event.target.value)}
+              >
+                <option value="">Select note</option>
+                {[1, 2, 3, 4, 5, 6].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div className="competency-grid">
             {(draft.competencies || []).map((section, sectionIndex) => (
               <div key={section.category} className="competency-section">
