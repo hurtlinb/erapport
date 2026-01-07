@@ -98,12 +98,14 @@ const DEFAULT_COMPETENCIES = [
   }
 ];
 
+const EVALUATION_TYPES = ["E1", "E2", "E3"];
+
 const defaultTemplate = {
   moduleId: "",
   moduleTitle: "123 - Activer les services d'un serveur",
   schoolYear: "2024-2025",
   note: "",
-  evaluationType: "E1",
+  evaluationType: EVALUATION_TYPES[0],
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -113,7 +115,7 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const normalizeTemplate = (template, module) => {
+const normalizeTemplate = (template, module, evaluationType) => {
   const baseTemplate = template || {};
   return {
     ...defaultTemplate,
@@ -121,10 +123,25 @@ const normalizeTemplate = (template, module) => {
     moduleId: module.id,
     moduleTitle: module.title || "",
     schoolYear: module.schoolYear || "",
+    evaluationType:
+      evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
   };
+};
+
+const normalizeModuleTemplates = (module) => {
+  const baseTemplates =
+    module.templates && typeof module.templates === "object" ? module.templates : {};
+  if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
+    baseTemplates[EVALUATION_TYPES[0]] = module.template;
+  }
+
+  return EVALUATION_TYPES.reduce((acc, type) => {
+    acc[type] = normalizeTemplate(baseTemplates[type] || {}, module, type);
+    return acc;
+  }, {});
 };
 
 const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
@@ -136,7 +153,12 @@ const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
 
   return {
     ...module,
-    template: normalizeTemplate(templateOverrides, module)
+    templates: normalizeModuleTemplates({
+      ...module,
+      templates: {
+        [EVALUATION_TYPES[0]]: templateOverrides
+      }
+    })
   };
 };
 
@@ -154,16 +176,26 @@ const normalizeModules = (modules = []) => {
 
     return {
       ...normalizedModule,
-      template: normalizeTemplate(module.template || {}, normalizedModule)
+      templates: normalizeModuleTemplates({
+        ...normalizedModule,
+        templates: normalizeModuleTemplates(module)
+      })
     };
   });
 };
+
+const normalizeStudent = (student) => ({
+  ...student,
+  evaluationType: student?.evaluationType || EVALUATION_TYPES[0]
+});
 
 const normalizeState = (state) => {
   const nextState = state || {};
   return {
     modules: normalizeModules(nextState.modules),
-    students: Array.isArray(nextState.students) ? nextState.students : []
+    students: Array.isArray(nextState.students)
+      ? nextState.students.map(normalizeStudent)
+      : []
   };
 };
 

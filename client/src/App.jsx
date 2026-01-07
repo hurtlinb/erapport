@@ -134,7 +134,7 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const normalizeTemplate = (template, module) => {
+const normalizeTemplate = (template, module, evaluationType) => {
   const baseTemplate = template || {};
   return {
     ...defaultTemplate,
@@ -142,10 +142,25 @@ const normalizeTemplate = (template, module) => {
     moduleId: module.id,
     moduleTitle: module.title || "",
     schoolYear: module.schoolYear || "",
+    evaluationType:
+      evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
   };
+};
+
+const normalizeModuleTemplates = (module) => {
+  const baseTemplates =
+    module.templates && typeof module.templates === "object" ? module.templates : {};
+  if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
+    baseTemplates[EVALUATION_TYPES[0]] = module.template;
+  }
+
+  return EVALUATION_TYPES.reduce((acc, type) => {
+    acc[type] = normalizeTemplate(baseTemplates[type] || {}, module, type);
+    return acc;
+  }, {});
 };
 
 const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
@@ -157,8 +172,21 @@ const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
 
   return {
     ...module,
-    template: normalizeTemplate(templateOverrides, module)
+    templates: normalizeModuleTemplates({
+      ...module,
+      templates: {
+        [EVALUATION_TYPES[0]]: templateOverrides
+      }
+    })
   };
+};
+
+const getStudentEvaluationType = (student) =>
+  student.evaluationType || EVALUATION_TYPES[0];
+
+const getModuleTemplate = (module, evaluationType) => {
+  const templates = normalizeModuleTemplates(module);
+  return templates[evaluationType] || templates[EVALUATION_TYPES[0]];
 };
 
 const normalizeTemplateItem = (item) => {
@@ -266,6 +294,9 @@ function App() {
   const [modules, setModules] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
   const [activeModuleId, setActiveModuleId] = useState("");
+  const [activeEvaluationType, setActiveEvaluationType] = useState(
+    EVALUATION_TYPES[0]
+  );
   const [students, setStudents] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(() =>
@@ -281,7 +312,23 @@ function App() {
   const [loadError, setLoadError] = useState("");
   const isHydratedRef = useRef(false);
   const moduleStudents = useMemo(
-    () => students.filter((student) => student.moduleId === activeModuleId),
+    () =>
+      students.filter(
+        (student) =>
+          student.moduleId === activeModuleId &&
+          getStudentEvaluationType(student) === activeEvaluationType
+      ),
+    [activeEvaluationType, activeModuleId, students]
+  );
+  const availableEvaluationTypes = useMemo(
+    () =>
+      EVALUATION_TYPES.filter((type) =>
+        students.some(
+          (student) =>
+            student.moduleId === activeModuleId &&
+            getStudentEvaluationType(student) === type
+        )
+      ),
     [activeModuleId, students]
   );
   const selectedStudent = moduleStudents.find(
@@ -343,17 +390,19 @@ function App() {
   useEffect(() => {
     setStudents((prev) =>
       prev.map((student) =>
-        student.moduleId === template.moduleId
+        student.moduleId === template.moduleId &&
+        getStudentEvaluationType(student) === activeEvaluationType
           ? applyTemplateToStudent(template, student)
           : student
       )
     );
     setDraft((prev) =>
-      prev.moduleId === template.moduleId
+      prev.moduleId === template.moduleId &&
+      getStudentEvaluationType(prev) === activeEvaluationType
         ? applyTemplateToStudent(template, prev)
         : prev
     );
-  }, [template]);
+  }, [activeEvaluationType, template]);
 
   useEffect(() => {
     if (!modules.length) return;
@@ -361,6 +410,17 @@ function App() {
       setActiveModuleId(modules[0]?.id || "");
     }
   }, [activeModuleId, modules]);
+
+  useEffect(() => {
+    if (!activeModuleId) return;
+    if (availableEvaluationTypes.length === 0) {
+      setActiveEvaluationType(EVALUATION_TYPES[0]);
+      return;
+    }
+    if (!availableEvaluationTypes.includes(activeEvaluationType)) {
+      setActiveEvaluationType(availableEvaluationTypes[0]);
+    }
+  }, [activeEvaluationType, activeModuleId, availableEvaluationTypes]);
 
   useEffect(() => {
     setSelectedId((prev) => {
@@ -374,8 +434,8 @@ function App() {
   useEffect(() => {
     const activeModule = modules.find((module) => module.id === activeModuleId);
     if (!activeModule) return;
-    setTemplate(normalizeTemplate(activeModule.template || {}, activeModule));
-  }, [activeModuleId, modules]);
+    setTemplate(getModuleTemplate(activeModule, activeEvaluationType));
+  }, [activeEvaluationType, activeModuleId, modules]);
 
   const studentCountLabel = useMemo(() => {
     return moduleStudents.length === 1
@@ -575,7 +635,17 @@ function App() {
       setModules((prevModules) =>
         prevModules.map((module) =>
           module.id === activeModuleId
-            ? { ...module, template: normalizeTemplate(next, module) }
+            ? {
+                ...module,
+                templates: {
+                  ...normalizeModuleTemplates(module),
+                  [activeEvaluationType]: normalizeTemplate(
+                    next,
+                    module,
+                    activeEvaluationType
+                  )
+                }
+              }
             : module
         )
       );
@@ -588,6 +658,10 @@ function App() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleEvaluationTypeChange = (nextType) => {
+    setActiveEvaluationType(nextType);
   };
 
   const handleTemplateCategoryChange = (sectionIndex, value) => {
@@ -739,6 +813,7 @@ function App() {
     });
     setModules((prev) => [...prev, newModule]);
     setActiveModuleId(newModule.id);
+    setActiveEvaluationType(EVALUATION_TYPES[0]);
   };
 
   const handleModuleFieldChange = (moduleId, field, value) => {
@@ -748,7 +823,10 @@ function App() {
         const updatedModule = { ...module, [field]: value };
         return {
           ...updatedModule,
-          template: normalizeTemplate(module.template || {}, updatedModule)
+          templates: normalizeModuleTemplates({
+            ...updatedModule,
+            templates: normalizeModuleTemplates(module)
+          })
         };
       })
     );
@@ -765,13 +843,15 @@ function App() {
   const handleApplyTemplate = () => {
     setStudents((prev) =>
       prev.map((student) =>
-        student.moduleId === template.moduleId
+        student.moduleId === template.moduleId &&
+        getStudentEvaluationType(student) === activeEvaluationType
           ? applyTemplateToStudent(template, student)
           : student
       )
     );
     setDraft((prev) =>
-      prev.moduleId === template.moduleId
+      prev.moduleId === template.moduleId &&
+      getStudentEvaluationType(prev) === activeEvaluationType
         ? applyTemplateToStudent(template, prev)
         : prev
     );
@@ -865,6 +945,30 @@ function App() {
                 })}
               </select>
             </label>
+            <fieldset className="module-evaluation-selector">
+              <legend>Report type</legend>
+              {EVALUATION_TYPES.map((type) => (
+                <label key={type} className="module-evaluation-option">
+                  <input
+                    type="radio"
+                    name="module-evaluation-type"
+                    value={type}
+                    checked={activeEvaluationType === type}
+                    disabled={
+                      !students.some(
+                        (student) =>
+                          student.moduleId === activeModuleId &&
+                          getStudentEvaluationType(student) === type
+                      )
+                    }
+                    onChange={(event) =>
+                      handleEvaluationTypeChange(event.target.value)
+                    }
+                  />
+                  <span>{type}</span>
+                </label>
+              ))}
+            </fieldset>
             <p className="helper-text">
               Switch modules to load their specific template and student list.
             </p>
@@ -1395,13 +1499,23 @@ function App() {
               <label>
                 Evaluation type
                 <select
-                  value={template.evaluationType}
+                  value={activeEvaluationType}
                   onChange={(event) =>
-                    handleTemplateField("evaluationType", event.target.value)
+                    handleEvaluationTypeChange(event.target.value)
                   }
                 >
                   {EVALUATION_TYPES.map((type) => (
-                    <option key={type} value={type}>
+                    <option
+                      key={type}
+                      value={type}
+                      disabled={
+                        !students.some(
+                          (student) =>
+                            student.moduleId === activeModuleId &&
+                            getStudentEvaluationType(student) === type
+                        )
+                      }
+                    >
                       {type}
                     </option>
                   ))}

@@ -250,6 +250,38 @@ select {
   gap: 8px;
 }
 
+.module-evaluation-selector {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.module-evaluation-selector legend {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0 6px;
+}
+
+.module-evaluation-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.module-evaluation-option input:disabled + span {
+  color: #94a3b8;
+}
+
+.module-evaluation-option input:disabled {
+  cursor: not-allowed;
+}
+
 .module-evaluations {
   display: flex;
   gap: 8px;
