@@ -1,0 +1,193 @@
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DATA_PATH = path.join(__dirname, "data.json");
+
+const DEFAULT_COMPETENCY_OPTIONS = [
+  {
+    code: "OO1",
+    description:
+      "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+  },
+  {
+    code: "OO2",
+    description:
+      "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+  },
+  {
+    code: "OO3",
+    description:
+      "Valider le fonctionnement des services déployés et documenter la configuration."
+  }
+];
+
+const DEFAULT_COMPETENCIES = [
+  {
+    category: "Active Directory",
+    items: [
+      {
+        task:
+          "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+        competencyId: "OO2"
+      },
+      {
+        task: "Est capable de joindre des clients/serveurs au domaine",
+        competencyId: "OO3"
+      }
+    ]
+  },
+  {
+    category: "DNS",
+    items: [
+      {
+        task:
+          "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Est capable de configurer des zones de recherches directes et inverses",
+        competencyId: "OO2"
+      },
+      {
+        task:
+          "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+        competencyId: "OO2"
+      }
+    ]
+  },
+  {
+    category: "DHCP",
+    items: [
+      {
+        task:
+          "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+        competencyId: "OO2"
+      },
+      {
+        task:
+          "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+        competencyId: "OO2"
+      }
+    ]
+  }
+];
+
+const defaultTemplate = {
+  moduleId: "",
+  moduleTitle: "123 - Activer les services d'un serveur",
+  schoolYear: "2024-2025",
+  note: "",
+  evaluationType: "E1",
+  className: "",
+  teacher: "",
+  evaluationDate: "",
+  coachingDate: "",
+  operationalCompetence: "",
+  competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
+  competencies: DEFAULT_COMPETENCIES
+};
+
+const normalizeTemplate = (template, module) => {
+  const baseTemplate = template || {};
+  return {
+    ...defaultTemplate,
+    ...baseTemplate,
+    moduleId: module.id,
+    moduleTitle: module.title || "",
+    schoolYear: module.schoolYear || "",
+    competencyOptions:
+      baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
+    competencies: baseTemplate.competencies || defaultTemplate.competencies
+  };
+};
+
+const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
+  const module = {
+    id: overrides.id ?? crypto.randomUUID(),
+    title: overrides.title ?? defaultTemplate.moduleTitle,
+    schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
+  };
+
+  return {
+    ...module,
+    template: normalizeTemplate(templateOverrides, module)
+  };
+};
+
+const normalizeModules = (modules = []) => {
+  if (!Array.isArray(modules) || modules.length === 0) {
+    return [buildDefaultModule()];
+  }
+
+  return modules.map((module) => {
+    const normalizedModule = {
+      id: module.id || crypto.randomUUID(),
+      title: module.title || "",
+      schoolYear: module.schoolYear || ""
+    };
+
+    return {
+      ...normalizedModule,
+      template: normalizeTemplate(module.template || {}, normalizedModule)
+    };
+  });
+};
+
+const normalizeState = (state) => {
+  const nextState = state || {};
+  return {
+    modules: normalizeModules(nextState.modules),
+    students: Array.isArray(nextState.students) ? nextState.students : []
+  };
+};
+
+export const loadState = () => {
+  if (!fs.existsSync(DATA_PATH)) {
+    const initialState = normalizeState({});
+    fs.writeFileSync(DATA_PATH, JSON.stringify(initialState, null, 2));
+    return initialState;
+  }
+
+  try {
+    const raw = fs.readFileSync(DATA_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    return normalizeState(parsed);
+  } catch (error) {
+    console.error(error);
+    const fallbackState = normalizeState({});
+    fs.writeFileSync(DATA_PATH, JSON.stringify(fallbackState, null, 2));
+    return fallbackState;
+  }
+};
+
+export const saveState = (nextState) => {
+  const normalizedState = normalizeState(nextState);
+  fs.writeFileSync(DATA_PATH, JSON.stringify(normalizedState, null, 2));
+  return normalizedState;
+};
