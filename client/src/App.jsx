@@ -993,42 +993,6 @@ function App() {
             </div>
           </div>
 
-          <div className="form-grid">
-            <label>
-              Last name
-              <input
-                type="text"
-                value={draft.name}
-                onChange={(event) =>
-                  handleStudentField("name", event.target.value)
-                }
-                placeholder="Doe"
-              />
-            </label>
-            <label>
-              First name
-              <input
-                type="text"
-                value={draft.firstname}
-                onChange={(event) =>
-                  handleStudentField("firstname", event.target.value)
-                }
-                placeholder="Jane"
-              />
-            </label>
-            <label>
-              Email
-              <input
-                type="email"
-                value={draft.email}
-                onChange={(event) =>
-                  handleStudentField("email", event.target.value)
-                }
-                placeholder="student@example.com"
-              />
-            </label>
-          </div>
-
           <div className="details-toggle-row">
             <button
               type="button"
@@ -1047,7 +1011,6 @@ function App() {
                   type="text"
                   value={draft.name}
                   readOnly
-                  disabled
                   placeholder="Doe"
                 />
               </label>
@@ -1057,7 +1020,6 @@ function App() {
                   type="text"
                   value={draft.firstname}
                   readOnly
-                  disabled
                   placeholder="Jane"
                 />
               </label>
@@ -1067,7 +1029,6 @@ function App() {
                   type="email"
                   value={draft.email}
                   readOnly
-                  disabled
                   placeholder="student@example.com"
                 />
               </label>
