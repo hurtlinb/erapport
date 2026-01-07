@@ -133,20 +133,33 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
 
 const normalizeModuleTemplates = (module, schoolYearLabel) => {
   const baseTemplates =
-    module.templates && typeof module.templates === "object" ? module.templates : {};
+    module.templates && typeof module.templates === "object"
+      ? { ...module.templates }
+      : {};
   if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
     baseTemplates[EVALUATION_TYPES[0]] = module.template;
   }
 
-  return EVALUATION_TYPES.reduce((acc, type) => {
-    acc[type] = normalizeTemplate(
+  const normalizedTemplates = {};
+  const defaultType = EVALUATION_TYPES[0];
+  normalizedTemplates[defaultType] = normalizeTemplate(
+    baseTemplates[defaultType] || {},
+    module,
+    schoolYearLabel,
+    defaultType
+  );
+
+  EVALUATION_TYPES.slice(1).forEach((type) => {
+    if (!baseTemplates[type]) return;
+    normalizedTemplates[type] = normalizeTemplate(
       baseTemplates[type] || {},
       module,
       schoolYearLabel,
       type
     );
-    return acc;
-  }, {});
+  });
+
+  return normalizedTemplates;
 };
 
 const buildDefaultModule = (
