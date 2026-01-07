@@ -273,10 +273,20 @@ app.post("/api/report", (req, res) => {
     });
   }
 
-  const summaryTitleY = infoBoxY + infoBoxHeight + 12;
+  const operationalTitleY = infoBoxY + infoBoxHeight + 12;
+  const operationalBodyY = operationalTitleY + 12;
+  const summaryTitleY = operationalBodyY + 20;
   const summaryBodyY = summaryTitleY + 12;
 
   doc
+    .fontSize(9)
+    .fillColor(theme.text)
+    .text("Compétence opérationnelle", 40, operationalTitleY)
+    .fontSize(8)
+    .fillColor(theme.muted)
+    .text(student.operationalCompetence || "-", 40, operationalBodyY, {
+      width: 515
+    })
     .fontSize(9)
     .fillColor(theme.text)
     .text("Résumé", 40, summaryTitleY)
