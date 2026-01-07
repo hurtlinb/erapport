@@ -230,6 +230,7 @@ function App() {
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const selectedStudent = students.find((student) => student.id === selectedId);
 
   useEffect(() => {
@@ -665,74 +666,88 @@ function App() {
                 placeholder="Barbara Ayoub"
               />
             </label>
-            <label>
-              Evaluation type
-              <input
-                type="text"
-                value={draft.evaluationType}
-                readOnly
-                disabled
-                placeholder="E1, E2, or E3"
-              />
-            </label>
-            <label>
-              Class
-              <input
-                type="text"
-                value={draft.className}
-                readOnly
-                disabled
-                placeholder="Class set in template"
-              />
-            </label>
-            <label>
-              Teacher
-              <input
-                type="text"
-                value={draft.teacher}
-                readOnly
-                disabled
-                placeholder="Teacher set in template"
-              />
-            </label>
-            <label>
-              Evaluation date
-              <input
-                type="date"
-                value={draft.evaluationDate}
-                readOnly
-                disabled
-              />
-            </label>
-            <label>
-              Coaching date
-              <input
-                type="date"
-                value={draft.coachingDate}
-                readOnly
-                disabled
-              />
-            </label>
-            <label>
-              Module title
-              <input
-                type="text"
-                value={draft.moduleTitle}
-                readOnly
-                disabled
-              />
-            </label>
-            <label>
-              Operational competence
-              <input
-                type="text"
-                value={draft.operationalCompetence}
-                readOnly
-                disabled
-                placeholder="Set in template"
-              />
-            </label>
           </div>
+          <div className="details-toggle-row">
+            <button
+              type="button"
+              className="button ghost details-toggle"
+              onClick={() => setShowDetails((prev) => !prev)}
+              aria-expanded={showDetails}
+            >
+              {showDetails ? "Hide details" : "Show details"}
+            </button>
+          </div>
+          {showDetails && (
+            <div className="form-grid details-grid">
+              <label>
+                Evaluation type
+                <input
+                  type="text"
+                  value={draft.evaluationType}
+                  readOnly
+                  disabled
+                  placeholder="E1, E2, or E3"
+                />
+              </label>
+              <label>
+                Class
+                <input
+                  type="text"
+                  value={draft.className}
+                  readOnly
+                  disabled
+                  placeholder="Class set in template"
+                />
+              </label>
+              <label>
+                Teacher
+                <input
+                  type="text"
+                  value={draft.teacher}
+                  readOnly
+                  disabled
+                  placeholder="Teacher set in template"
+                />
+              </label>
+              <label>
+                Evaluation date
+                <input
+                  type="date"
+                  value={draft.evaluationDate}
+                  readOnly
+                  disabled
+                />
+              </label>
+              <label>
+                Coaching date
+                <input
+                  type="date"
+                  value={draft.coachingDate}
+                  readOnly
+                  disabled
+                />
+              </label>
+              <label>
+                Module title
+                <input
+                  type="text"
+                  value={draft.moduleTitle}
+                  readOnly
+                  disabled
+                />
+              </label>
+              <label>
+                Operational competence
+                <input
+                  type="text"
+                  value={draft.operationalCompetence}
+                  readOnly
+                  disabled
+                  placeholder="Set in template"
+                />
+              </label>
+            </div>
+          )}
 
           <div className="textarea-block">
             <label>

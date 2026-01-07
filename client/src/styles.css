@@ -195,6 +195,21 @@ h1 {
   gap: 16px;
 }
 
+.details-toggle-row {
+  display: flex;
+  justify-content: flex-start;
+  margin: 10px 0 4px;
+}
+
+.details-toggle {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.details-grid {
+  margin-bottom: 8px;
+}
+
 label {
   display: flex;
   flex-direction: column;
