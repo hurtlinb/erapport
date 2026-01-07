@@ -152,21 +152,45 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
 
 const normalizeModuleTemplates = (module, schoolYearLabel) => {
   const baseTemplates =
-    module.templates && typeof module.templates === "object" ? module.templates : {};
+    module.templates && typeof module.templates === "object"
+      ? { ...module.templates }
+      : {};
   if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
     baseTemplates[EVALUATION_TYPES[0]] = module.template;
   }
 
-  return EVALUATION_TYPES.reduce((acc, type) => {
-    acc[type] = normalizeTemplate(
+  const normalizedTemplates = {};
+  const defaultType = EVALUATION_TYPES[0];
+  normalizedTemplates[defaultType] = normalizeTemplate(
+    baseTemplates[defaultType] || {},
+    module,
+    schoolYearLabel,
+    defaultType
+  );
+
+  EVALUATION_TYPES.slice(1).forEach((type) => {
+    if (!baseTemplates[type]) return;
+    normalizedTemplates[type] = normalizeTemplate(
       baseTemplates[type] || {},
       module,
       schoolYearLabel,
       type
     );
-    return acc;
-  }, {});
+  });
+
+  return normalizedTemplates;
 };
+
+const getAvailableEvaluationTypes = (module) => {
+  if (!module?.templates) return [EVALUATION_TYPES[0]];
+  const availableTypes = EVALUATION_TYPES.filter((type) =>
+    Boolean(module.templates[type])
+  );
+  return availableTypes.length ? availableTypes : [EVALUATION_TYPES[0]];
+};
+
+const isEvaluationTypeAvailable = (module, type) =>
+  Boolean(module?.templates?.[type]);
 
 const buildDefaultModule = (
   overrides = {},
@@ -550,6 +574,14 @@ function App() {
     () => activeModules.find((module) => module.id === activeModuleId) || null,
     [activeModuleId, activeModules]
   );
+
+  useEffect(() => {
+    if (!activeModule) return;
+    const availableTypes = getAvailableEvaluationTypes(activeModule);
+    if (!availableTypes.includes(activeEvaluationType)) {
+      setActiveEvaluationType(availableTypes[0]);
+    }
+  }, [activeEvaluationType, activeModule]);
 
   const moduleCountLabel = useMemo(() => {
     return activeModules.length === 1
@@ -1111,20 +1143,24 @@ function App() {
             </label>
             <fieldset className="module-evaluation-selector">
               <legend>Report type</legend>
-              {EVALUATION_TYPES.map((type) => (
-                <label key={type} className="module-evaluation-option">
-                  <input
-                    type="radio"
-                    name="module-evaluation-type"
-                    value={type}
-                    checked={activeEvaluationType === type}
-                    onChange={(event) =>
-                      handleEvaluationTypeChange(event.target.value)
-                    }
-                  />
-                  <span>{type}</span>
-                </label>
-              ))}
+              {EVALUATION_TYPES.map((type) => {
+                const isAvailable = isEvaluationTypeAvailable(activeModule, type);
+                return (
+                  <label key={type} className="module-evaluation-option">
+                    <input
+                      type="radio"
+                      name="module-evaluation-type"
+                      value={type}
+                      checked={activeEvaluationType === type}
+                      onChange={(event) =>
+                        handleEvaluationTypeChange(event.target.value)
+                      }
+                      disabled={!isAvailable}
+                    />
+                    <span>{type}</span>
+                  </label>
+                );
+              })}
             </fieldset>
             <p className="helper-text">
               Switch school years or modules to load their templates and students.
@@ -1652,12 +1688,13 @@ function App() {
                   }
                 >
                   {EVALUATION_TYPES.map((type) => (
-                  <option
-                    key={type}
-                    value={type}
-                  >
-                    {type}
-                  </option>
+                    <option
+                      key={type}
+                      value={type}
+                      disabled={!isEvaluationTypeAvailable(activeModule, type)}
+                    >
+                      {type}
+                    </option>
                   ))}
                 </select>
               </label>
