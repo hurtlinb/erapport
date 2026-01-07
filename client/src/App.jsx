@@ -116,6 +116,13 @@ const getStatusClass = (status) => {
   return "status-empty";
 };
 
+const getStudentNoteClass = (note) => {
+  const numericNote = Number(note);
+  if ([4, 5, 6].includes(numericNote)) return "note-ok";
+  if ([1, 2, 3].includes(numericNote)) return "note-nok";
+  return "";
+};
+
 const migrateStatus = (status) => {
   if (status === "NOK") return STATUS_VALUES.NEEDS_IMPROVEMENT;
   if (status === "NA") return STATUS_VALUES.NOT_ASSESSED;
@@ -958,11 +965,13 @@ function App() {
             {moduleStudents.map((student) => (
               <li
                 key={student.id}
-                className={
-                  selectedId === student.id
-                    ? "student-card active"
-                    : "student-card"
-                }
+                className={[
+                  "student-card",
+                  getStudentNoteClass(student.note),
+                  selectedId === student.id ? "active" : ""
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 onClick={() => setSelectedId(student.id)}
               >
                 <div>
