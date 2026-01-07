@@ -114,7 +114,19 @@ const getSummaryRowHeight = (doc, category) => {
 
 const drawSummaryHeaderRow = (doc, y) => {
   doc
-    .rect(summaryTable.x, y, summaryTable.width, summaryTable.headerHeight)
+    .rect(
+      summaryTable.x,
+      y,
+      summaryTable.columnWidths.category,
+      summaryTable.headerHeight
+    )
+    .fillAndStroke(theme.competencyHeader, theme.text)
+    .rect(
+      summaryTable.x + summaryTable.columnWidths.category,
+      y,
+      summaryTable.columnWidths.result,
+      summaryTable.headerHeight
+    )
     .fillAndStroke(theme.competencyHeader, theme.text)
     .fillColor(theme.text)
     .fontSize(9)
@@ -171,6 +183,7 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
 
   doc
     .fontSize(7)
+    .font("Helvetica-Bold")
     .fillColor(theme.text)
     .text("Note du module", resultX + 2, y + 4, {
       width: summaryTable.columnWidths.result - 4,
