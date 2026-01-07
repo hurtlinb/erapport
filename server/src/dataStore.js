@@ -215,7 +215,7 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
 
 const normalizeSchoolYears = (schoolYears = [], modules = []) => {
   if (Array.isArray(schoolYears) && schoolYears.length > 0) {
-    return schoolYears.map((schoolYear) => {
+    const normalizedYears = schoolYears.map((schoolYear) => {
       const label =
         schoolYear.label ||
         schoolYear.schoolYear ||
@@ -227,6 +227,16 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
         modules: normalizeModules(schoolYear.modules || [], label)
       };
     });
+    const existingLabels = new Set(normalizedYears.map((year) => year.label));
+    SCHOOL_YEARS.forEach((label) => {
+      if (existingLabels.has(label)) return;
+      normalizedYears.push({
+        id: crypto.randomUUID(),
+        label,
+        modules: normalizeModules([], label)
+      });
+    });
+    return normalizedYears;
   }
 
   if (Array.isArray(modules) && modules.length > 0) {
@@ -240,11 +250,23 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
       return acc;
     }, {});
 
-    return Object.entries(groupedModules).map(([label, yearModules]) => ({
-      id: crypto.randomUUID(),
-      label,
-      modules: normalizeModules(yearModules, label)
-    }));
+    const normalizedYears = Object.entries(groupedModules).map(
+      ([label, yearModules]) => ({
+        id: crypto.randomUUID(),
+        label,
+        modules: normalizeModules(yearModules, label)
+      })
+    );
+    const existingLabels = new Set(normalizedYears.map((year) => year.label));
+    SCHOOL_YEARS.forEach((label) => {
+      if (existingLabels.has(label)) return;
+      normalizedYears.push({
+        id: crypto.randomUUID(),
+        label,
+        modules: normalizeModules([], label)
+      });
+    });
+    return normalizedYears;
   }
 
   return SCHOOL_YEARS.map((label) => ({
