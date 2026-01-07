@@ -470,6 +470,7 @@ function App() {
   }, [selectedStudent, template]);
 
   useEffect(() => {
+    if (template.evaluationType !== activeEvaluationType) return;
     setStudents((prev) =>
       prev.map((student) =>
         student.moduleId === template.moduleId &&
