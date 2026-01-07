@@ -18,11 +18,13 @@ const theme = {
   primary: "#2563eb",
   primaryLight: "#eff6ff",
   surfaceMuted: "#f8fafc",
+  competencyHeader: "#c7d7ec",
+  competencyAccent: "#d9f2d9",
   status: {
     OK: { fill: "#dcfce7", text: "#16a34a", border: "#16a34a" },
     NEEDS_IMPROVEMENT: { fill: "#ffedd5", text: "#f97316", border: "#f97316" },
     NOT_ASSESSED: { fill: "#fecdd3", text: "#e11d48", border: "#e11d48" },
-    DEFAULT: { fill: "#f8fafc", text: "#0f172a", border: "#e2e8f0" }
+    DEFAULT: { fill: "#ffffff", text: "#0f172a", border: "#e2e8f0" }
   }
 };
 
@@ -67,52 +69,100 @@ const getStatusStyle = (status) => {
   return theme.status.DEFAULT;
 };
 
-const getCompetencyLabel = (item, competencyOptions = []) => {
-  const option = competencyOptions.find(
-    (candidate) => candidate.code === item.competencyId
-  );
-
-  if (option) {
-    return `${option.code} - ${option.description}`;
+const competencyTable = {
+  x: 40,
+  width: 515,
+  headerHeight: 18,
+  baseRowHeight: 18,
+  columnWidths: {
+    indicator: 16,
+    code: 40,
+    task: 250,
+    comment: 155,
+    status: 54
   }
-
-  return "-";
 };
 
-const drawSectionHeader = (doc, title, y) => {
+const getCompetencyRowHeight = (doc, task, comment) => {
+  const textPadding = 4;
+  const taskHeight = doc.heightOfString(task || "", {
+    width: competencyTable.columnWidths.task - textPadding * 2
+  });
+  const commentHeight = doc.heightOfString(comment || "", {
+    width: competencyTable.columnWidths.comment - textPadding * 2
+  });
+  return Math.max(
+    competencyTable.baseRowHeight,
+    Math.ceil(Math.max(taskHeight, commentHeight) + textPadding * 2)
+  );
+};
+
+const drawCompetencyHeaderRow = (doc, title, index, y) => {
   doc
-    .roundedRect(40, y, 515, 18, 4)
-    .fillAndStroke(theme.primaryLight, theme.primary)
+    .rect(competencyTable.x, y, competencyTable.width, competencyTable.headerHeight)
+    .fillAndStroke(theme.competencyHeader, theme.text)
     .fillColor(theme.text)
-    .fontSize(10)
+    .fontSize(9)
     .font("Helvetica-Bold")
-    .text(title, 48, y + 4);
+    .text(`${index + 1}) ${title}`, competencyTable.x + 6, y + 4, {
+      width: competencyTable.width - 12
+    });
   doc.font("Helvetica");
 };
 
-const drawCompetencyRow = (doc, task, competency, status, comment, y) => {
+const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   const statusStyle = getStatusStyle(status);
+  const columns = competencyTable.columnWidths;
+  const columnPositions = {
+    indicator: competencyTable.x,
+    code: competencyTable.x + columns.indicator,
+    task: competencyTable.x + columns.indicator + columns.code,
+    comment:
+      competencyTable.x + columns.indicator + columns.code + columns.task,
+    status:
+      competencyTable.x +
+      columns.indicator +
+      columns.code +
+      columns.task +
+      columns.comment
+  };
+
   doc
-    .rect(40, y, 260, 18)
-    .stroke(theme.border)
-    .rect(300, y, 140, 18)
-    .stroke(theme.border)
-    .rect(440, y, 70, 18)
-    .stroke(theme.border)
-    .rect(510, y, 45, 18)
-    .fillAndStroke(statusStyle.fill, statusStyle.border || theme.border);
+    .rect(columnPositions.indicator, y, columns.indicator, rowHeight)
+    .fillAndStroke(theme.competencyAccent, theme.text)
+    .rect(columnPositions.code, y, columns.code, rowHeight)
+    .stroke(theme.text)
+    .rect(columnPositions.task, y, columns.task, rowHeight)
+    .stroke(theme.text)
+    .rect(columnPositions.comment, y, columns.comment, rowHeight)
+    .stroke(theme.text)
+    .rect(columnPositions.status, y, columns.status, rowHeight)
+    .fillAndStroke(statusStyle.fill, theme.text);
+
   doc
     .fontSize(8)
     .fillColor(theme.text)
-    .text(task, 44, y + 4, { width: 252 })
-    .text(competency, 304, y + 4, { width: 132 });
+    .text(code || "", columnPositions.code, y + 4, {
+      width: columns.code,
+      align: "center"
+    })
+    .text(task || "-", columnPositions.task + 4, y + 4, {
+      width: columns.task - 8
+    });
+
   doc
-    .fillColor(theme.muted)
-    .text(comment || "-", 444, y + 4, { width: 62 });
+    .fillColor(theme.text)
+    .text(comment || "", columnPositions.comment + 4, y + 4, {
+      width: columns.comment - 8
+    });
+
   doc
     .fillColor(statusStyle.text)
     .font("Helvetica-Bold")
-    .text(status || "-", 515, y + 4, { width: 40, align: "center" });
+    .text(status || "-", columnPositions.status, y + 4, {
+      width: columns.status,
+      align: "center"
+    });
   doc.font("Helvetica");
 };
 
@@ -298,54 +348,55 @@ app.post("/api/report", (req, res) => {
     .text(objectivesList || "-", 40, objectivesBodyY, { width: 515 });
 
   let cursorY = doc.y + 24;
-  student.competencies?.forEach((section) => {
-    if (cursorY > 700) {
+  student.competencies?.forEach((section, sectionIndex) => {
+    if (cursorY + competencyTable.headerHeight > 740) {
       doc.addPage();
       cursorY = 40;
     }
-    drawSectionHeader(doc, section.category, cursorY);
-    cursorY += 24;
-
-    doc
-      .rect(40, cursorY, 260, 16)
-      .fillAndStroke(theme.surfaceMuted, theme.border)
-      .rect(300, cursorY, 140, 16)
-      .fillAndStroke(theme.surfaceMuted, theme.border)
-      .rect(440, cursorY, 70, 16)
-      .fillAndStroke(theme.surfaceMuted, theme.border)
-      .rect(510, cursorY, 45, 16)
-      .fillAndStroke(theme.surfaceMuted, theme.border)
-      .fontSize(8)
-      .fillColor(theme.text)
-      .text("Tâche", 44, cursorY + 4)
-      .text("Compétence", 304, cursorY + 4)
-      .text("Commentaire", 444, cursorY + 4)
-      .text("Éval", 515, cursorY + 4, { width: 40, align: "center" });
-
-    cursorY += 18;
+    drawCompetencyHeaderRow(doc, section.category, sectionIndex, cursorY);
+    cursorY += competencyTable.headerHeight;
 
     section.items?.forEach((item) => {
-      if (cursorY > 760) {
+      const taskLabel = item.task || item.label || "-";
+      const rowHeight = getCompetencyRowHeight(
+        doc,
+        taskLabel,
+        item.comment
+      );
+
+      if (cursorY + rowHeight > 760) {
         doc.addPage();
         cursorY = 40;
       }
-      const taskLabel = item.task || item.label || "-";
-      const competencyLabel = getCompetencyLabel(
-        item,
-        student.competencyOptions
-      );
+
       drawCompetencyRow(
         doc,
         taskLabel,
-        competencyLabel,
+        item.competencyId || "-",
         item.status,
         item.comment,
-        cursorY
+        cursorY,
+        rowHeight
       );
-      cursorY += 18;
+      cursorY += rowHeight;
     });
 
-    cursorY += 16;
+    const commentRowHeight = competencyTable.baseRowHeight;
+    if (cursorY + commentRowHeight > 760) {
+      doc.addPage();
+      cursorY = 40;
+    }
+
+    drawCompetencyRow(
+      doc,
+      "Commentaire :",
+      "",
+      "",
+      "",
+      cursorY,
+      commentRowHeight
+    );
+    cursorY += commentRowHeight + 12;
   });
 
   if (cursorY > 720) {
