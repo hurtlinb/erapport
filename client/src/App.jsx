@@ -1119,6 +1119,17 @@ function App() {
                       </tr>
                     );
                   })}
+                  <tr className="report-summary-note-row">
+                    <td className="summary-category summary-note-spacer">
+                      &nbsp;
+                    </td>
+                    <td className="summary-result summary-note-cell">
+                      <span className="summary-note-label">Note du module</span>
+                      <span className="summary-note-value">
+                        {draft.note || "—"}
+                      </span>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             ) : (

@@ -88,6 +88,7 @@ const summaryTable = {
   width: 515,
   headerHeight: 18,
   baseRowHeight: 18,
+  noteRowHeight: 26,
   columnWidths: {
     category: 445,
     result: 70
@@ -146,6 +147,33 @@ const drawSummaryRow = (doc, category, result, y, rowHeight) => {
     .fillColor(statusStyle.text)
     .font("Helvetica-Bold")
     .text(result || "-", resultX, y + 4, {
+      width: summaryTable.columnWidths.result,
+      align: "center"
+    });
+  doc.font("Helvetica");
+};
+
+const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
+  const resultX = summaryTable.x + summaryTable.columnWidths.category;
+  const noteValue = note || "-";
+
+  doc
+    .rect(summaryTable.x, y, summaryTable.columnWidths.category, rowHeight)
+    .stroke(theme.text)
+    .rect(resultX, y, summaryTable.columnWidths.result, rowHeight)
+    .fillAndStroke(theme.status.OK.fill, theme.text);
+
+  doc
+    .fontSize(7)
+    .fillColor(theme.text)
+    .text("Note du module", resultX + 2, y + 4, {
+      width: summaryTable.columnWidths.result - 4,
+      align: "center"
+    })
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor(theme.status.OK.text)
+    .text(noteValue, resultX, y + 12, {
       width: summaryTable.columnWidths.result,
       align: "center"
     });
@@ -436,6 +464,16 @@ app.post("/api/report", (req, res) => {
     drawSummaryRow(doc, section.category, section.result, cursorY, rowHeight);
     cursorY += rowHeight;
   });
+
+  const noteRowHeight = summaryTable.noteRowHeight;
+  if (cursorY + noteRowHeight > 760) {
+    doc.addPage();
+    cursorY = 40;
+    drawSummaryHeaderRow(doc, cursorY);
+    cursorY += summaryTable.headerHeight;
+  }
+  drawSummaryNoteRow(doc, student.note, cursorY, noteRowHeight);
+  cursorY += noteRowHeight;
 
   cursorY += 16;
   student.competencies?.forEach((section, sectionIndex) => {
