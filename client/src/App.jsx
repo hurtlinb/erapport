@@ -104,6 +104,8 @@ const STATUS_VALUES = {
   NEEDS_IMPROVEMENT: "~",
   NOT_ASSESSED: "NOK"
 };
+const EVALUATION_COPY_SOURCE = "E1";
+const EVALUATION_COPY_TARGET = "E2";
 
 const getStatusClass = (status) => {
   if (status === STATUS_VALUES.OK) return "status-ok";
@@ -420,6 +422,15 @@ const buildStudentFromTemplate = (template) => ({
   competencies: mapTemplateCompetencies(template)
 });
 
+const cloneStudentReport = (student, evaluationType) => {
+  const clonedStudent = JSON.parse(JSON.stringify(student));
+  return {
+    ...clonedStudent,
+    id: crypto.randomUUID(),
+    evaluationType
+  };
+};
+
 function App() {
   const [schoolYears, setSchoolYears] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
@@ -436,8 +447,10 @@ function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
+  const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [importStudentText, setImportStudentText] = useState("");
   const [importStudentError, setImportStudentError] = useState("");
+  const [copyStudentSelections, setCopyStudentSelections] = useState({});
   const [showDetails, setShowDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -464,6 +477,15 @@ function App() {
         (module) => module.schoolYear === activeSchoolYear?.label
       ),
     [activeSchoolYear]
+  );
+  const e1Students = useMemo(
+    () =>
+      students.filter(
+        (student) =>
+          student.moduleId === activeModuleId &&
+          getStudentEvaluationType(student) === EVALUATION_COPY_SOURCE
+      ),
+    [activeModuleId, students]
   );
 
   useEffect(() => {
@@ -697,6 +719,47 @@ function App() {
     setImportStudentText("");
     setImportStudentError("");
     setIsImportStudentModalOpen(true);
+  };
+
+  const handleOpenCopyStudentsModal = () => {
+    const defaultSelections = e1Students.reduce((acc, student) => {
+      const noteValue = Number(student.note);
+      const shouldSelect =
+        student.note !== "" && Number.isFinite(noteValue) && noteValue < 4;
+      acc[student.id] = shouldSelect;
+      return acc;
+    }, {});
+    setCopyStudentSelections(defaultSelections);
+    setIsCopyStudentsModalOpen(true);
+  };
+
+  const handleToggleCopyStudent = (studentId) => {
+    setCopyStudentSelections((prev) => ({
+      ...prev,
+      [studentId]: !prev[studentId]
+    }));
+  };
+
+  const handleSelectAllCopyStudents = (nextValue) => {
+    setCopyStudentSelections((prev) => {
+      const updatedSelections = { ...prev };
+      e1Students.forEach((student) => {
+        updatedSelections[student.id] = nextValue;
+      });
+      return updatedSelections;
+    });
+  };
+
+  const handleConfirmCopyStudents = () => {
+    const selectedStudents = e1Students.filter(
+      (student) => copyStudentSelections[student.id]
+    );
+    if (!selectedStudents.length) return;
+    const copiedStudents = selectedStudents.map((student) =>
+      cloneStudentReport(student, EVALUATION_COPY_TARGET)
+    );
+    setStudents((prev) => [...prev, ...copiedStudents]);
+    setIsCopyStudentsModalOpen(false);
   };
 
   const parseImportLines = (text) => {
@@ -1050,6 +1113,12 @@ function App() {
     setIsTemplateModalOpen(false);
   };
 
+  const selectedCopyStudentsCount = useMemo(
+    () =>
+      e1Students.filter((student) => copyStudentSelections[student.id]).length,
+    [copyStudentSelections, e1Students]
+  );
+
   if (isLoading) {
     return (
       <div className="app">
@@ -1173,9 +1242,23 @@ function App() {
         <section className="panel">
           <div className="panel-header">
             <h2>Student list</h2>
-            <button className="button ghost" onClick={handleImportStudents}>
-              Import students
-            </button>
+            <div className="actions">
+              <button className="button ghost" onClick={handleImportStudents}>
+                Import students
+              </button>
+              <button
+                className="button ghost"
+                onClick={handleOpenCopyStudentsModal}
+                disabled={e1Students.length === 0}
+                title={
+                  e1Students.length === 0
+                    ? "No E1 students available to copy."
+                    : "Copy E1 reports into E2"
+                }
+              >
+                Copy E1 → E2
+              </button>
+            </div>
           </div>
           <ul className="student-list">
             {moduleStudents.length === 0 && (
@@ -1557,6 +1640,89 @@ function App() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isCopyStudentsModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2>Copy E1 reports to E2</h2>
+                <p className="helper-text">
+                  Select the students to copy. Notes below 4 are pre-selected.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsCopyStudentsModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="copy-students-controls">
+              <button
+                type="button"
+                className="button ghost"
+                onClick={() => handleSelectAllCopyStudents(true)}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="button ghost"
+                onClick={() => handleSelectAllCopyStudents(false)}
+              >
+                Clear
+              </button>
+              <span className="helper-text">
+                {selectedCopyStudentsCount} of {e1Students.length} selected
+              </span>
+            </div>
+            <div className="copy-students-list">
+              {e1Students.map((student) => {
+                const displayName =
+                  getStudentDisplayName(student) || "Unnamed student";
+                const noteLabel = student.note ? `Note: ${student.note}` : "No note";
+                return (
+                  <label key={student.id} className="copy-student-row">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(copyStudentSelections[student.id])}
+                      onChange={() => handleToggleCopyStudent(student.id)}
+                    />
+                    <span>
+                      <strong>{displayName}</strong>
+                      <span className="copy-student-meta">{noteLabel}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="actions align-start modal-actions">
+              <div className="action-row">
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => setIsCopyStudentsModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={handleConfirmCopyStudents}
+                  disabled={selectedCopyStudentsCount === 0}
+                >
+                  {selectedCopyStudentsCount > 0
+                    ? `Copy ${selectedCopyStudentsCount} report${
+                        selectedCopyStudentsCount === 1 ? "" : "s"
+                      }`
+                    : "Copy reports"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

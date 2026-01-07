@@ -663,6 +663,51 @@ textarea {
   padding-top: 12px;
 }
 
+.copy-students-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.copy-students-controls .helper-text {
+  margin: 0;
+}
+
+.copy-students-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.copy-student-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.copy-student-row input {
+  margin-top: 4px;
+}
+
+.copy-student-meta {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 4px;
+}
+
 .action-row {
   display: flex;
   gap: 10px;
