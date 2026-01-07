@@ -400,6 +400,10 @@ textarea {
   background: var(--status-color);
 }
 
+.report-summary-note-row td {
+  background: #ffffff;
+}
+
 .summary-category {
   font-weight: 600;
 }
@@ -416,6 +420,31 @@ textarea {
   border-radius: 999px;
   border: 1px solid var(--status-strong, #e2e8f0);
   background: rgba(255, 255, 255, 0.7);
+}
+
+.summary-note-spacer {
+  border-right: none;
+}
+
+.summary-note-cell {
+  border-left: none;
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #14532d;
+  text-align: center;
+}
+
+.summary-note-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-note-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .summary-task-list {
