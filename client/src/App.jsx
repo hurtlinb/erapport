@@ -1175,7 +1175,7 @@ function App() {
                         aria-label="Note du module"
                       >
                         <option value="">Select note</option>
-                        {[1, 2, 3, 4, 5, 6].map((value) => (
+                        {[6, 5, 4, 3, 2, 1].map((value) => (
                           <option key={value} value={value}>
                             {value}
                           </option>
