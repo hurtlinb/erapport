@@ -377,14 +377,41 @@ textarea {
 
 .report-summary-card {
   border-radius: 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--status-strong, #e2e8f0);
   padding: 12px;
-  background: #f8fafc;
+  --status-color: #f8fafc;
+  --status-strong: #e2e8f0;
+  background: linear-gradient(90deg, var(--status-color) 0, #fff 60%);
 }
 
 .summary-category {
   margin: 0 0 8px;
   font-weight: 600;
+}
+
+.summary-result {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.summary-result-label {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.summary-result-value {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--status-strong, #e2e8f0);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .summary-task-list {
@@ -394,6 +421,21 @@ textarea {
   gap: 4px;
   font-size: 13px;
   color: #1f2937;
+}
+
+.report-summary-card.status-ok {
+  --status-color: #dcfce7;
+  --status-strong: #16a34a;
+}
+
+.report-summary-card.status-nok {
+  --status-color: #ffedd5;
+  --status-strong: #f97316;
+}
+
+.report-summary-card.status-na {
+  --status-color: #fecdd3;
+  --status-strong: #e11d48;
 }
 
 .note-row {
