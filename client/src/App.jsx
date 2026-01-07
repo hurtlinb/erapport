@@ -1205,9 +1205,21 @@ function App() {
                     </td>
                     <td className="summary-result summary-note-cell">
                       <span className="summary-note-label">Note du module</span>
-                      <span className="summary-note-value">
-                        {draft.note || "—"}
-                      </span>
+                      <select
+                        className="summary-note-select"
+                        value={draft.note}
+                        onChange={(event) =>
+                          handleStudentField("note", event.target.value)
+                        }
+                        aria-label="Note du module"
+                      >
+                        <option value="">Select note</option>
+                        {[1, 2, 3, 4, 5, 6].map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 </tbody>
@@ -1215,23 +1227,6 @@ function App() {
             ) : (
               <p className="helper-text">No categories yet.</p>
             )}
-          </div>
-
-          <div className="note-row">
-            <label>
-              Note
-              <select
-                value={draft.note}
-                onChange={(event) => handleStudentField("note", event.target.value)}
-              >
-                <option value="">Select note</option>
-                {[1, 2, 3, 4, 5, 6].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
 
           <div className="competency-grid">
