@@ -638,7 +638,7 @@ function App() {
 
         <section className="panel form-panel">
           <div className="panel-header">
-            <h2>{isEditing ? draft.name || "Student report" : "New report"}</h2>
+            <h2>{isEditing ? "Edit report" : "New report"}</h2>
             <div className="actions">
               <button className="button primary" onClick={handleGeneratePdf}>
                 Generate PDF
