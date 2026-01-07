@@ -79,16 +79,6 @@ const getCompetencyLabel = (item, competencyOptions = []) => {
   return "-";
 };
 
-const drawKeyValue = (doc, label, value, x, y) => {
-  doc
-    .fontSize(9)
-    .fillColor(theme.text)
-    .text(label, x, y)
-    .font("Helvetica-Bold")
-    .text(value || "-", x + 140, y)
-    .font("Helvetica");
-};
-
 const drawSectionHeader = (doc, title, y) => {
   doc
     .roundedRect(40, y, 515, 18, 4)
@@ -211,47 +201,77 @@ app.post("/api/report", (req, res) => {
     });
 
   const infoBoxY = moduleBarY + moduleBarHeight + 8;
-  const infoBoxHeight = 110;
-  doc
-    .font("Helvetica")
-    .fontSize(9)
-    .fillColor(theme.text)
-    .rect(40, infoBoxY, 515, infoBoxHeight)
-    .stroke(theme.border);
+  const infoRowHeight = 26;
+  const infoRows = 2;
+  const infoBoxHeight = infoRowHeight * infoRows;
+  const infoTableX = 40;
+  const infoColumnWidths = [260, 190, 65];
+  const sigPath = path.join(__dirname, "sig.png");
 
-  drawKeyValue(doc, "Apprenant", student.name, 48, infoBoxY + 8);
-  drawKeyValue(doc, "Classe", student.className || "", 48, infoBoxY + 22);
-  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, infoBoxY + 36);
-  drawKeyValue(
-    doc,
-    "Type d'évaluation",
-    student.evaluationType || "",
-    48,
-    infoBoxY + 50
-  );
-  drawKeyValue(
-    doc,
-    "Date d'évaluation",
-    formatDate(student.evaluationDate),
-    48,
-    infoBoxY + 64
-  );
-  drawKeyValue(
-    doc,
-    "Date de coaching",
-    formatDate(student.coachingDate),
-    48,
-    infoBoxY + 78
-  );
+  doc.lineWidth(0.6).strokeColor(theme.text).font("Helvetica").fontSize(9);
 
+  infoColumnWidths.reduce((x, width, columnIndex) => {
+    for (let rowIndex = 0; rowIndex < infoRows; rowIndex += 1) {
+      doc.rect(x, infoBoxY + rowIndex * infoRowHeight, width, infoRowHeight).stroke();
+    }
+    return x + width;
+  }, infoTableX);
+
+  const leftColumnX = infoTableX + 8;
   doc
-    .fontSize(9)
-    .fillColor(theme.text)
-    .text("Note du module", 360, infoBoxY + 12)
     .font("Helvetica-Bold")
-    .fontSize(16)
-    .text(student.score || "", 360, infoBoxY + 26)
-    .font("Helvetica");
+    .fontSize(10)
+    .text("Apprenant(e)", leftColumnX, infoBoxY + 5, {
+      width: infoColumnWidths[0] - 16
+    })
+    .font("Helvetica")
+    .fontSize(8)
+    .text("Nom + prénom / classe", leftColumnX, infoBoxY + 16, {
+      width: infoColumnWidths[0] - 16
+    });
+
+  const secondRowY = infoBoxY + infoRowHeight;
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text("Enseignants", leftColumnX, secondRowY + 5, {
+      width: infoColumnWidths[0] - 16
+    })
+    .font("Helvetica")
+    .fontSize(8)
+    .text("Prénom + nom / signature", leftColumnX, secondRowY + 16, {
+      width: infoColumnWidths[0] - 16
+    });
+
+  const middleColumnX = infoTableX + infoColumnWidths[0] + 8;
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(student.name || "-", middleColumnX, infoBoxY + 6, {
+      width: infoColumnWidths[1] - 16
+    })
+    .font("Helvetica-Oblique")
+    .fontSize(11)
+    .text(student.teacher || "-", middleColumnX, secondRowY + 6, {
+      width: infoColumnWidths[1] - 16
+    });
+
+  const rightColumnX = infoTableX + infoColumnWidths[0] + infoColumnWidths[1];
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(student.className || "-", rightColumnX, infoBoxY + 6, {
+      width: infoColumnWidths[2],
+      align: "center"
+    });
+
+  if (fs.existsSync(sigPath)) {
+    doc.image(sigPath, rightColumnX + 6, secondRowY + 4, {
+      fit: [infoColumnWidths[2] - 12, infoRowHeight - 8],
+      align: "center",
+      valign: "center"
+    });
+  }
 
   const summaryTitleY = infoBoxY + infoBoxHeight + 12;
   const summaryBodyY = summaryTitleY + 12;
