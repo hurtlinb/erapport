@@ -168,6 +168,16 @@ h1 {
   cursor: pointer;
 }
 
+.student-card.note-ok {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+}
+
+.student-card.note-nok {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.18);
+}
+
 .student-card.active {
   border-color: #2563eb;
   background: #eff6ff;
