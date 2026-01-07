@@ -417,6 +417,11 @@ function App() {
     return `${template.moduleTitle || "Module"} (${template.schoolYear})`;
   }, [template.moduleTitle, template.schoolYear]);
 
+  const activeModule = useMemo(
+    () => modules.find((module) => module.id === activeModuleId) || null,
+    [activeModuleId, modules]
+  );
+
   const moduleCountLabel = useMemo(() => {
     return modules.length === 1 ? "1 module" : `${modules.length} modules`;
   }, [modules.length]);
@@ -1092,65 +1097,27 @@ function App() {
               </button>
             </div>
 
-            <div className="module-manager">
-              <div className="template-competency-header">
-                <div className="category-name">
-                  <span className="badge">Modules</span>
-                  <p className="helper-text">
-                    Organize modules by school year. Each module includes E1, E2, and
-                    E3 evaluations.
-                  </p>
+            <div className="template-competency-grid">
+              <div className="template-competency">
+                <div className="template-competency-header">
+                  <div className="category-name">
+                    <span className="badge">Active module</span>
+                    <p className="helper-text">
+                      Update the module information used in the active template.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="module-list">
-                {modules.map((module) => (
-                  <div
-                    key={module.id}
-                    className={
-                      module.id === activeModuleId
-                        ? "module-card active"
-                        : "module-card"
-                    }
-                    onClick={() => setActiveModuleId(module.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        setActiveModuleId(module.id);
-                      }
-                    }}
-                  >
-                    <div className="module-card-header">
-                      <div>
-                        <p className="module-title">
-                          {module.title || "Module"}
-                        </p>
-                        <p className="module-meta">
-                          {module.schoolYear || "School year not set"}
-                        </p>
-                      </div>
-                      <button
-                        className="button text"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRemoveModule(module.id);
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <div
-                      className="module-form"
-                      onClick={(event) => event.stopPropagation()}
-                    >
+                {activeModule ? (
+                  <>
+                    <div className="form-grid">
                       <label>
                         Module title
                         <input
                           type="text"
-                          value={module.title}
+                          value={activeModule.title}
                           onChange={(event) =>
                             handleModuleFieldChange(
-                              module.id,
+                              activeModule.id,
                               "title",
                               event.target.value
                             )
@@ -1162,10 +1129,10 @@ function App() {
                         School year
                         <input
                           type="text"
-                          value={module.schoolYear}
+                          value={activeModule.schoolYear}
                           onChange={(event) =>
                             handleModuleFieldChange(
-                              module.id,
+                              activeModule.id,
                               "schoolYear",
                               event.target.value
                             )
@@ -1181,8 +1148,12 @@ function App() {
                         </span>
                       ))}
                     </div>
-                  </div>
-                ))}
+                  </>
+                ) : (
+                  <p className="helper-text">
+                    No active module selected.
+                  </p>
+                )}
               </div>
             </div>
 
