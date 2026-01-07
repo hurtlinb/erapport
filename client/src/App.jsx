@@ -91,6 +91,7 @@ const DEFAULT_COMPETENCIES = [
 ];
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
+const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 
 const storageKey = "erapport.students";
 const templateStorageKey = "erapport.template";
@@ -425,6 +426,12 @@ function App() {
     () => modules.find((module) => module.id === activeModuleId) || null,
     [activeModuleId, modules]
   );
+  const activeModuleSchoolYear = useMemo(() => {
+    if (!activeModule) return SCHOOL_YEARS[0];
+    return SCHOOL_YEARS.includes(activeModule.schoolYear)
+      ? activeModule.schoolYear
+      : SCHOOL_YEARS[0];
+  }, [activeModule]);
 
   const moduleCountLabel = useMemo(() => {
     return modules.length === 1 ? "1 module" : `${modules.length} modules`;
@@ -1235,9 +1242,8 @@ function App() {
                       </label>
                       <label>
                         School year
-                        <input
-                          type="text"
-                          value={activeModule.schoolYear}
+                        <select
+                          value={activeModuleSchoolYear}
                           onChange={(event) =>
                             handleModuleFieldChange(
                               activeModule.id,
@@ -1245,8 +1251,13 @@ function App() {
                               event.target.value
                             )
                           }
-                          placeholder="2024-2025"
-                        />
+                        >
+                          {SCHOOL_YEARS.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
                       </label>
                     </div>
                     <div className="module-evaluations">
