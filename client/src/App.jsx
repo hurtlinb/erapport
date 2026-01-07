@@ -734,15 +734,6 @@ function App() {
 
           <div className="textarea-block">
             <label>
-              Report summary
-              <textarea
-                rows="3"
-                value={draft.note}
-                onChange={(event) => handleStudentField("note", event.target.value)}
-                placeholder="Overall feedback for the student..."
-              />
-            </label>
-            <label>
               Teacher remarks
               <textarea
                 rows="3"
