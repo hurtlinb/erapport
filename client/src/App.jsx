@@ -1298,6 +1298,18 @@ function App() {
             </fieldset>
             <div className="module-actions">
               <button
+                className="button ghost"
+                onClick={handleOpenCopyStudentsModal}
+                disabled={e1Students.length === 0}
+                title={
+                  e1Students.length === 0
+                    ? "No E1 students available to copy."
+                    : "Copy E1 reports into E2"
+                }
+              >
+                Copy E1 → E2
+              </button>
+              <button
                 className="button danger"
                 type="button"
                 onClick={() => handleRemoveReportType(activeEvaluationType)}
@@ -1317,18 +1329,6 @@ function App() {
             <div className="actions">
               <button className="button ghost" onClick={handleImportStudents}>
                 Import students
-              </button>
-              <button
-                className="button ghost"
-                onClick={handleOpenCopyStudentsModal}
-                disabled={e1Students.length === 0}
-                title={
-                  e1Students.length === 0
-                    ? "No E1 students available to copy."
-                    : "Copy E1 reports into E2"
-                }
-              >
-                Copy E1 → E2
               </button>
             </div>
           </div>
