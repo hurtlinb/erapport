@@ -134,14 +134,14 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const normalizeTemplate = (template, module, evaluationType) => {
+const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
   return {
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
     moduleTitle: module.title || "",
-    schoolYear: module.schoolYear || "",
+    schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     competencyOptions:
@@ -150,7 +150,7 @@ const normalizeTemplate = (template, module, evaluationType) => {
   };
 };
 
-const normalizeModuleTemplates = (module) => {
+const normalizeModuleTemplates = (module, schoolYearLabel) => {
   const baseTemplates =
     module.templates && typeof module.templates === "object" ? module.templates : {};
   if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
@@ -158,36 +158,120 @@ const normalizeModuleTemplates = (module) => {
   }
 
   return EVALUATION_TYPES.reduce((acc, type) => {
-    acc[type] = normalizeTemplate(baseTemplates[type] || {}, module, type);
+    acc[type] = normalizeTemplate(
+      baseTemplates[type] || {},
+      module,
+      schoolYearLabel,
+      type
+    );
     return acc;
   }, {});
 };
 
-const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
+const buildDefaultModule = (
+  overrides = {},
+  templateOverrides = {},
+  schoolYearLabel = defaultTemplate.schoolYear
+) => {
   const module = {
     id: crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle,
-    schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
+    title: overrides.title ?? defaultTemplate.moduleTitle
   };
 
   return {
     ...module,
-    templates: normalizeModuleTemplates({
-      ...module,
-      templates: {
-        [EVALUATION_TYPES[0]]: templateOverrides
-      }
-    })
+    templates: normalizeModuleTemplates(
+      {
+        ...module,
+        templates: {
+          [EVALUATION_TYPES[0]]: templateOverrides
+        }
+      },
+      schoolYearLabel
+    )
   };
 };
 
 const getStudentEvaluationType = (student) =>
   student.evaluationType || EVALUATION_TYPES[0];
 
-const getModuleTemplate = (module, evaluationType) => {
-  const templates = normalizeModuleTemplates(module);
+const getModuleTemplate = (module, schoolYearLabel, evaluationType) => {
+  const templates = normalizeModuleTemplates(module, schoolYearLabel);
   return templates[evaluationType] || templates[EVALUATION_TYPES[0]];
 };
+
+const normalizeModules = (modules = [], schoolYearLabel) => {
+  if (!Array.isArray(modules) || modules.length === 0) {
+    return [buildDefaultModule({}, {}, schoolYearLabel)];
+  }
+
+  return modules.map((module) => {
+    const normalizedModule = {
+      id: module.id || crypto.randomUUID(),
+      title: module.title || ""
+    };
+
+    return {
+      ...normalizedModule,
+      templates: normalizeModuleTemplates(
+        {
+          ...normalizedModule,
+          templates: normalizeModuleTemplates(module, schoolYearLabel)
+        },
+        schoolYearLabel
+      )
+    };
+  });
+};
+
+const normalizeSchoolYears = (schoolYears = [], modules = []) => {
+  if (Array.isArray(schoolYears) && schoolYears.length > 0) {
+    return schoolYears.map((schoolYear) => {
+      const label =
+        schoolYear.label ||
+        schoolYear.schoolYear ||
+        schoolYear.year ||
+        defaultTemplate.schoolYear;
+      return {
+        id: schoolYear.id || crypto.randomUUID(),
+        label,
+        modules: normalizeModules(schoolYear.modules || [], label)
+      };
+    });
+  }
+
+  if (Array.isArray(modules) && modules.length > 0) {
+    const groupedModules = modules.reduce((acc, module) => {
+      const label = module.schoolYear || defaultTemplate.schoolYear;
+      if (!acc[label]) {
+        acc[label] = [];
+      }
+      const { schoolYear, ...rest } = module;
+      acc[label].push(rest);
+      return acc;
+    }, {});
+
+    return Object.entries(groupedModules).map(([label, yearModules]) => ({
+      id: crypto.randomUUID(),
+      label,
+      modules: normalizeModules(yearModules, label)
+    }));
+  }
+
+  return [
+    {
+      id: crypto.randomUUID(),
+      label: defaultTemplate.schoolYear,
+      modules: normalizeModules([], defaultTemplate.schoolYear)
+    }
+  ];
+};
+
+const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
+  id: crypto.randomUUID(),
+  label,
+  modules: normalizeModules([], label)
+});
 
 const normalizeTemplateItem = (item) => {
   if (typeof item === "string") {
@@ -291,8 +375,9 @@ const buildStudentFromTemplate = (template) => ({
 });
 
 function App() {
-  const [modules, setModules] = useState([]);
+  const [schoolYears, setSchoolYears] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
+  const [activeSchoolYearId, setActiveSchoolYearId] = useState("");
   const [activeModuleId, setActiveModuleId] = useState("");
   const [activeEvaluationType, setActiveEvaluationType] = useState(
     EVALUATION_TYPES[0]
@@ -323,6 +408,14 @@ function App() {
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
+  const activeSchoolYear = useMemo(
+    () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
+    [activeSchoolYearId, schoolYears]
+  );
+  const activeModules = useMemo(
+    () => activeSchoolYear?.modules || [],
+    [activeSchoolYear]
+  );
 
   useEffect(() => {
     const loadState = async () => {
@@ -332,7 +425,7 @@ function App() {
           throw new Error("Unable to fetch stored data.");
         }
         const data = await response.json();
-        setModules(data.modules || []);
+        setSchoolYears(normalizeSchoolYears(data.schoolYears, data.modules));
         setStudents(data.students || []);
         setLoadError("");
         isHydratedRef.current = true;
@@ -356,7 +449,7 @@ function App() {
         await fetch(`${API_BASE_URL}/api/state`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ modules, students })
+          body: JSON.stringify({ schoolYears, students })
         });
       } catch (error) {
         console.error(error);
@@ -364,7 +457,7 @@ function App() {
     };
 
     persistState();
-  }, [modules, students]);
+  }, [schoolYears, students]);
 
   useEffect(() => {
     if (selectedStudent) {
@@ -394,11 +487,27 @@ function App() {
   }, [activeEvaluationType, template]);
 
   useEffect(() => {
-    if (!modules.length) return;
-    if (!activeModuleId || !modules.some((module) => module.id === activeModuleId)) {
-      setActiveModuleId(modules[0]?.id || "");
+    if (!schoolYears.length) return;
+    if (
+      !activeSchoolYearId ||
+      !schoolYears.some((year) => year.id === activeSchoolYearId)
+    ) {
+      setActiveSchoolYearId(schoolYears[0]?.id || "");
     }
-  }, [activeModuleId, modules]);
+  }, [activeSchoolYearId, schoolYears]);
+
+  useEffect(() => {
+    if (!activeModules.length) {
+      setActiveModuleId("");
+      return;
+    }
+    if (
+      !activeModuleId ||
+      !activeModules.some((module) => module.id === activeModuleId)
+    ) {
+      setActiveModuleId(activeModules[0]?.id || "");
+    }
+  }, [activeModuleId, activeModules]);
 
   useEffect(() => {
     setSelectedId((prev) => {
@@ -410,10 +519,14 @@ function App() {
   }, [moduleStudents]);
 
   useEffect(() => {
-    const activeModule = modules.find((module) => module.id === activeModuleId);
-    if (!activeModule) return;
-    setTemplate(getModuleTemplate(activeModule, activeEvaluationType));
-  }, [activeEvaluationType, activeModuleId, modules]);
+    const activeModule = activeModules.find(
+      (module) => module.id === activeModuleId
+    );
+    if (!activeModule || !activeSchoolYear) return;
+    setTemplate(
+      getModuleTemplate(activeModule, activeSchoolYear.label, activeEvaluationType)
+    );
+  }, [activeEvaluationType, activeModuleId, activeModules, activeSchoolYear]);
 
   const studentCountLabel = useMemo(() => {
     return moduleStudents.length === 1
@@ -428,19 +541,15 @@ function App() {
   }, [template.moduleTitle, template.schoolYear]);
 
   const activeModule = useMemo(
-    () => modules.find((module) => module.id === activeModuleId) || null,
-    [activeModuleId, modules]
+    () => activeModules.find((module) => module.id === activeModuleId) || null,
+    [activeModuleId, activeModules]
   );
-  const activeModuleSchoolYear = useMemo(() => {
-    if (!activeModule) return SCHOOL_YEARS[0];
-    return SCHOOL_YEARS.includes(activeModule.schoolYear)
-      ? activeModule.schoolYear
-      : SCHOOL_YEARS[0];
-  }, [activeModule]);
 
   const moduleCountLabel = useMemo(() => {
-    return modules.length === 1 ? "1 module" : `${modules.length} modules`;
-  }, [modules.length]);
+    return activeModules.length === 1
+      ? "1 module"
+      : `${activeModules.length} modules`;
+  }, [activeModules.length]);
 
   const persistDraftChanges = (updater) => {
     setDraft((prevDraft) => {
@@ -610,21 +719,29 @@ function App() {
   const updateTemplate = (updater) => {
     setTemplate((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      setModules((prevModules) =>
-        prevModules.map((module) =>
-          module.id === activeModuleId
+      setSchoolYears((prevYears) =>
+        prevYears.map((year) =>
+          year.id === activeSchoolYearId
             ? {
-                ...module,
-                templates: {
-                  ...normalizeModuleTemplates(module),
-                  [activeEvaluationType]: normalizeTemplate(
-                    next,
-                    module,
-                    activeEvaluationType
-                  )
-                }
+                ...year,
+                modules: year.modules.map((module) =>
+                  module.id === activeModuleId
+                    ? {
+                        ...module,
+                        templates: {
+                          ...normalizeModuleTemplates(module, year.label),
+                          [activeEvaluationType]: normalizeTemplate(
+                            next,
+                            module,
+                            year.label,
+                            activeEvaluationType
+                          )
+                        }
+                      }
+                    : module
+                )
               }
-            : module
+            : year
         )
       );
       return next;
@@ -784,35 +901,86 @@ function App() {
     }));
   };
 
+  const handleAddSchoolYear = () => {
+    const existingLabels = schoolYears.map((year) => year.label);
+    const nextLabel =
+      SCHOOL_YEARS.find((year) => !existingLabels.includes(year)) ||
+      `New school year ${existingLabels.length + 1}`;
+    const newSchoolYear = buildDefaultSchoolYear(nextLabel);
+    setSchoolYears((prev) => [...prev, newSchoolYear]);
+    setActiveSchoolYearId(newSchoolYear.id);
+    setActiveModuleId(newSchoolYear.modules[0]?.id || "");
+    setActiveEvaluationType(EVALUATION_TYPES[0]);
+  };
+
   const handleAddModule = () => {
+    if (!activeSchoolYear) {
+      const fallbackSchoolYear = buildDefaultSchoolYear();
+      setSchoolYears((prev) => [...prev, fallbackSchoolYear]);
+      setActiveSchoolYearId(fallbackSchoolYear.id);
+      setActiveModuleId(fallbackSchoolYear.modules[0]?.id || "");
+      return;
+    }
     const newModule = buildDefaultModule({
-      title: "New module",
-      schoolYear: defaultTemplate.schoolYear
-    });
-    setModules((prev) => [...prev, newModule]);
+      title: "New module"
+    }, {}, activeSchoolYear.label);
+    setSchoolYears((prev) =>
+      prev.map((year) =>
+        year.id === activeSchoolYearId
+          ? {
+              ...year,
+              modules: [...year.modules, newModule]
+            }
+          : year
+      )
+    );
     setActiveModuleId(newModule.id);
     setActiveEvaluationType(EVALUATION_TYPES[0]);
   };
 
   const handleModuleFieldChange = (moduleId, field, value) => {
-    setModules((prev) =>
-      prev.map((module) => {
-        if (module.id !== moduleId) return module;
-        const updatedModule = { ...module, [field]: value };
-        return {
-          ...updatedModule,
-          templates: normalizeModuleTemplates({
-            ...updatedModule,
-            templates: normalizeModuleTemplates(module)
-          })
-        };
-      })
+    setSchoolYears((prev) =>
+      prev.map((year) =>
+        year.id === activeSchoolYearId
+          ? {
+              ...year,
+              modules: year.modules.map((module) => {
+                if (module.id !== moduleId) return module;
+                const updatedModule = { ...module, [field]: value };
+                return {
+                  ...updatedModule,
+                  templates: normalizeModuleTemplates(
+                    {
+                      ...updatedModule,
+                      templates: normalizeModuleTemplates(module, year.label)
+                    },
+                    year.label
+                  )
+                };
+              })
+            }
+          : year
+      )
     );
   };
 
   const handleRemoveModule = (moduleId) => {
     if (!confirm("Delete this module?")) return;
-    setModules((prev) => prev.filter((module) => module.id !== moduleId));
+    setSchoolYears((prev) =>
+      prev.map((year) => {
+        if (year.id !== activeSchoolYearId) return year;
+        const remainingModules = year.modules.filter(
+          (module) => module.id !== moduleId
+        );
+        return {
+          ...year,
+          modules:
+            remainingModules.length > 0
+              ? remainingModules
+              : [buildDefaultModule({}, {}, year.label)]
+        };
+      })
+    );
     if (activeModuleId === moduleId) {
       setActiveModuleId("");
     }
@@ -896,6 +1064,9 @@ function App() {
               >
                 Modify template
               </button>
+              <button className="button primary" onClick={handleAddSchoolYear}>
+                New school year
+              </button>
               <button className="button primary" onClick={handleAddModule}>
                 New module
               </button>
@@ -904,20 +1075,29 @@ function App() {
 
           <div className="module-selector">
             <label>
+              School year
+              <select
+                value={activeSchoolYearId}
+                onChange={(event) => setActiveSchoolYearId(event.target.value)}
+              >
+                {schoolYears.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    {year.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               Active module
               <select
                 value={activeModuleId}
                 onChange={(event) => setActiveModuleId(event.target.value)}
               >
-                {modules.map((module) => {
+                {activeModules.map((module) => {
                   const title = module.title || "Module";
-                  const yearLabel = module.schoolYear
-                    ? ` (${module.schoolYear})`
-                    : "";
                   return (
                     <option key={module.id} value={module.id}>
                       {title}
-                      {yearLabel}
                     </option>
                   );
                 })}
@@ -941,7 +1121,7 @@ function App() {
               ))}
             </fieldset>
             <p className="helper-text">
-              Switch modules to load their specific template and student list.
+              Switch school years or modules to load their templates and students.
             </p>
           </div>
 
@@ -1419,22 +1599,12 @@ function App() {
                       </label>
                       <label>
                         School year
-                        <select
-                          value={activeModuleSchoolYear}
-                          onChange={(event) =>
-                            handleModuleFieldChange(
-                              activeModule.id,
-                              "schoolYear",
-                              event.target.value
-                            )
-                          }
-                        >
-                          {SCHOOL_YEARS.map((year) => (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          ))}
-                        </select>
+                        <input
+                          type="text"
+                          value={activeSchoolYear?.label || "Not set"}
+                          readOnly
+                          disabled
+                        />
                       </label>
                     </div>
                     <div className="module-evaluations">
