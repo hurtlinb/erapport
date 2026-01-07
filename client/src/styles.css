@@ -274,6 +274,14 @@ select {
   color: #0f172a;
 }
 
+.module-evaluation-option input:disabled + span {
+  color: #94a3b8;
+}
+
+.module-evaluation-option input:disabled {
+  cursor: not-allowed;
+}
+
 .module-evaluations {
   display: flex;
   gap: 8px;
