@@ -1089,25 +1089,28 @@ function App() {
             <div className="report-summary-header">
               <h3>Summary</h3>
               <p className="helper-text">
-                Categories and tasks overview (read-only).
+                Categories and results overview (read-only).
               </p>
             </div>
             {(draft.competencies || []).length ? (
               <div className="report-summary-grid">
-                {(draft.competencies || []).map((section, sectionIndex) => (
-                  <div
-                    key={`${section.category}-${sectionIndex}`}
-                    className="report-summary-card"
-                  >
-                    <p className="summary-category">{section.category}</p>
-                    <ul className="summary-task-list">
-                      {(section.items || []).map((item, itemIndex) => {
-                        const taskLabel = item.task || item.label || "Task";
-                        return <li key={`${taskLabel}-${itemIndex}`}>{taskLabel}</li>;
-                      })}
-                    </ul>
-                  </div>
-                ))}
+                {(draft.competencies || []).map((section, sectionIndex) => {
+                  const statusClass = getStatusClass(section.result);
+                  return (
+                    <div
+                      key={`${section.category}-${sectionIndex}`}
+                      className={`report-summary-card ${statusClass}`}
+                    >
+                      <p className="summary-category">{section.category}</p>
+                      <p className="summary-result">
+                        <span className="summary-result-label">Result</span>
+                        <span className="summary-result-value">
+                          {section.result || "—"}
+                        </span>
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="helper-text">No categories yet.</p>
