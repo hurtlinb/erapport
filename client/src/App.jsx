@@ -219,7 +219,7 @@ const applyTemplateToStudent = (template, student) => ({
   moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
-  note: template.note || "",
+  note: student.note ?? template.note ?? "",
   evaluationType: template.evaluationType || "",
   className: template.className || "",
   teacher: template.teacher || "",
