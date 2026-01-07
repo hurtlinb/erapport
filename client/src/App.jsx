@@ -578,18 +578,6 @@ function App() {
     );
   }, [activeEvaluationType, activeModuleId, activeModules, activeSchoolYear]);
 
-  const studentCountLabel = useMemo(() => {
-    return moduleStudents.length === 1
-      ? "1 student"
-      : `${moduleStudents.length} students`;
-  }, [moduleStudents.length]);
-
-  const activeModuleLabel = useMemo(() => {
-    if (!template.moduleTitle && !template.schoolYear) return "Not set";
-    if (!template.schoolYear) return template.moduleTitle || "Not set";
-    return `${template.moduleTitle || "Module"} (${template.schoolYear})`;
-  }, [template.moduleTitle, template.schoolYear]);
-
   const activeModule = useMemo(
     () => activeModules.find((module) => module.id === activeModuleId) || null,
     [activeModuleId, activeModules]
@@ -602,12 +590,6 @@ function App() {
       setActiveEvaluationType(availableTypes[0]);
     }
   }, [activeEvaluationType, activeModule]);
-
-  const moduleCountLabel = useMemo(() => {
-    return activeModules.length === 1
-      ? "1 module"
-      : `${activeModules.length} modules`;
-  }, [activeModules.length]);
 
   const persistDraftChanges = (updater) => {
     setDraft((prevDraft) => {
@@ -1070,20 +1052,6 @@ function App() {
             Manage your student list, fill in competencies, and export PDFs that
             match the official summary sheet.
           </p>
-        </div>
-        <div className="hero-card">
-          <div>
-            <p className="label">Students</p>
-            <p className="value">{studentCountLabel}</p>
-          </div>
-          <div>
-            <p className="label">Active module</p>
-            <p className="value">{activeModuleLabel}</p>
-          </div>
-          <div>
-            <p className="label">Modules</p>
-            <p className="value">{moduleCountLabel}</p>
-          </div>
         </div>
       </header>
 
