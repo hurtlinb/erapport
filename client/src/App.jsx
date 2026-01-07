@@ -95,11 +95,32 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const buildDefaultModule = (overrides = {}) => ({
-  id: crypto.randomUUID(),
-  title: overrides.title ?? defaultTemplate.moduleTitle,
-  schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
-});
+const normalizeTemplate = (template, module) => {
+  const baseTemplate = template || {};
+  return {
+    ...defaultTemplate,
+    ...baseTemplate,
+    moduleId: module.id,
+    moduleTitle: module.title || "",
+    schoolYear: module.schoolYear || "",
+    competencyOptions:
+      baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
+    competencies: baseTemplate.competencies || defaultTemplate.competencies
+  };
+};
+
+const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
+  const module = {
+    id: crypto.randomUUID(),
+    title: overrides.title ?? defaultTemplate.moduleTitle,
+    schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
+  };
+
+  return {
+    ...module,
+    template: normalizeTemplate(templateOverrides, module)
+  };
+};
 
 const normalizeTemplateItem = (item) => {
   if (typeof item === "string") {
@@ -225,15 +246,40 @@ function saveStudents(students) {
 
 function loadModules() {
   try {
+    const legacyTemplate = (() => {
+      try {
+        const raw = localStorage.getItem(templateStorageKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultTemplate,
+          ...parsed,
+          competencyOptions:
+            parsed.competencyOptions || defaultTemplate.competencyOptions,
+          competencies: parsed.competencies || defaultTemplate.competencies
+        };
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    })();
     const raw = localStorage.getItem(moduleStorageKey);
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      return [buildDefaultModule()];
+      return [buildDefaultModule({}, legacyTemplate || {})];
     }
     return parsed.map((module) => ({
       id: module.id || crypto.randomUUID(),
       title: module.title || "",
-      schoolYear: module.schoolYear || ""
+      schoolYear: module.schoolYear || "",
+      template: normalizeTemplate(
+        module.template || legacyTemplate || {},
+        {
+          id: module.id || crypto.randomUUID(),
+          title: module.title || "",
+          schoolYear: module.schoolYear || ""
+        }
+      )
     }));
   } catch (error) {
     console.error(error);
@@ -246,25 +292,13 @@ function saveModules(modules) {
 }
 
 function App() {
-  const [modules, setModules] = useState(() => loadModules());
-  const [template, setTemplate] = useState(() => {
-    try {
-      const raw = localStorage.getItem(templateStorageKey);
-      if (!raw) return defaultTemplate;
-      const parsed = JSON.parse(raw);
-      return {
-        ...defaultTemplate,
-        ...parsed,
-        competencyOptions: parsed.competencyOptions || defaultTemplate.competencyOptions,
-        competencies: parsed.competencies || defaultTemplate.competencies
-      };
-    } catch (error) {
-      console.error(error);
-      return defaultTemplate;
-    }
-  });
+  const initialModules = useMemo(() => loadModules(), []);
+  const [modules, setModules] = useState(initialModules);
+  const [template, setTemplate] = useState(
+    initialModules[0]?.template || defaultTemplate
+  );
   const [activeModuleId, setActiveModuleId] = useState(
-    () => template.moduleId || modules[0]?.id || ""
+    () => template.moduleId || initialModules[0]?.id || ""
   );
   const [students, setStudents] = useState(() => loadStudents());
   const [selectedId, setSelectedId] = useState(students[0]?.id || "");
@@ -283,14 +317,6 @@ function App() {
   }, [modules]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(templateStorageKey, JSON.stringify(template));
-    } catch (error) {
-      console.error(error);
-    }
-  }, [template]);
-
-  useEffect(() => {
     if (selectedStudent) {
       setDraft(applyTemplateToStudent(template, selectedStudent));
       setIsEditing(true);
@@ -302,9 +328,17 @@ function App() {
 
   useEffect(() => {
     setStudents((prev) =>
-      prev.map((student) => applyTemplateToStudent(template, student))
+      prev.map((student) =>
+        student.moduleId === template.moduleId
+          ? applyTemplateToStudent(template, student)
+          : student
+      )
     );
-    setDraft((prev) => applyTemplateToStudent(template, prev));
+    setDraft((prev) =>
+      prev.moduleId === template.moduleId
+        ? applyTemplateToStudent(template, prev)
+        : prev
+    );
   }, [template]);
 
   useEffect(() => {
@@ -317,12 +351,7 @@ function App() {
   useEffect(() => {
     const activeModule = modules.find((module) => module.id === activeModuleId);
     if (!activeModule) return;
-    setTemplate((prev) => ({
-      ...prev,
-      moduleId: activeModule.id,
-      moduleTitle: activeModule.title || "",
-      schoolYear: activeModule.schoolYear || ""
-    }));
+    setTemplate(normalizeTemplate(activeModule.template || {}, activeModule));
   }, [activeModuleId, modules]);
 
   const studentCountLabel = useMemo(() => {
@@ -445,15 +474,29 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const updateTemplate = (updater) => {
+    setTemplate((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      setModules((prevModules) =>
+        prevModules.map((module) =>
+          module.id === activeModuleId
+            ? { ...module, template: normalizeTemplate(next, module) }
+            : module
+        )
+      );
+      return next;
+    });
+  };
+
   const handleTemplateField = (field, value) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       [field]: value
     }));
   };
 
   const handleTemplateCategoryChange = (sectionIndex, value) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex ? { ...section, category: value } : section
@@ -467,7 +510,7 @@ function App() {
     field,
     value
   ) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
@@ -484,7 +527,7 @@ function App() {
   };
 
   const handleAddCategory = () => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: [
         ...(prev.competencies || []),
@@ -502,7 +545,7 @@ function App() {
   };
 
   const handleRemoveCategory = (sectionIndex) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).filter(
         (_, index) => index !== sectionIndex
@@ -511,7 +554,7 @@ function App() {
   };
 
   const handleAddCompetencyOption = () => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencyOptions: [
         ...(prev.competencyOptions || []),
@@ -524,7 +567,7 @@ function App() {
   };
 
   const handleCompetencyOptionChange = (index, field, value) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencyOptions: (prev.competencyOptions || []).map(
         (option, optIndex) =>
@@ -534,7 +577,7 @@ function App() {
   };
 
   const handleRemoveCompetencyOption = (index) => {
-    setTemplate((prev) => {
+    updateTemplate((prev) => {
       const removedCode = prev.competencyOptions?.[index]?.code;
       const updatedOptions = (prev.competencyOptions || []).filter(
         (_, optIndex) => optIndex !== index
@@ -558,7 +601,7 @@ function App() {
   };
 
   const handleAddTask = (sectionIndex) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex
@@ -578,7 +621,7 @@ function App() {
   };
 
   const handleRemoveTask = (sectionIndex, itemIndex) => {
-    setTemplate((prev) => ({
+    updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
@@ -603,9 +646,14 @@ function App() {
 
   const handleModuleFieldChange = (moduleId, field, value) => {
     setModules((prev) =>
-      prev.map((module) =>
-        module.id === moduleId ? { ...module, [field]: value } : module
-      )
+      prev.map((module) => {
+        if (module.id !== moduleId) return module;
+        const updatedModule = { ...module, [field]: value };
+        return {
+          ...updatedModule,
+          template: normalizeTemplate(module.template || {}, updatedModule)
+        };
+      })
     );
   };
 
@@ -619,9 +667,17 @@ function App() {
 
   const handleApplyTemplate = () => {
     setStudents((prev) =>
-      prev.map((student) => applyTemplateToStudent(template, student))
+      prev.map((student) =>
+        student.moduleId === template.moduleId
+          ? applyTemplateToStudent(template, student)
+          : student
+      )
     );
-    setDraft((prev) => applyTemplateToStudent(template, prev));
+    setDraft((prev) =>
+      prev.moduleId === template.moduleId
+        ? applyTemplateToStudent(template, prev)
+        : prev
+    );
     setIsTemplateModalOpen(false);
   };
 
