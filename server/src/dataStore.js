@@ -99,6 +99,7 @@ const DEFAULT_COMPETENCIES = [
 ];
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
+const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 
 const defaultTemplate = {
   moduleId: "",
@@ -246,13 +247,11 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
     }));
   }
 
-  return [
-    {
-      id: crypto.randomUUID(),
-      label: defaultTemplate.schoolYear,
-      modules: normalizeModules([], defaultTemplate.schoolYear)
-    }
-  ];
+  return SCHOOL_YEARS.map((label) => ({
+    id: crypto.randomUUID(),
+    label,
+    modules: normalizeModules([], label)
+  }));
 };
 
 const normalizeStudent = (student) => ({
