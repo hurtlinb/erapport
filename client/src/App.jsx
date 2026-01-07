@@ -91,6 +91,11 @@ const DEFAULT_COMPETENCIES = [
 ];
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
+const TASK_EVALUATION_METHODS = [
+  { value: "Evaluation écrite", label: "📝 Evaluation écrite" },
+  { value: "Evaluation pratique", label: "🧪 Evaluation pratique" },
+  { value: "Documentation", label: "📚 Documentation" }
+];
 const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 
 const storageKey = "erapport.students";
@@ -161,11 +166,12 @@ const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
 
 const normalizeTemplateItem = (item) => {
   if (typeof item === "string") {
-    return { task: item, competencyId: "" };
+    return { task: item, competencyId: "", evaluationMethod: "" };
   }
   return {
     task: item?.task || "",
-    competencyId: item?.competencyId || ""
+    competencyId: item?.competencyId || "",
+    evaluationMethod: item?.evaluationMethod || ""
   };
 };
 
@@ -194,6 +200,7 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
         return {
           task: normalizedItem.task,
           competencyId: normalizedItem.competencyId || existingItem?.competencyId || "",
+          evaluationMethod: normalizedItem.evaluationMethod || "",
           status: existingItem?.status ?? "",
           comment: existingItem?.comment || ""
         };
@@ -676,7 +683,8 @@ function App() {
           items: [
             {
               task: "New task",
-              competencyId: prev.competencyOptions?.[0]?.code || ""
+              competencyId: prev.competencyOptions?.[0]?.code || "",
+              evaluationMethod: ""
             }
           ]
         }
@@ -751,7 +759,8 @@ function App() {
                 ...(section.items || []),
                 {
                   task: "New task",
-                  competencyId: prev.competencyOptions?.[0]?.code || ""
+                  competencyId: prev.competencyOptions?.[0]?.code || "",
+                  evaluationMethod: ""
                 }
               ]
             }
@@ -1578,7 +1587,10 @@ function App() {
                     {section.items.map((item, itemIndex) => {
                       const normalizedItem = normalizeTemplateItem(item);
                       return (
-                        <div key={itemIndex} className="template-task-row">
+                        <div
+                          key={itemIndex}
+                          className="template-task-row template-task-row--task"
+                        >
                           <input
                             type="text"
                             value={normalizedItem.task}
@@ -1606,6 +1618,24 @@ function App() {
                             {template.competencyOptions?.map((option) => (
                               <option key={option.code} value={option.code}>
                                 {option.code}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={normalizedItem.evaluationMethod}
+                            onChange={(event) =>
+                              handleTemplateTaskFieldChange(
+                                sectionIndex,
+                                itemIndex,
+                                "evaluationMethod",
+                                event.target.value
+                              )
+                            }
+                          >
+                            <option value="">Select evaluation</option>
+                            {TASK_EVALUATION_METHODS.map((method) => (
+                              <option key={method.value} value={method.value}>
+                                {method.label}
                               </option>
                             ))}
                           </select>
