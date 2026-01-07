@@ -741,6 +741,43 @@ function App() {
       cloneStudentReport(student, EVALUATION_COPY_TARGET)
     );
     setStudents((prev) => [...prev, ...copiedStudents]);
+    if (
+      activeModule &&
+      activeSchoolYear &&
+      !isEvaluationTypeAvailable(activeModule, EVALUATION_COPY_TARGET)
+    ) {
+      const sourceTemplate = getModuleTemplate(
+        activeModule,
+        activeSchoolYear.label,
+        EVALUATION_COPY_SOURCE
+      );
+      setSchoolYears((prev) =>
+        prev.map((year) =>
+          year.id === activeSchoolYearId
+            ? {
+                ...year,
+                modules: year.modules.map((module) =>
+                  module.id === activeModuleId
+                    ? {
+                        ...module,
+                        templates: {
+                          ...normalizeModuleTemplates(module, year.label),
+                          [EVALUATION_COPY_TARGET]: normalizeTemplate(
+                            sourceTemplate,
+                            module,
+                            year.label,
+                            EVALUATION_COPY_TARGET
+                          )
+                        }
+                      }
+                    : module
+                )
+              }
+            : year
+        )
+      );
+    }
+    setActiveEvaluationType(EVALUATION_COPY_TARGET);
     setIsCopyStudentsModalOpen(false);
   };
 
