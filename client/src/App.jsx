@@ -342,7 +342,13 @@ function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const selectedStudent = students.find((student) => student.id === selectedId);
+  const moduleStudents = useMemo(
+    () => students.filter((student) => student.moduleId === activeModuleId),
+    [activeModuleId, students]
+  );
+  const selectedStudent = moduleStudents.find(
+    (student) => student.id === selectedId
+  );
 
   useEffect(() => {
     saveStudents(students);
@@ -385,14 +391,25 @@ function App() {
   }, [activeModuleId, modules]);
 
   useEffect(() => {
+    setSelectedId((prev) => {
+      if (moduleStudents.some((student) => student.id === prev)) {
+        return prev;
+      }
+      return moduleStudents[0]?.id || "";
+    });
+  }, [moduleStudents]);
+
+  useEffect(() => {
     const activeModule = modules.find((module) => module.id === activeModuleId);
     if (!activeModule) return;
     setTemplate(normalizeTemplate(activeModule.template || {}, activeModule));
   }, [activeModuleId, modules]);
 
   const studentCountLabel = useMemo(() => {
-    return students.length === 1 ? "1 student" : `${students.length} students`;
-  }, [students.length]);
+    return moduleStudents.length === 1
+      ? "1 student"
+      : `${moduleStudents.length} students`;
+  }, [moduleStudents.length]);
 
   const activeModuleLabel = useMemo(() => {
     if (!template.moduleTitle && !template.schoolYear) return "Not set";
@@ -763,6 +780,32 @@ function App() {
             </button>
           </div>
 
+          <div className="module-selector">
+            <label>
+              Active module
+              <select
+                value={activeModuleId}
+                onChange={(event) => setActiveModuleId(event.target.value)}
+              >
+                {modules.map((module) => {
+                  const title = module.title || "Module";
+                  const yearLabel = module.schoolYear
+                    ? ` (${module.schoolYear})`
+                    : "";
+                  return (
+                    <option key={module.id} value={module.id}>
+                      {title}
+                      {yearLabel}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <p className="helper-text">
+              Switch modules to load their specific template and student list.
+            </p>
+          </div>
+
           <div className="template-summary">
             <div className="summary-pill">
               <span className="pill-label">Module</span>
@@ -806,10 +849,12 @@ function App() {
             </button>
           </div>
           <ul className="student-list">
-            {students.length === 0 && (
-              <li className="empty">No students yet. Add one to get started.</li>
+            {moduleStudents.length === 0 && (
+              <li className="empty">
+                No students yet for this module. Add one to get started.
+              </li>
             )}
-            {students.map((student) => (
+            {moduleStudents.map((student) => (
               <li
                 key={student.id}
                 className={

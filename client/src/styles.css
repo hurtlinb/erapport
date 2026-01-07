@@ -240,6 +240,11 @@ select {
   gap: 12px;
 }
 
+.module-selector {
+  display: grid;
+  gap: 8px;
+}
+
 .module-manager {
   display: flex;
   flex-direction: column;
