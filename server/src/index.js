@@ -381,22 +381,7 @@ app.post("/api/report", (req, res) => {
       cursorY += rowHeight;
     });
 
-    const commentRowHeight = competencyTable.baseRowHeight;
-    if (cursorY + commentRowHeight > 760) {
-      doc.addPage();
-      cursorY = 40;
-    }
-
-    drawCompetencyRow(
-      doc,
-      "Commentaire :",
-      "",
-      "",
-      "",
-      cursorY,
-      commentRowHeight
-    );
-    cursorY += commentRowHeight + 12;
+    cursorY += 12;
   });
 
   if (cursorY > 720) {
