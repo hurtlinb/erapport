@@ -1162,44 +1162,7 @@ function App() {
                 );
               })}
             </fieldset>
-            <p className="helper-text">
-              Switch school years or modules to load their templates and students.
-            </p>
           </div>
-
-          <div className="template-summary">
-            <div className="summary-pill">
-              <span className="pill-label">Module</span>
-              <span className="pill-value">
-                {activeModuleLabel}
-              </span>
-            </div>
-            <div className="summary-pill">
-              <span className="pill-label">School year</span>
-              <span className="pill-value">
-                {template.schoolYear || "Not set"}
-              </span>
-            </div>
-            <div className="summary-pill">
-              <span className="pill-label">Competencies</span>
-              <span className="pill-value">{templateCompetencyCount}</span>
-            </div>
-            <div className="summary-pill">
-              <span className="pill-label">Categories</span>
-              <span className="pill-value">
-                {(template.competencies || []).length}
-              </span>
-            </div>
-            <div className="summary-pill">
-              <span className="pill-label">Tasks</span>
-              <span className="pill-value">{templateTaskCount}</span>
-            </div>
-          </div>
-
-          <p className="helper-text">
-            Use the Modify template button to edit details, update competencies, and
-            apply them to all existing reports.
-          </p>
         </section>
 
         <section className="panel">
