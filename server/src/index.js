@@ -83,6 +83,75 @@ const competencyTable = {
   }
 };
 
+const summaryTable = {
+  x: 40,
+  width: 515,
+  headerHeight: 18,
+  baseRowHeight: 18,
+  columnWidths: {
+    category: 445,
+    result: 70
+  }
+};
+
+const getSummaryRowHeight = (doc, category) => {
+  const textPadding = 4;
+  const categoryHeight = doc.heightOfString(category || "", {
+    width: summaryTable.columnWidths.category - textPadding * 2
+  });
+  return Math.max(
+    summaryTable.baseRowHeight,
+    Math.ceil(categoryHeight + textPadding * 2)
+  );
+};
+
+const drawSummaryHeaderRow = (doc, y) => {
+  doc
+    .rect(summaryTable.x, y, summaryTable.width, summaryTable.headerHeight)
+    .fillAndStroke(theme.competencyHeader, theme.text)
+    .fillColor(theme.text)
+    .fontSize(9)
+    .font("Helvetica-Bold")
+    .text("Résumé des compétences évaluées", summaryTable.x + 6, y + 4, {
+      width: summaryTable.columnWidths.category - 12
+    })
+    .text(
+      "Résultat",
+      summaryTable.x + summaryTable.columnWidths.category,
+      y + 4,
+      {
+        width: summaryTable.columnWidths.result,
+        align: "center"
+      }
+    );
+  doc.font("Helvetica");
+};
+
+const drawSummaryRow = (doc, category, result, y, rowHeight) => {
+  const statusStyle = getStatusStyle(result);
+  const resultX = summaryTable.x + summaryTable.columnWidths.category;
+
+  doc
+    .rect(summaryTable.x, y, summaryTable.columnWidths.category, rowHeight)
+    .stroke(theme.text)
+    .rect(resultX, y, summaryTable.columnWidths.result, rowHeight)
+    .fillAndStroke(statusStyle.fill, theme.text);
+
+  doc
+    .fontSize(8)
+    .fillColor(theme.text)
+    .text(category || "-", summaryTable.x + 4, y + 4, {
+      width: summaryTable.columnWidths.category - 8
+    })
+    .fillColor(statusStyle.text)
+    .font("Helvetica-Bold")
+    .text(result || "-", resultX, y + 4, {
+      width: summaryTable.columnWidths.result,
+      align: "center"
+    });
+  doc.font("Helvetica");
+};
+
 const getCompetencyRowHeight = (doc, task, comment) => {
   const textPadding = 4;
   const taskHeight = doc.heightOfString(task || "", {
@@ -97,8 +166,7 @@ const getCompetencyRowHeight = (doc, task, comment) => {
   );
 };
 
-const drawCompetencyHeaderRow = (doc, title, index, y, result) => {
-  const statusStyle = getStatusStyle(result);
+const drawCompetencyHeaderRow = (doc, title, index, y) => {
   doc
     .rect(competencyTable.x, y, competencyTable.width, competencyTable.headerHeight)
     .fillAndStroke(theme.competencyHeader, theme.text)
@@ -107,13 +175,6 @@ const drawCompetencyHeaderRow = (doc, title, index, y, result) => {
     .font("Helvetica-Bold")
     .text(`${index + 1}) ${title}`, competencyTable.x + 6, y + 4, {
       width: competencyTable.width - 90
-    });
-  doc
-    .fillColor(statusStyle.text)
-    .font("Helvetica-Bold")
-    .text(`Result: ${result || "-"}`, competencyTable.x, y + 4, {
-      width: competencyTable.width - 6,
-      align: "right"
     });
   doc.font("Helvetica");
 };
@@ -355,19 +416,34 @@ app.post("/api/report", (req, res) => {
     .fillColor(theme.muted)
     .text(objectivesList || "-", 40, objectivesBodyY, { width: 515 });
 
-  let cursorY = doc.y + 24;
+  let cursorY = doc.y + 16;
+  if (cursorY + summaryTable.headerHeight > 740) {
+    doc.addPage();
+    cursorY = 40;
+  }
+
+  drawSummaryHeaderRow(doc, cursorY);
+  cursorY += summaryTable.headerHeight;
+
+  (student.competencies || []).forEach((section) => {
+    const rowHeight = getSummaryRowHeight(doc, section.category);
+    if (cursorY + rowHeight > 760) {
+      doc.addPage();
+      cursorY = 40;
+      drawSummaryHeaderRow(doc, cursorY);
+      cursorY += summaryTable.headerHeight;
+    }
+    drawSummaryRow(doc, section.category, section.result, cursorY, rowHeight);
+    cursorY += rowHeight;
+  });
+
+  cursorY += 16;
   student.competencies?.forEach((section, sectionIndex) => {
     if (cursorY + competencyTable.headerHeight > 740) {
       doc.addPage();
       cursorY = 40;
     }
-    drawCompetencyHeaderRow(
-      doc,
-      section.category,
-      sectionIndex,
-      cursorY,
-      section.result
-    );
+    drawCompetencyHeaderRow(doc, section.category, sectionIndex, cursorY);
     cursorY += competencyTable.headerHeight;
 
     section.items?.forEach((item) => {
