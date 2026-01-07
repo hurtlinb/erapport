@@ -180,6 +180,7 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
 
     return {
       category: section.category,
+      result: existingSection?.result ?? "",
       items: items.map((item) => {
         const normalizedItem = normalizeTemplateItem(item);
         const existingItem = existingSection?.items?.find((candidate) => {
@@ -493,6 +494,15 @@ function App() {
           )
         };
       })
+    }));
+  };
+
+  const updateCategoryResult = (sectionIndex, value) => {
+    persistDraftChanges((prev) => ({
+      ...prev,
+      competencies: (prev.competencies || []).map((section, sIndex) =>
+        sIndex === sectionIndex ? { ...section, result: value } : section
+      )
     }));
   };
 
@@ -1044,7 +1054,24 @@ function App() {
           <div className="competency-grid">
             {(draft.competencies || []).map((section, sectionIndex) => (
               <div key={section.category} className="competency-section">
-                <h3>{section.category}</h3>
+                <div className="competency-section-header">
+                  <h3>{section.category}</h3>
+                  <label className="category-result">
+                    <span>Result</span>
+                    <select
+                      className={`status-select ${getStatusClass(section.result)}`}
+                      value={section.result}
+                      onChange={(event) =>
+                        updateCategoryResult(sectionIndex, event.target.value)
+                      }
+                    >
+                      <option value="">Select result</option>
+                      <option value={STATUS_VALUES.OK}>OK</option>
+                      <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>~</option>
+                      <option value={STATUS_VALUES.NOT_ASSESSED}>NOK</option>
+                    </select>
+                  </label>
+                </div>
                 <div className="competency-table">
                   {(section.items || []).map((item, itemIndex) => {
                     const competencyLabel = getCompetencyLabel(

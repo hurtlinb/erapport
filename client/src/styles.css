@@ -365,7 +365,25 @@ textarea {
 }
 
 .competency-section h3 {
-  margin: 0 0 12px;
+  margin: 0;
+}
+
+.competency-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.category-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .competency-table {
