@@ -85,6 +85,7 @@ const defaultTemplate = {
   teacher: "",
   evaluationDate: "",
   coachingDate: "",
+  operationalCompetence: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
 };
@@ -152,6 +153,7 @@ const applyTemplateToStudent = (template, student) => ({
   teacher: template.teacher || "",
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
+  operationalCompetence: template.operationalCompetence || "",
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
@@ -167,6 +169,7 @@ const buildStudentFromTemplate = (template) => ({
   teacher: template.teacher || "",
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
+  operationalCompetence: template.operationalCompetence || "",
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template)
 });
@@ -713,6 +716,16 @@ function App() {
                 disabled
               />
             </label>
+            <label>
+              Operational competence
+              <input
+                type="text"
+                value={draft.operationalCompetence}
+                readOnly
+                disabled
+                placeholder="Set in template"
+              />
+            </label>
           </div>
 
           <div className="textarea-block">
@@ -900,6 +913,17 @@ function App() {
                   onChange={(event) =>
                     handleTemplateField("coachingDate", event.target.value)
                   }
+                />
+              </label>
+              <label>
+                Operational competence
+                <input
+                  type="text"
+                  value={template.operationalCompetence}
+                  onChange={(event) =>
+                    handleTemplateField("operationalCompetence", event.target.value)
+                  }
+                  placeholder="OP1, OP2, etc."
                 />
               </label>
             </div>
