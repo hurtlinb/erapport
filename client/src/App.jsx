@@ -54,8 +54,11 @@ const DEFAULT_COMPETENCIES = [
   }
 ];
 
+const EVALUATION_TYPES = ["E1", "E2", "E3"];
+
 const storageKey = "erapport.students";
 const templateStorageKey = "erapport.template";
+const moduleStorageKey = "erapport.modules";
 const statusVersionKey = "erapport.statusVersion";
 
 const STATUS_VALUES = {
@@ -78,9 +81,11 @@ const migrateStatus = (status) => {
 };
 
 const defaultTemplate = {
+  moduleId: "",
   moduleTitle: "123 - Activer les services d'un serveur",
+  schoolYear: "2024-2025",
   note: "",
-  evaluationType: "E1",
+  evaluationType: EVALUATION_TYPES[0],
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -89,6 +94,12 @@ const defaultTemplate = {
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
 };
+
+const buildDefaultModule = (overrides = {}) => ({
+  id: crypto.randomUUID(),
+  title: overrides.title ?? defaultTemplate.moduleTitle,
+  schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
+});
 
 const normalizeTemplateItem = (item) => {
   if (typeof item === "string") {
@@ -146,7 +157,9 @@ const getCompetencyLabel = (item, competencyOptions = []) => {
 
 const applyTemplateToStudent = (template, student) => ({
   ...student,
+  moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
+  schoolYear: template.schoolYear || "",
   note: template.note || "",
   evaluationType: template.evaluationType || "",
   className: template.className || "",
@@ -161,7 +174,9 @@ const applyTemplateToStudent = (template, student) => ({
 const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
   name: "",
+  moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
+  schoolYear: template.schoolYear || "",
   note: template.note || "",
   remarks: "",
   evaluationType: template.evaluationType || "",
@@ -208,7 +223,30 @@ function saveStudents(students) {
   localStorage.setItem(storageKey, JSON.stringify(students));
 }
 
+function loadModules() {
+  try {
+    const raw = localStorage.getItem(moduleStorageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return [buildDefaultModule()];
+    }
+    return parsed.map((module) => ({
+      id: module.id || crypto.randomUUID(),
+      title: module.title || "",
+      schoolYear: module.schoolYear || ""
+    }));
+  } catch (error) {
+    console.error(error);
+    return [buildDefaultModule()];
+  }
+}
+
+function saveModules(modules) {
+  localStorage.setItem(moduleStorageKey, JSON.stringify(modules));
+}
+
 function App() {
+  const [modules, setModules] = useState(() => loadModules());
   const [template, setTemplate] = useState(() => {
     try {
       const raw = localStorage.getItem(templateStorageKey);
@@ -225,6 +263,9 @@ function App() {
       return defaultTemplate;
     }
   });
+  const [activeModuleId, setActiveModuleId] = useState(
+    () => template.moduleId || modules[0]?.id || ""
+  );
   const [students, setStudents] = useState(() => loadStudents());
   const [selectedId, setSelectedId] = useState(students[0]?.id || "");
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
@@ -236,6 +277,10 @@ function App() {
   useEffect(() => {
     saveStudents(students);
   }, [students]);
+
+  useEffect(() => {
+    saveModules(modules);
+  }, [modules]);
 
   useEffect(() => {
     try {
@@ -262,9 +307,37 @@ function App() {
     setDraft((prev) => applyTemplateToStudent(template, prev));
   }, [template]);
 
+  useEffect(() => {
+    if (!modules.length) return;
+    if (!activeModuleId || !modules.some((module) => module.id === activeModuleId)) {
+      setActiveModuleId(modules[0]?.id || "");
+    }
+  }, [activeModuleId, modules]);
+
+  useEffect(() => {
+    const activeModule = modules.find((module) => module.id === activeModuleId);
+    if (!activeModule) return;
+    setTemplate((prev) => ({
+      ...prev,
+      moduleId: activeModule.id,
+      moduleTitle: activeModule.title || "",
+      schoolYear: activeModule.schoolYear || ""
+    }));
+  }, [activeModuleId, modules]);
+
   const studentCountLabel = useMemo(() => {
     return students.length === 1 ? "1 student" : `${students.length} students`;
   }, [students.length]);
+
+  const activeModuleLabel = useMemo(() => {
+    if (!template.moduleTitle && !template.schoolYear) return "Not set";
+    if (!template.schoolYear) return template.moduleTitle || "Not set";
+    return `${template.moduleTitle || "Module"} (${template.schoolYear})`;
+  }, [template.moduleTitle, template.schoolYear]);
+
+  const moduleCountLabel = useMemo(() => {
+    return modules.length === 1 ? "1 module" : `${modules.length} modules`;
+  }, [modules.length]);
 
   const persistDraftChanges = (updater) => {
     setDraft((prevDraft) => {
@@ -519,6 +592,31 @@ function App() {
     }));
   };
 
+  const handleAddModule = () => {
+    const newModule = buildDefaultModule({
+      title: "New module",
+      schoolYear: defaultTemplate.schoolYear
+    });
+    setModules((prev) => [...prev, newModule]);
+    setActiveModuleId(newModule.id);
+  };
+
+  const handleModuleFieldChange = (moduleId, field, value) => {
+    setModules((prev) =>
+      prev.map((module) =>
+        module.id === moduleId ? { ...module, [field]: value } : module
+      )
+    );
+  };
+
+  const handleRemoveModule = (moduleId) => {
+    if (!confirm("Delete this module?")) return;
+    setModules((prev) => prev.filter((module) => module.id !== moduleId));
+    if (activeModuleId === moduleId) {
+      setActiveModuleId("");
+    }
+  };
+
   const handleApplyTemplate = () => {
     setStudents((prev) =>
       prev.map((student) => applyTemplateToStudent(template, student))
@@ -545,7 +643,11 @@ function App() {
           </div>
           <div>
             <p className="label">Active module</p>
-            <p className="value">{draft.moduleTitle || "Not set"}</p>
+            <p className="value">{activeModuleLabel}</p>
+          </div>
+          <div>
+            <p className="label">Modules</p>
+            <p className="value">{moduleCountLabel}</p>
           </div>
         </div>
       </header>
@@ -573,7 +675,13 @@ function App() {
             <div className="summary-pill">
               <span className="pill-label">Module</span>
               <span className="pill-value">
-                {template.moduleTitle || "Not set"}
+                {activeModuleLabel}
+              </span>
+            </div>
+            <div className="summary-pill">
+              <span className="pill-label">School year</span>
+              <span className="pill-value">
+                {template.schoolYear || "Not set"}
               </span>
             </div>
             <div className="summary-pill">
@@ -666,6 +774,16 @@ function App() {
           </div>
           {showDetails && (
             <div className="form-grid details-grid">
+              <label>
+                School year
+                <input
+                  type="text"
+                  value={draft.schoolYear}
+                  readOnly
+                  disabled
+                  placeholder="2024-2025"
+                />
+              </label>
               <label>
                 Evaluation type
                 <input
@@ -834,18 +952,104 @@ function App() {
               </button>
             </div>
 
+            <div className="module-manager">
+              <div className="template-competency-header">
+                <div className="category-name">
+                  <span className="badge">Modules</span>
+                  <p className="helper-text">
+                    Organize modules by school year. Each module includes E1, E2, and
+                    E3 evaluations.
+                  </p>
+                </div>
+                <button className="button ghost" onClick={handleAddModule}>
+                  + Add module
+                </button>
+              </div>
+              <div className="module-list">
+                {modules.map((module) => (
+                  <div
+                    key={module.id}
+                    className={
+                      module.id === activeModuleId
+                        ? "module-card active"
+                        : "module-card"
+                    }
+                    onClick={() => setActiveModuleId(module.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        setActiveModuleId(module.id);
+                      }
+                    }}
+                  >
+                    <div className="module-card-header">
+                      <div>
+                        <p className="module-title">
+                          {module.title || "Module"}
+                        </p>
+                        <p className="module-meta">
+                          {module.schoolYear || "School year not set"}
+                        </p>
+                      </div>
+                      <button
+                        className="button text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleRemoveModule(module.id);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div
+                      className="module-form"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <label>
+                        Module title
+                        <input
+                          type="text"
+                          value={module.title}
+                          onChange={(event) =>
+                            handleModuleFieldChange(
+                              module.id,
+                              "title",
+                              event.target.value
+                            )
+                          }
+                          placeholder="123 - Activer les services d'un serveur"
+                        />
+                      </label>
+                      <label>
+                        School year
+                        <input
+                          type="text"
+                          value={module.schoolYear}
+                          onChange={(event) =>
+                            handleModuleFieldChange(
+                              module.id,
+                              "schoolYear",
+                              event.target.value
+                            )
+                          }
+                          placeholder="2024-2025"
+                        />
+                      </label>
+                    </div>
+                    <div className="module-evaluations">
+                      {EVALUATION_TYPES.map((type) => (
+                        <span key={type} className="module-chip">
+                          {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="form-grid">
-              <label>
-                Module title
-                <input
-                  type="text"
-                  value={template.moduleTitle}
-                  onChange={(event) =>
-                    handleTemplateField("moduleTitle", event.target.value)
-                  }
-                  placeholder="123 - Activer les services d'un serveur"
-                />
-              </label>
               <label>
                 Default summary
                 <textarea
@@ -867,9 +1071,11 @@ function App() {
                     handleTemplateField("evaluationType", event.target.value)
                   }
                 >
-                  <option value="E1">E1</option>
-                  <option value="E2">E2</option>
-                  <option value="E3">E3</option>
+                  {EVALUATION_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label>
