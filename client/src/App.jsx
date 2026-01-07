@@ -175,7 +175,8 @@ const buildDefaultModule = (
 ) => {
   const module = {
     id: crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle
+    title: overrides.title ?? defaultTemplate.moduleTitle,
+    schoolYear: overrides.schoolYear ?? schoolYearLabel
   };
 
   return {
@@ -208,7 +209,8 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   return modules.map((module) => {
     const normalizedModule = {
       id: module.id || crypto.randomUUID(),
-      title: module.title || ""
+      title: module.title || "",
+      schoolYear: module.schoolYear || schoolYearLabel
     };
 
     return {
@@ -413,7 +415,10 @@ function App() {
     [activeSchoolYearId, schoolYears]
   );
   const activeModules = useMemo(
-    () => activeSchoolYear?.modules || [],
+    () =>
+      (activeSchoolYear?.modules || []).filter(
+        (module) => module.schoolYear === activeSchoolYear?.label
+      ),
     [activeSchoolYear]
   );
 
