@@ -1,6 +1,9 @@
 import cors from "cors";
 import express from "express";
+import fs from "fs";
+import path from "path";
 import PDFDocument from "pdfkit";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +37,21 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString("fr-FR");
+};
+
+const getEvaluationNumber = (value) => {
+  if (!value) return "";
+  const normalizedValue = String(value).trim().toUpperCase();
+  const evaluationMap = {
+    E1: "1",
+    E2: "2",
+    E3: "3"
+  };
+  if (evaluationMap[normalizedValue]) {
+    return evaluationMap[normalizedValue];
+  }
+  const matchedNumber = normalizedValue.match(/E(\d+)/);
+  return matchedNumber ? matchedNumber[1] : "";
 };
 
 const getStatusStyle = (status) => {
@@ -119,47 +137,123 @@ app.post("/api/report", (req, res) => {
   );
   doc.pipe(res);
 
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const logoPath = path.join(__dirname, "emf.png");
+  const headerX = 40;
+  const headerY = 40;
+  const headerWidth = 515;
+  const headerHeight = 40;
+  const logoWidth = 150;
+  const dateWidth = 90;
+  const titleWidth = headerWidth - logoWidth - dateWidth;
+  const evaluationNumber = getEvaluationNumber(student.evaluationType);
+  const reportTitle = `Rapport d'évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  }`;
+
+  doc.lineWidth(0.6).strokeColor(theme.text);
+  doc.rect(headerX, headerY, logoWidth, headerHeight).stroke();
   doc
-    .font("Helvetica-Bold")
-    .fontSize(14)
-    .fillColor(theme.text)
-    .text("Rapport d'évaluation sommative", 40, 40)
-    .font("Helvetica")
-    .fontSize(9)
-    .text(formatDate(student.evaluationDate), 450, 42, { align: "right" });
+    .rect(headerX + logoWidth, headerY, titleWidth, headerHeight)
+    .stroke();
+  doc
+    .rect(
+      headerX + logoWidth + titleWidth,
+      headerY,
+      dateWidth,
+      headerHeight
+    )
+    .stroke();
+
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, headerX + 8, headerY + 6, {
+      fit: [logoWidth - 16, headerHeight - 12],
+      align: "left",
+      valign: "center"
+    });
+  } else {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(12)
+      .fillColor(theme.text)
+      .text("EMF", headerX + 12, headerY + 12, { width: logoWidth - 24 });
+  }
 
   doc
-    .roundedRect(40, 64, 515, 24, 6)
-    .fillAndStroke(theme.primaryLight, theme.primary)
+    .font("Helvetica-Bold")
+    .fontSize(12)
     .fillColor(theme.text)
+    .text(reportTitle, headerX + logoWidth, headerY + 12, {
+      width: titleWidth,
+      align: "center"
+    });
+  doc
+    .font("Helvetica")
     .fontSize(10)
-    .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 48, 72);
+    .text(formatDate(new Date()), headerX + logoWidth + titleWidth, headerY + 12, {
+      width: dateWidth,
+      align: "center"
+    });
 
+  const moduleBarY = headerY + headerHeight + 8;
+  const moduleBarHeight = 28;
+
+  doc
+    .rect(40, moduleBarY, 515, moduleBarHeight)
+    .fillAndStroke("#fbd2a3", theme.text)
+    .fillColor(theme.text)
+    .fontSize(11)
+    .font("Helvetica-Bold")
+    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
+      width: 515,
+      align: "center"
+    });
+
+  const infoBoxY = moduleBarY + moduleBarHeight + 8;
+  const infoBoxHeight = 110;
   doc
     .font("Helvetica")
     .fontSize(9)
     .fillColor(theme.text)
-    .rect(40, 92, 515, 110)
+    .rect(40, infoBoxY, 515, infoBoxHeight)
     .stroke(theme.border);
 
-  drawKeyValue(doc, "Apprenant", student.name, 48, 100);
-  drawKeyValue(doc, "Classe", student.className || "", 48, 114);
-  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, 128);
-  drawKeyValue(doc, "Type d'évaluation", student.evaluationType || "", 48, 142);
-  drawKeyValue(doc, "Date d'évaluation", formatDate(student.evaluationDate), 48, 156);
-  drawKeyValue(doc, "Date de coaching", formatDate(student.coachingDate), 48, 170);
+  drawKeyValue(doc, "Apprenant", student.name, 48, infoBoxY + 8);
+  drawKeyValue(doc, "Classe", student.className || "", 48, infoBoxY + 22);
+  drawKeyValue(doc, "Enseignant", student.teacher || "", 48, infoBoxY + 36);
+  drawKeyValue(
+    doc,
+    "Type d'évaluation",
+    student.evaluationType || "",
+    48,
+    infoBoxY + 50
+  );
+  drawKeyValue(
+    doc,
+    "Date d'évaluation",
+    formatDate(student.evaluationDate),
+    48,
+    infoBoxY + 64
+  );
+  drawKeyValue(
+    doc,
+    "Date de coaching",
+    formatDate(student.coachingDate),
+    48,
+    infoBoxY + 78
+  );
 
   doc
     .fontSize(9)
     .fillColor(theme.text)
-    .text("Note du module", 360, 104)
+    .text("Note du module", 360, infoBoxY + 12)
     .font("Helvetica-Bold")
     .fontSize(16)
-    .text(student.score || "", 360, 118)
+    .text(student.score || "", 360, infoBoxY + 26)
     .font("Helvetica");
 
-  const summaryTitleY = 214;
+  const summaryTitleY = infoBoxY + infoBoxHeight + 12;
   const summaryBodyY = summaryTitleY + 12;
 
   doc
