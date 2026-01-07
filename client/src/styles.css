@@ -178,11 +178,6 @@ h1 {
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.18);
 }
 
-.student-card.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-
 .student-name {
   margin: 0 0 6px;
   font-weight: 600;
