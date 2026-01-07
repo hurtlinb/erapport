@@ -1042,6 +1042,36 @@ function App() {
           {showDetails && (
             <div className="form-grid details-grid">
               <label>
+                Last name
+                <input
+                  type="text"
+                  value={draft.name}
+                  readOnly
+                  disabled
+                  placeholder="Doe"
+                />
+              </label>
+              <label>
+                First name
+                <input
+                  type="text"
+                  value={draft.firstname}
+                  readOnly
+                  disabled
+                  placeholder="Jane"
+                />
+              </label>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={draft.email}
+                  readOnly
+                  disabled
+                  placeholder="student@example.com"
+                />
+              </label>
+              <label>
                 School year
                 <input
                   type="text"
