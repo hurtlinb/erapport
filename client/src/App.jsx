@@ -320,17 +320,6 @@ function App() {
       ),
     [activeEvaluationType, activeModuleId, students]
   );
-  const availableEvaluationTypes = useMemo(
-    () =>
-      EVALUATION_TYPES.filter((type) =>
-        students.some(
-          (student) =>
-            student.moduleId === activeModuleId &&
-            getStudentEvaluationType(student) === type
-        )
-      ),
-    [activeModuleId, students]
-  );
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
@@ -410,17 +399,6 @@ function App() {
       setActiveModuleId(modules[0]?.id || "");
     }
   }, [activeModuleId, modules]);
-
-  useEffect(() => {
-    if (!activeModuleId) return;
-    if (availableEvaluationTypes.length === 0) {
-      setActiveEvaluationType(EVALUATION_TYPES[0]);
-      return;
-    }
-    if (!availableEvaluationTypes.includes(activeEvaluationType)) {
-      setActiveEvaluationType(availableEvaluationTypes[0]);
-    }
-  }, [activeEvaluationType, activeModuleId, availableEvaluationTypes]);
 
   useEffect(() => {
     setSelectedId((prev) => {
@@ -954,13 +932,6 @@ function App() {
                     name="module-evaluation-type"
                     value={type}
                     checked={activeEvaluationType === type}
-                    disabled={
-                      !students.some(
-                        (student) =>
-                          student.moduleId === activeModuleId &&
-                          getStudentEvaluationType(student) === type
-                      )
-                    }
                     onChange={(event) =>
                       handleEvaluationTypeChange(event.target.value)
                     }
@@ -1505,19 +1476,12 @@ function App() {
                   }
                 >
                   {EVALUATION_TYPES.map((type) => (
-                    <option
-                      key={type}
-                      value={type}
-                      disabled={
-                        !students.some(
-                          (student) =>
-                            student.moduleId === activeModuleId &&
-                            getStudentEvaluationType(student) === type
-                        )
-                      }
-                    >
-                      {type}
-                    </option>
+                  <option
+                    key={type}
+                    value={type}
+                  >
+                    {type}
+                  </option>
                   ))}
                 </select>
               </label>
