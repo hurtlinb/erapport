@@ -96,7 +96,7 @@ const TASK_EVALUATION_METHODS = [
   { value: "Evaluation pratique", label: "🧪 Evaluation pratique" },
   { value: "Documentation", label: "📚 Documentation" }
 ];
-const SCHOOL_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
+const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 const API_BASE_URL = "http://localhost:3001";
 
 const STATUS_VALUES = {
@@ -284,13 +284,11 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
     }));
   }
 
-  return [
-    {
-      id: crypto.randomUUID(),
-      label: defaultTemplate.schoolYear,
-      modules: normalizeModules([], defaultTemplate.schoolYear)
-    }
-  ];
+  return SCHOOL_YEARS.map((label) => ({
+    id: crypto.randomUUID(),
+    label,
+    modules: normalizeModules([], label)
+  }));
 };
 
 const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
@@ -939,18 +937,6 @@ function App() {
     }));
   };
 
-  const handleAddSchoolYear = () => {
-    const existingLabels = schoolYears.map((year) => year.label);
-    const nextLabel =
-      SCHOOL_YEARS.find((year) => !existingLabels.includes(year)) ||
-      `New school year ${existingLabels.length + 1}`;
-    const newSchoolYear = buildDefaultSchoolYear(nextLabel);
-    setSchoolYears((prev) => [...prev, newSchoolYear]);
-    setActiveSchoolYearId(newSchoolYear.id);
-    setActiveModuleId(newSchoolYear.modules[0]?.id || "");
-    setActiveEvaluationType(EVALUATION_TYPES[0]);
-  };
-
   const handleAddModule = () => {
     if (!activeSchoolYear) {
       const fallbackSchoolYear = buildDefaultSchoolYear();
@@ -1101,9 +1087,6 @@ function App() {
                 onClick={() => setIsTemplateModalOpen(true)}
               >
                 Modify template
-              </button>
-              <button className="button primary" onClick={handleAddSchoolYear}>
-                New school year
               </button>
               <button className="button primary" onClick={handleAddModule}>
                 New module
