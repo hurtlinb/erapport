@@ -179,20 +179,13 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
     .rect(summaryTable.x, y, summaryTable.columnWidths.category, rowHeight)
     .stroke(theme.text)
     .rect(resultX, y, summaryTable.columnWidths.result, rowHeight)
-    .fillAndStroke(theme.status.OK.fill, theme.text);
+    .stroke(theme.text);
 
   doc
-    .fontSize(7)
-    .font("Helvetica-Bold")
-    .fillColor(theme.text)
-    .text("Note du module", resultX + 2, y + 4, {
-      width: summaryTable.columnWidths.result - 4,
-      align: "center"
-    })
     .font("Helvetica-Bold")
     .fontSize(12)
-    .fillColor(theme.status.OK.text)
-    .text(noteValue, resultX, y + 12, {
+    .fillColor(theme.text)
+    .text(noteValue, resultX, y + 7, {
       width: summaryTable.columnWidths.result,
       align: "center"
     });
