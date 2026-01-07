@@ -275,13 +275,16 @@ app.post("/api/report", (req, res) => {
 
   const operationalTitleY = infoBoxY + infoBoxHeight + 12;
   const operationalBodyY = operationalTitleY + 12;
-  const summaryTitleY = operationalBodyY + 20;
-  const summaryBodyY = summaryTitleY + 12;
+  const objectivesTitleY = operationalBodyY + 22;
+  const objectivesBodyY = objectivesTitleY + 12;
+  const objectivesList = (student.competencyOptions || [])
+    .map((option) => `${option.code}: ${option.description}`)
+    .join("\n");
 
   doc
     .fontSize(9)
     .fillColor(theme.text)
-    .text("Compétence opérationnelle", 40, operationalTitleY)
+    .text("Compétences opérationnelles :", 40, operationalTitleY)
     .fontSize(8)
     .fillColor(theme.muted)
     .text(student.operationalCompetence || "-", 40, operationalBodyY, {
@@ -289,10 +292,10 @@ app.post("/api/report", (req, res) => {
     })
     .fontSize(9)
     .fillColor(theme.text)
-    .text("Résumé", 40, summaryTitleY)
+    .text("Objectifs opérationnels", 40, objectivesTitleY)
     .fontSize(8)
     .fillColor(theme.muted)
-    .text(student.note || "-", 40, summaryBodyY, { width: 515 });
+    .text(objectivesList || "-", 40, objectivesBodyY, { width: 515 });
 
   let cursorY = doc.y + 24;
   student.competencies?.forEach((section) => {
