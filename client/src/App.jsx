@@ -341,6 +341,9 @@ function App() {
   const [draft, setDraft] = useState(() => buildStudentFromTemplate(template));
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isNewStudentModalOpen, setIsNewStudentModalOpen] = useState(false);
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentError, setNewStudentError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const moduleStudents = useMemo(
     () => students.filter((student) => student.moduleId === activeModuleId),
@@ -502,7 +505,30 @@ function App() {
   };
 
   const handleNewStudent = () => {
-    setSelectedId("");
+    setNewStudentName("");
+    setNewStudentError("");
+    setIsNewStudentModalOpen(true);
+  };
+
+  const handleCreateStudent = (event) => {
+    if (event?.preventDefault) {
+      event.preventDefault();
+    }
+    const trimmedName = newStudentName.trim();
+    if (!trimmedName) {
+      setNewStudentError("Please enter a student name.");
+      return;
+    }
+    const newStudent = {
+      ...buildStudentFromTemplate(template),
+      name: trimmedName
+    };
+    setStudents((prev) => [...prev, newStudent]);
+    setSelectedId(newStudent.id);
+    setIsEditing(true);
+    setIsNewStudentModalOpen(false);
+    setNewStudentName("");
+    setNewStudentError("");
   };
 
   const handleGeneratePdf = async () => {
@@ -1078,6 +1104,59 @@ function App() {
           </div>
         </section>
       </main>
+
+      {isNewStudentModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2>New student</h2>
+                <p className="helper-text">
+                  Enter the student name to start a new report.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsNewStudentModalOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <form onSubmit={handleCreateStudent}>
+              <label>
+                Student name
+                <input
+                  type="text"
+                  value={newStudentName}
+                  onChange={(event) => {
+                    setNewStudentName(event.target.value);
+                    setNewStudentError("");
+                  }}
+                  placeholder="e.g. Alex Dupont"
+                  autoFocus
+                />
+              </label>
+              {newStudentError && (
+                <p className="helper-text error-text">{newStudentError}</p>
+              )}
+              <div className="actions align-start modal-actions">
+                <div className="action-row">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setIsNewStudentModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="button primary">
+                    Create student
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isTemplateModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
