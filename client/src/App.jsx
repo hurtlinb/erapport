@@ -801,6 +801,9 @@ function App() {
                 })}
               </select>
             </label>
+            <button className="button ghost" onClick={handleAddModule}>
+              New module
+            </button>
             <p className="helper-text">
               Switch modules to load their specific template and student list.
             </p>
@@ -1098,9 +1101,6 @@ function App() {
                     E3 evaluations.
                   </p>
                 </div>
-                <button className="button ghost" onClick={handleAddModule}>
-                  + Add module
-                </button>
               </div>
               <div className="module-list">
                 {modules.map((module) => (
