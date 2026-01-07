@@ -85,6 +85,34 @@ const getStatusStyle = (status) => {
   return theme.status.DEFAULT;
 };
 
+const getRemediationValue = (competencies = []) => {
+  const allItems = competencies.flatMap((section) => section.items || []);
+  if (allItems.length === 0) {
+    return "-";
+  }
+
+  const hasNonOk = allItems.some((item) => item.status !== STATUS_VALUES.OK);
+  if (!hasNonOk) {
+    return "Aucune remédiation";
+  }
+
+  const remediationMethods = new Set();
+  allItems.forEach((item) => {
+    if (item.status !== STATUS_VALUES.NOT_ASSESSED) {
+      return;
+    }
+    if (item.evaluationMethod) {
+      remediationMethods.add(item.evaluationMethod);
+    }
+  });
+
+  if (remediationMethods.size === 0) {
+    return "-";
+  }
+
+  return Array.from(remediationMethods).join(" + ");
+};
+
 const competencyTable = {
   x: 40,
   width: 515,
@@ -548,17 +576,31 @@ app.post("/api/report", (req, res) => {
     cursorY = 40;
   }
 
+  const remediationValue = getRemediationValue(student.competencies);
+  const remediationHeight = 18;
+  const remarksHeight = 22;
+
   doc
-    .roundedRect(40, cursorY, 515, 70, 6)
-    .fillAndStroke(theme.primaryLight, theme.primary)
-    .fillColor(theme.text)
-    .fontSize(9)
+    .rect(40, cursorY, 515, remediationHeight)
+    .stroke(theme.text)
     .font("Helvetica-Bold")
-    .text("Remarques", 48, cursorY + 8)
-    .font("Helvetica")
     .fontSize(8)
-    .fillColor(theme.muted)
-    .text(student.remarks || "-", 48, cursorY + 22, { width: 490 });
+    .fillColor(theme.text)
+    .text("A remédier :", 46, cursorY + 4)
+    .font("Helvetica")
+    .text(remediationValue, 120, cursorY + 4, { width: 430 });
+
+  cursorY += remediationHeight;
+
+  doc
+    .rect(40, cursorY, 515, remarksHeight)
+    .stroke(theme.text)
+    .font("Helvetica-Bold")
+    .fontSize(8)
+    .fillColor(theme.text)
+    .text("Remarques :", 46, cursorY + 5)
+    .font("Helvetica")
+    .text(student.remarks || "-", 120, cursorY + 5, { width: 430 });
 
   doc.end();
 });
