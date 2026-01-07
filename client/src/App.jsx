@@ -865,6 +865,23 @@ function App() {
                 })}
               </select>
             </label>
+            <fieldset className="module-evaluation-selector">
+              <legend>Report type</legend>
+              {EVALUATION_TYPES.map((type) => (
+                <label key={type} className="module-evaluation-option">
+                  <input
+                    type="radio"
+                    name="module-evaluation-type"
+                    value={type}
+                    checked={template.evaluationType === type}
+                    onChange={(event) =>
+                      handleTemplateField("evaluationType", event.target.value)
+                    }
+                  />
+                  <span>{type}</span>
+                </label>
+              ))}
+            </fieldset>
             <p className="helper-text">
               Switch modules to load their specific template and student list.
             </p>
