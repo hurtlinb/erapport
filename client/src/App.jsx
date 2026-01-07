@@ -660,6 +660,8 @@ function App() {
                 type="text"
                 value={draft.name}
                 onChange={(event) => handleStudentField("name", event.target.value)}
+                readOnly={isEditing}
+                disabled={isEditing}
                 placeholder="Barbara Ayoub"
               />
             </label>
