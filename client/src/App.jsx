@@ -1093,25 +1093,34 @@ function App() {
               </p>
             </div>
             {(draft.competencies || []).length ? (
-              <div className="report-summary-grid">
-                {(draft.competencies || []).map((section, sectionIndex) => {
-                  const statusClass = getStatusClass(section.result);
-                  return (
-                    <div
-                      key={`${section.category}-${sectionIndex}`}
-                      className={`report-summary-card ${statusClass}`}
-                    >
-                      <p className="summary-category">{section.category}</p>
-                      <p className="summary-result">
-                        <span className="summary-result-label">Result</span>
-                        <span className="summary-result-value">
-                          {section.result || "—"}
-                        </span>
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
+              <table className="report-summary-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Category</th>
+                    <th scope="col">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(draft.competencies || []).map((section, sectionIndex) => {
+                    const statusClass = getStatusClass(section.result);
+                    return (
+                      <tr
+                        key={`${section.category}-${sectionIndex}`}
+                        className={`report-summary-row ${statusClass}`}
+                      >
+                        <td className="summary-category">
+                          {section.category || "—"}
+                        </td>
+                        <td className="summary-result">
+                          <span className="summary-result-value">
+                            {section.result || "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             ) : (
               <p className="helper-text">No categories yet.</p>
             )}
