@@ -115,14 +115,14 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
-const normalizeTemplate = (template, module, evaluationType) => {
+const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
   return {
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
     moduleTitle: module.title || "",
-    schoolYear: module.schoolYear || "",
+    schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     competencyOptions:
@@ -131,7 +131,7 @@ const normalizeTemplate = (template, module, evaluationType) => {
   };
 };
 
-const normalizeModuleTemplates = (module) => {
+const normalizeModuleTemplates = (module, schoolYearLabel) => {
   const baseTemplates =
     module.templates && typeof module.templates === "object" ? module.templates : {};
   if (module.template && !baseTemplates[EVALUATION_TYPES[0]]) {
@@ -139,49 +139,105 @@ const normalizeModuleTemplates = (module) => {
   }
 
   return EVALUATION_TYPES.reduce((acc, type) => {
-    acc[type] = normalizeTemplate(baseTemplates[type] || {}, module, type);
+    acc[type] = normalizeTemplate(
+      baseTemplates[type] || {},
+      module,
+      schoolYearLabel,
+      type
+    );
     return acc;
   }, {});
 };
 
-const buildDefaultModule = (overrides = {}, templateOverrides = {}) => {
+const buildDefaultModule = (
+  overrides = {},
+  templateOverrides = {},
+  schoolYearLabel = defaultTemplate.schoolYear
+) => {
   const module = {
     id: overrides.id ?? crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle,
-    schoolYear: overrides.schoolYear ?? defaultTemplate.schoolYear
+    title: overrides.title ?? defaultTemplate.moduleTitle
   };
 
   return {
     ...module,
-    templates: normalizeModuleTemplates({
-      ...module,
-      templates: {
-        [EVALUATION_TYPES[0]]: templateOverrides
-      }
-    })
+    templates: normalizeModuleTemplates(
+      {
+        ...module,
+        templates: {
+          [EVALUATION_TYPES[0]]: templateOverrides
+        }
+      },
+      schoolYearLabel
+    )
   };
 };
 
-const normalizeModules = (modules = []) => {
+const normalizeModules = (modules = [], schoolYearLabel) => {
   if (!Array.isArray(modules) || modules.length === 0) {
-    return [buildDefaultModule()];
+    return [buildDefaultModule({}, {}, schoolYearLabel)];
   }
 
   return modules.map((module) => {
     const normalizedModule = {
       id: module.id || crypto.randomUUID(),
-      title: module.title || "",
-      schoolYear: module.schoolYear || ""
+      title: module.title || ""
     };
 
     return {
       ...normalizedModule,
-      templates: normalizeModuleTemplates({
-        ...normalizedModule,
-        templates: normalizeModuleTemplates(module)
-      })
+      templates: normalizeModuleTemplates(
+        {
+          ...normalizedModule,
+          templates: normalizeModuleTemplates(module, schoolYearLabel)
+        },
+        schoolYearLabel
+      )
     };
   });
+};
+
+const normalizeSchoolYears = (schoolYears = [], modules = []) => {
+  if (Array.isArray(schoolYears) && schoolYears.length > 0) {
+    return schoolYears.map((schoolYear) => {
+      const label =
+        schoolYear.label ||
+        schoolYear.schoolYear ||
+        schoolYear.year ||
+        defaultTemplate.schoolYear;
+      return {
+        id: schoolYear.id || crypto.randomUUID(),
+        label,
+        modules: normalizeModules(schoolYear.modules || [], label)
+      };
+    });
+  }
+
+  if (Array.isArray(modules) && modules.length > 0) {
+    const groupedModules = modules.reduce((acc, module) => {
+      const label = module.schoolYear || defaultTemplate.schoolYear;
+      if (!acc[label]) {
+        acc[label] = [];
+      }
+      const { schoolYear, ...rest } = module;
+      acc[label].push(rest);
+      return acc;
+    }, {});
+
+    return Object.entries(groupedModules).map(([label, yearModules]) => ({
+      id: crypto.randomUUID(),
+      label,
+      modules: normalizeModules(yearModules, label)
+    }));
+  }
+
+  return [
+    {
+      id: crypto.randomUUID(),
+      label: defaultTemplate.schoolYear,
+      modules: normalizeModules([], defaultTemplate.schoolYear)
+    }
+  ];
 };
 
 const normalizeStudent = (student) => ({
@@ -192,7 +248,7 @@ const normalizeStudent = (student) => ({
 const normalizeState = (state) => {
   const nextState = state || {};
   return {
-    modules: normalizeModules(nextState.modules),
+    schoolYears: normalizeSchoolYears(nextState.schoolYears, nextState.modules),
     students: Array.isArray(nextState.students)
       ? nextState.students.map(normalizeStudent)
       : []
