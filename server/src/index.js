@@ -56,6 +56,12 @@ const getEvaluationNumber = (value) => {
   return matchedNumber ? matchedNumber[1] : "";
 };
 
+const getStudentDisplayName = (student) => {
+  const firstName = student?.firstname?.trim() || "";
+  const lastName = student?.name?.trim() || "";
+  return [firstName, lastName].filter(Boolean).join(" ");
+};
+
 const getStatusStyle = (status) => {
   if (status === STATUS_VALUES.OK) {
     return theme.status.OK;
@@ -237,12 +243,13 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
 
 app.post("/api/report", (req, res) => {
   const student = req.body;
+  const studentDisplayName = getStudentDisplayName(student);
 
   const doc = new PDFDocument({ margin: 40, size: "A4" });
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename="${student.name || "report"}.pdf"`
+    `attachment; filename="${studentDisplayName || "report"}.pdf"`
   );
   doc.pipe(res);
 
@@ -366,7 +373,7 @@ app.post("/api/report", (req, res) => {
   doc
     .font("Helvetica-Bold")
     .fontSize(12)
-    .text(student.name || "-", middleColumnX, infoBoxY + 6, {
+    .text(studentDisplayName || "-", middleColumnX, infoBoxY + 6, {
       width: infoColumnWidths[1] - 16
     })
     .font("Helvetica-Oblique")

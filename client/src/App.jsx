@@ -230,9 +230,18 @@ const applyTemplateToStudent = (template, student) => ({
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
 
+const getStudentDisplayName = (student) => {
+  const firstName = student.firstname?.trim() || "";
+  const lastName = student.name?.trim() || "";
+  return [firstName, lastName].filter(Boolean).join(" ");
+};
+
+const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
+
 const buildStudentFromTemplate = (template) => ({
   id: crypto.randomUUID(),
   name: "",
+  firstname: "",
   email: "",
   moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
@@ -259,6 +268,8 @@ function loadStudents() {
 
     const normalizedStudents = students.map((student) => ({
       ...student,
+      firstname: student.firstname || "",
+      email: student.email || "",
       competencies: (student.competencies || []).map((section) => ({
         ...section,
         items: (section.items || []).map((item) => ({
@@ -454,14 +465,14 @@ function App() {
           );
         }
 
-        if (!nextDraft.name.trim()) {
+        if (!hasStudentIdentity(nextDraft)) {
           return prevStudents;
         }
 
         return [...prevStudents, { ...nextDraft }];
       });
 
-      if (nextDraft.name.trim()) {
+      if (hasStudentIdentity(nextDraft)) {
         setSelectedId(nextDraft.id);
         setIsEditing(true);
       }
@@ -563,7 +574,8 @@ function App() {
 
     const importedStudents = rows.map(([lastName, firstName, email]) => ({
       ...buildStudentFromTemplate(template),
-      name: `${firstName} ${lastName}`.trim(),
+      name: lastName || "",
+      firstname: firstName || "",
       email: email || ""
     }));
 
@@ -576,7 +588,7 @@ function App() {
   };
 
   const handleGeneratePdf = async () => {
-    if (!draft.name.trim()) {
+    if (!hasStudentIdentity(draft)) {
       alert("Please enter the student's name.");
       return;
     }
@@ -595,7 +607,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${draft.name}-evaluation-report.pdf`;
+    link.download = `${getStudentDisplayName(draft)}-evaluation-report.pdf`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -945,7 +957,9 @@ function App() {
                 onClick={() => setSelectedId(student.id)}
               >
                 <div>
-                  <p className="student-name">{student.name}</p>
+                  <p className="student-name">
+                    {getStudentDisplayName(student) || "Unnamed student"}
+                  </p>
                   <p className="student-meta">
                     {student.className || "No class"} •{" "}
                     {student.evaluationDate || "No date"}
@@ -969,7 +983,7 @@ function App() {
           <div className="panel-header">
             <h2>
               {isEditing
-                ? draft.name || "Edit report"
+                ? getStudentDisplayName(draft) || "Edit report"
                 : "New report"}
             </h2>
             <div className="actions">
@@ -977,6 +991,42 @@ function App() {
                 Generate PDF
               </button>
             </div>
+          </div>
+
+          <div className="form-grid">
+            <label>
+              Last name
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(event) =>
+                  handleStudentField("name", event.target.value)
+                }
+                placeholder="Doe"
+              />
+            </label>
+            <label>
+              First name
+              <input
+                type="text"
+                value={draft.firstname}
+                onChange={(event) =>
+                  handleStudentField("firstname", event.target.value)
+                }
+                placeholder="Jane"
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="email"
+                value={draft.email}
+                onChange={(event) =>
+                  handleStudentField("email", event.target.value)
+                }
+                placeholder="student@example.com"
+              />
+            </label>
           </div>
 
           <div className="details-toggle-row">
@@ -991,6 +1041,36 @@ function App() {
           </div>
           {showDetails && (
             <div className="form-grid details-grid">
+              <label>
+                Last name
+                <input
+                  type="text"
+                  value={draft.name}
+                  readOnly
+                  disabled
+                  placeholder="Doe"
+                />
+              </label>
+              <label>
+                First name
+                <input
+                  type="text"
+                  value={draft.firstname}
+                  readOnly
+                  disabled
+                  placeholder="Jane"
+                />
+              </label>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={draft.email}
+                  readOnly
+                  disabled
+                  placeholder="student@example.com"
+                />
+              </label>
               <label>
                 School year
                 <input
