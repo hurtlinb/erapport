@@ -23,15 +23,17 @@ const DEFAULT_COMPETENCIES = [
     category: "Active Directory",
     items: [
       {
-        task: "Explain the role of a domain controller",
+        task:
+          "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
         competencyId: "OO1"
       },
       {
-        task: "Create users and groups in an OU",
-        competencyId: "OO1"
+        task:
+          "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+        competencyId: "OO2"
       },
       {
-        task: "Join a workstation to the domain",
+        task: "Est capable de joindre des clients/serveurs au domaine",
         competencyId: "OO3"
       }
     ]
@@ -39,17 +41,51 @@ const DEFAULT_COMPETENCIES = [
   {
     category: "DNS",
     items: [
-      { task: "Create forward lookup zones", competencyId: "OO2" },
-      { task: "Configure A and CNAME records", competencyId: "OO2" },
-      { task: "Verify name resolution", competencyId: "OO3" }
+      {
+        task:
+          "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Est capable de configurer des zones de recherches directes et inverses",
+        competencyId: "OO2"
+      },
+      {
+        task:
+          "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+        competencyId: "OO2"
+      }
     ]
   },
   {
     category: "DHCP",
     items: [
-      { task: "Create a scope with options", competencyId: "OO2" },
-      { task: "Reserve an address", competencyId: "OO2" },
-      { task: "Validate client lease", competencyId: "OO3" }
+      {
+        task:
+          "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+        competencyId: "OO1"
+      },
+      {
+        task:
+          "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+        competencyId: "OO2"
+      },
+      {
+        task:
+          "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+        competencyId: "OO2"
+      }
     ]
   }
 ];
