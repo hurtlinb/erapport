@@ -32,6 +32,28 @@ const STATUS_VALUES = {
   NOT_ASSESSED: "NOK"
 };
 
+const formatDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("fr-FR");
+};
+
+const getEvaluationNumber = (value) => {
+  if (!value) return "";
+  const normalizedValue = String(value).trim().toUpperCase();
+  const evaluationMap = {
+    E1: "1",
+    E2: "2",
+    E3: "3"
+  };
+  if (evaluationMap[normalizedValue]) {
+    return evaluationMap[normalizedValue];
+  }
+  const matchedNumber = normalizedValue.match(/E(\d+)/);
+  return matchedNumber ? matchedNumber[1] : "";
+};
+
 const getStatusStyle = (status) => {
   if (status === STATUS_VALUES.OK) {
     return theme.status.OK;
@@ -107,7 +129,78 @@ app.post("/api/report", (req, res) => {
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const infoBoxY = 40;
+  const logoPath = path.join(__dirname, "emf.png");
+  const headerX = 40;
+  const headerY = 40;
+  const headerWidth = 515;
+  const headerHeight = 40;
+  const logoWidth = 150;
+  const dateWidth = 90;
+  const titleWidth = headerWidth - logoWidth - dateWidth;
+  const evaluationNumber = getEvaluationNumber(student.evaluationType);
+  const reportTitle = `Rapport d'évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  }`;
+
+  doc.lineWidth(0.6).strokeColor(theme.text);
+  doc.rect(headerX, headerY, logoWidth, headerHeight).stroke();
+  doc
+    .rect(headerX + logoWidth, headerY, titleWidth, headerHeight)
+    .stroke();
+  doc
+    .rect(
+      headerX + logoWidth + titleWidth,
+      headerY,
+      dateWidth,
+      headerHeight
+    )
+    .stroke();
+
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, headerX + 8, headerY + 6, {
+      fit: [logoWidth - 16, headerHeight - 12],
+      align: "left",
+      valign: "center"
+    });
+  } else {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(12)
+      .fillColor(theme.text)
+      .text("EMF", headerX + 12, headerY + 12, { width: logoWidth - 24 });
+  }
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor(theme.text)
+    .text(reportTitle, headerX + logoWidth, headerY + 12, {
+      width: titleWidth,
+      align: "center"
+    });
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .text(formatDate(new Date()), headerX + logoWidth + titleWidth, headerY + 12, {
+      width: dateWidth,
+      align: "center"
+    });
+
+  const moduleBarY = headerY + headerHeight + 8;
+  const moduleBarHeight = 28;
+
+  doc
+    .rect(40, moduleBarY, 515, moduleBarHeight)
+    .fillAndStroke("#fbd2a3", theme.text)
+    .fillColor(theme.text)
+    .fontSize(11)
+    .font("Helvetica-Bold")
+    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
+      width: 515,
+      align: "center"
+    });
+
+  const infoBoxY = moduleBarY + moduleBarHeight + 8;
   const infoRowHeight = 26;
   const infoRows = 2;
   const infoBoxHeight = infoRowHeight * infoRows;
@@ -182,62 +275,26 @@ app.post("/api/report", (req, res) => {
 
   const operationalTitleY = infoBoxY + infoBoxHeight + 12;
   const operationalBodyY = operationalTitleY + 12;
-  const moduleCodeY = operationalBodyY + 20;
-  const objectivesBoxY = moduleCodeY + 12;
-  const objectivesPadding = 8;
-  const objectivesContentWidth = 515 - objectivesPadding * 2;
-  const objectivesEntries = student.competencyOptions?.length
-    ? student.competencyOptions.map((option) => {
-        const description = option.description ? `: ${option.description}` : "";
-        return `${option.code || "-"}${description}`;
-      })
-    : ["-"];
-  const objectivesText = objectivesEntries.join("\n");
-  const objectivesTextHeight = doc.heightOfString(objectivesText, {
-    width: objectivesContentWidth,
-    lineGap: 2
-  });
-  const objectivesBoxHeight = objectivesTextHeight + objectivesPadding * 2 + 12;
-  const objectivesTitleY = objectivesBoxY + objectivesPadding - 2;
-  const objectivesTextY = objectivesTitleY + 12;
+  const summaryTitleY = operationalBodyY + 20;
+  const summaryBodyY = summaryTitleY + 12;
 
   doc
-    .fontSize(10)
+    .fontSize(9)
     .fillColor(theme.text)
-    .font("Helvetica-Bold")
-    .text("Compétences opérationnelles :", 40, operationalTitleY)
-    .font("Helvetica")
+    .text("Compétence opérationnelle", 40, operationalTitleY)
     .fontSize(8)
-    .fillColor(theme.text)
+    .fillColor(theme.muted)
     .text(student.operationalCompetence || "-", 40, operationalBodyY, {
       width: 515
     })
     .fontSize(9)
     .fillColor(theme.text)
-    .font("Helvetica")
-    .text(student.moduleTitle || "-", 40, moduleCodeY, { width: 515 });
-
-  doc
-    .lineWidth(0.8)
-    .strokeColor("#15803d")
-    .rect(40, objectivesBoxY, 515, objectivesBoxHeight)
-    .stroke();
-  doc
-    .fillColor(theme.text)
-    .font("Helvetica-Bold")
-    .fontSize(9)
-    .text("Objectifs opérationnels", 40 + objectivesPadding, objectivesTitleY, {
-      width: objectivesContentWidth
-    })
-    .font("Helvetica")
+    .text("Résumé", 40, summaryTitleY)
     .fontSize(8)
-    .fillColor(theme.text)
-    .text(objectivesText, 40 + objectivesPadding, objectivesTextY, {
-      width: objectivesContentWidth,
-      lineGap: 2
-    });
+    .fillColor(theme.muted)
+    .text(student.note || "-", 40, summaryBodyY, { width: 515 });
 
-  let cursorY = objectivesBoxY + objectivesBoxHeight + 16;
+  let cursorY = doc.y + 24;
   student.competencies?.forEach((section) => {
     if (cursorY > 700) {
       doc.addPage();
