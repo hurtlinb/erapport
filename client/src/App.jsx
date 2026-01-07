@@ -654,19 +654,6 @@ function App() {
             </div>
           </div>
 
-          <div className="form-grid">
-            <label>
-              Student name
-              <input
-                type="text"
-                value={draft.name}
-                onChange={(event) => handleStudentField("name", event.target.value)}
-                readOnly={isEditing}
-                disabled={isEditing}
-                placeholder="Barbara Ayoub"
-              />
-            </label>
-          </div>
           <div className="details-toggle-row">
             <button
               type="button"
