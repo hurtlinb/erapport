@@ -1062,12 +1062,11 @@ function App() {
             {(draft.competencies || []).map((section, sectionIndex) => (
               <div key={section.category} className="competency-section">
                 <div className="competency-section-header">
-                  <h3>{section.category}</h3>
                   <label className="category-result">
-                    <span>Result</span>
                     <select
                       className={`status-select ${getStatusClass(section.result)}`}
                       value={section.result}
+                      aria-label="Category result"
                       onChange={(event) =>
                         updateCategoryResult(sectionIndex, event.target.value)
                       }
@@ -1078,6 +1077,7 @@ function App() {
                       <option value={STATUS_VALUES.NOT_ASSESSED}>NOK</option>
                     </select>
                   </label>
+                  <h3>{section.category}</h3>
                 </div>
                 <div className="competency-table">
                   {(section.items || []).map((item, itemIndex) => {
