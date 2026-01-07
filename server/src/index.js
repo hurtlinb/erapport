@@ -177,7 +177,7 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
 
   doc
     .rect(summaryTable.x, y, summaryTable.columnWidths.category, rowHeight)
-    .stroke(theme.text)
+    .fill(theme.status.DEFAULT.fill)
     .rect(resultX, y, summaryTable.columnWidths.result, rowHeight)
     .stroke(theme.text);
 
