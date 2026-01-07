@@ -180,6 +180,14 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
     .fill(theme.status.DEFAULT.fill)
     .rect(resultX, y, summaryTable.columnWidths.result, rowHeight)
     .stroke(theme.text);
+  doc
+    .moveTo(summaryTable.x, y)
+    .lineTo(resultX, y)
+    .stroke(theme.text);
+  doc
+    .moveTo(resultX, y)
+    .lineTo(resultX, y + rowHeight)
+    .stroke(theme.text);
 
   doc
     .font("Helvetica-Bold")
