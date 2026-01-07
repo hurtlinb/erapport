@@ -960,10 +960,6 @@ function App() {
                   <p className="student-name">
                     {getStudentDisplayName(student) || "Unnamed student"}
                   </p>
-                  <p className="student-meta">
-                    {student.className || "No class"} •{" "}
-                    {student.evaluationDate || "No date"}
-                  </p>
                 </div>
                 <button
                   className="button text"
