@@ -97,7 +97,8 @@ const getCompetencyRowHeight = (doc, task, comment) => {
   );
 };
 
-const drawCompetencyHeaderRow = (doc, title, index, y) => {
+const drawCompetencyHeaderRow = (doc, title, index, y, result) => {
+  const statusStyle = getStatusStyle(result);
   doc
     .rect(competencyTable.x, y, competencyTable.width, competencyTable.headerHeight)
     .fillAndStroke(theme.competencyHeader, theme.text)
@@ -105,7 +106,14 @@ const drawCompetencyHeaderRow = (doc, title, index, y) => {
     .fontSize(9)
     .font("Helvetica-Bold")
     .text(`${index + 1}) ${title}`, competencyTable.x + 6, y + 4, {
-      width: competencyTable.width - 12
+      width: competencyTable.width - 90
+    });
+  doc
+    .fillColor(statusStyle.text)
+    .font("Helvetica-Bold")
+    .text(`Result: ${result || "-"}`, competencyTable.x, y + 4, {
+      width: competencyTable.width - 6,
+      align: "right"
     });
   doc.font("Helvetica");
 };
@@ -353,7 +361,13 @@ app.post("/api/report", (req, res) => {
       doc.addPage();
       cursorY = 40;
     }
-    drawCompetencyHeaderRow(doc, section.category, sectionIndex, cursorY);
+    drawCompetencyHeaderRow(
+      doc,
+      section.category,
+      sectionIndex,
+      cursorY,
+      section.result
+    );
     cursorY += competencyTable.headerHeight;
 
     section.items?.forEach((item) => {
