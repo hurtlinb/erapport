@@ -736,6 +736,21 @@ textarea {
   margin-top: 6px;
 }
 
+.app-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.app-footer .helper-text {
+  margin: 0;
+}
+
+.backend-url {
+  font-family: "JetBrains Mono", "SFMono-Regular", "Menlo", monospace;
+  color: #0f172a;
+}
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
