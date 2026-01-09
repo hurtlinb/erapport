@@ -97,7 +97,8 @@ const TASK_EVALUATION_METHODS = [
   { value: "Documentation", label: "📚 Documentation" }
 ];
 const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
-const API_BASE_URL = "http://localhost:3001";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const STATUS_VALUES = {
   OK: "OK",

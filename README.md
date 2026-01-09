@@ -34,3 +34,45 @@ npm run dev
 
 The UI runs on `http://localhost:5173` and expects the API at
 `http://localhost:3001`.
+
+## Production Docker images
+
+This repo contains two Dockerfiles:
+
+- `server/Dockerfile` builds the Node/Express API image.
+- `client/Dockerfile` builds the static Vite app and serves it with Nginx.
+
+### Build the images
+
+From the repository root:
+
+```bash
+docker build -t erapport-server ./server
+docker build --build-arg VITE_API_BASE_URL=http://localhost:3001 -t erapport-client ./client
+```
+
+`VITE_API_BASE_URL` is baked into the frontend at build time, so set it to the
+public URL of the API for your environment.
+
+### Run the containers
+
+```bash
+docker run --name erapport-server -p 3001:3001 erapport-server
+docker run --name erapport-client -p 8080:80 erapport-client
+```
+
+The frontend will be available on `http://localhost:8080` and it will connect to
+the API using the `VITE_API_BASE_URL` used at build time.
+
+### Persisting server state
+
+The server stores data in `server/src/data.json`. If you want data to survive
+container restarts, mount a volume:
+
+```bash
+docker run \
+  --name erapport-server \
+  -p 3001:3001 \
+  -v $(pwd)/server/src/data.json:/app/src/data.json \
+  erapport-server
+```
