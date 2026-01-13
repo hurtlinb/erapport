@@ -450,6 +450,52 @@ const getStudentDisplayName = (student) => {
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
 
+const syncGroupEvaluations = (student, groupName, studentsPool) => {
+  if (!groupName) {
+    return { ...student, groupName };
+  }
+
+  const peerStudent = studentsPool.find(
+    (candidate) =>
+      candidate.id !== student.id &&
+      candidate.moduleId === student.moduleId &&
+      getStudentEvaluationType(candidate) === getStudentEvaluationType(student) &&
+      getStudentGroupName(candidate) === groupName
+  );
+
+  if (!peerStudent) {
+    return { ...student, groupName };
+  }
+
+  const peerCompetencies = peerStudent.competencies || [];
+  const updatedCompetencies = (student.competencies || []).map(
+    (section, sectionIndex) => {
+      if (!section.groupEvaluation) return section;
+      const peerSection = peerCompetencies[sectionIndex];
+      if (!peerSection) return section;
+      return {
+        ...section,
+        result: peerSection.result ?? "",
+        items: (section.items || []).map((item, itemIndex) => {
+          const peerItem = peerSection.items?.[itemIndex];
+          if (!peerItem) return item;
+          return {
+            ...item,
+            status: peerItem.status ?? "",
+            comment: peerItem.comment ?? ""
+          };
+        })
+      };
+    }
+  );
+
+  return {
+    ...student,
+    groupName,
+    competencies: updatedCompetencies
+  };
+};
+
 const buildStudentFromTemplate = (template, teacherId = "") => ({
   id: crypto.randomUUID(),
   name: "",
@@ -1271,14 +1317,23 @@ function App() {
   };
 
   const handleStudentGroupChange = (studentId, value) => {
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.id === studentId ? { ...student, groupName: value } : student
-      )
-    );
-    if (selectedId === studentId) {
-      setDraft((prev) => ({ ...prev, groupName: value }));
-    }
+    setStudents((prev) => {
+      let updatedStudent = null;
+      const nextStudents = prev.map((student) => {
+        if (student.id !== studentId) return student;
+        const nextStudent = template.groupFeatureEnabled
+          ? syncGroupEvaluations({ ...student, groupName: value }, value, prev)
+          : { ...student, groupName: value };
+        updatedStudent = nextStudent;
+        return nextStudent;
+      });
+
+      if (selectedId === studentId && updatedStudent) {
+        setDraft(updatedStudent);
+      }
+
+      return nextStudents;
+    });
   };
 
   const handleRemoveTask = (sectionIndex, itemIndex) => {
