@@ -32,13 +32,13 @@ const getTokenFromRequest = (req) => {
 const requireAuth = (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) {
-    res.status(401).json({ error: "Missing token." });
+    res.status(401).json({ error: "Jeton manquant." });
     return;
   }
   const state = loadState();
   const user = state.users.find((entry) => entry.token === token);
   if (!user) {
-    res.status(401).json({ error: "Invalid token." });
+    res.status(401).json({ error: "Jeton invalide." });
     return;
   }
   req.user = user;
@@ -49,7 +49,7 @@ const requireAuth = (req, res, next) => {
 app.post("/api/auth/register", (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) {
-    res.status(400).json({ error: "Name, email, and password are required." });
+    res.status(400).json({ error: "Nom, e-mail et mot de passe requis." });
     return;
   }
 
@@ -59,7 +59,7 @@ app.post("/api/auth/register", (req, res) => {
     (user) => user.email.toLowerCase() === normalizedEmail
   );
   if (existingUser) {
-    res.status(409).json({ error: "An account already exists for this email." });
+    res.status(409).json({ error: "Un compte existe déjà pour cet e-mail." });
     return;
   }
 
@@ -89,7 +89,7 @@ app.post("/api/auth/register", (req, res) => {
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
-    res.status(400).json({ error: "Email and password are required." });
+    res.status(400).json({ error: "E-mail et mot de passe requis." });
     return;
   }
 
@@ -99,13 +99,13 @@ app.post("/api/auth/login", (req, res) => {
     (entry) => entry.email.toLowerCase() === normalizedEmail
   );
   if (!user) {
-    res.status(401).json({ error: "Invalid credentials." });
+    res.status(401).json({ error: "Identifiants invalides." });
     return;
   }
 
   const passwordHash = hashPassword(password, user.salt);
   if (passwordHash !== user.passwordHash) {
-    res.status(401).json({ error: "Invalid credentials." });
+    res.status(401).json({ error: "Identifiants invalides." });
     return;
   }
 
@@ -218,7 +218,7 @@ const sanitizeFilename = (value) => {
     .trim()
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "");
-  return normalized ? normalized.slice(0, 60) : "report";
+  return normalized ? normalized.slice(0, 60) : "rapport";
 };
 
 const sanitizeReportToken = (value) =>
@@ -241,7 +241,7 @@ const getEvaluationLabel = (evaluationType) => {
 const getStudentNameToken = (student) => {
   const firstName = sanitizeReportToken(student?.firstname);
   const lastName = sanitizeReportToken(student?.name);
-  return `${firstName}${lastName}` || "Student";
+  return `${firstName}${lastName}` || "etudiant";
 };
 
 const buildReportFilename = (student) => {
@@ -266,10 +266,10 @@ const csvEscape = (value) => {
   return stringValue;
 };
 
-const buildOutlookDraftScript = () => `# Creates Outlook draft emails from students.csv
-$csvPath = Join-Path $PSScriptRoot "students.csv"
+const buildOutlookDraftScript = () => `# Crée des brouillons Outlook à partir de etudiants.csv
+$csvPath = Join-Path $PSScriptRoot "etudiants.csv"
 if (-not (Test-Path $csvPath)) {
-  Write-Error "students.csv not found in the same folder as this script."
+  Write-Error "etudiants.csv introuvable dans le même dossier que ce script."
   exit 1
 }
 
@@ -277,18 +277,18 @@ $outlook = New-Object -ComObject Outlook.Application
 $students = Import-Csv $csvPath
 
 foreach ($student in $students) {
-  if (-not $student.StudentEmail) {
+  if (-not $student.EmailEtudiant) {
     continue
   }
 
   $mail = $outlook.CreateItem(0)
-  $mail.To = $student.StudentEmail
-  $mail.Subject = "Evaluation report - $($student.StudentName)"
-  $attachmentPath = Join-Path $PSScriptRoot $student.ReportFilename
+  $mail.To = $student.EmailEtudiant
+  $mail.Subject = "Rapport d'évaluation - $($student.NomEtudiant)"
+  $attachmentPath = Join-Path $PSScriptRoot $student.FichierRapport
   $coachingPath = $null
 
-  if ($student.CoachingFilename) {
-    $coachingPath = Join-Path $PSScriptRoot $student.CoachingFilename
+  if ($student.FichierCoaching) {
+    $coachingPath = Join-Path $PSScriptRoot $student.FichierCoaching
   }
 
   if (Test-Path $attachmentPath) {
@@ -1225,14 +1225,14 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
   const students = Array.isArray(req.body?.students) ? req.body.students : [];
 
   if (students.length === 0) {
-    res.status(400).json({ error: "No students provided for export." });
+    res.status(400).json({ error: "Aucun étudiant fourni pour l'export." });
     return;
   }
 
   res.setHeader("Content-Type", "application/zip");
   res.setHeader(
     "Content-Disposition",
-    'attachment; filename="evaluation-reports.zip"'
+    'attachment; filename="rapports-evaluation.zip"'
   );
 
   const archive = archiver("zip", { zlib: { level: 9 } });
@@ -1247,10 +1247,10 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
   archive.pipe(res);
 
   const csvRows = [[
-    "StudentName",
-    "StudentEmail",
-    "ReportFilename",
-    "CoachingFilename"
+    "NomEtudiant",
+    "EmailEtudiant",
+    "FichierRapport",
+    "FichierCoaching"
   ]];
 
   try {
@@ -1277,9 +1277,9 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
     const csvContent = csvRows
       .map((row) => row.map(csvEscape).join(","))
       .join("\n");
-    archive.append(csvContent, { name: "students.csv" });
+    archive.append(csvContent, { name: "etudiants.csv" });
     archive.append(buildOutlookDraftScript(), {
-      name: "create-outlook-drafts.ps1"
+      name: "creer-brouillons-outlook.ps1"
     });
 
     await archive.finalize();
