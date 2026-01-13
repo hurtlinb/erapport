@@ -1,4 +1,5 @@
 import cors from "cors";
+import crypto from "crypto";
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -12,13 +13,140 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-app.get("/api/state", (req, res) => {
-  res.json(loadState());
+const hashPassword = (password, salt) =>
+  crypto.pbkdf2Sync(password, salt, 120000, 64, "sha512").toString("hex");
+
+const createToken = () => crypto.randomUUID();
+
+const getTokenFromRequest = (req) => {
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) return "";
+  return authHeader.replace("Bearer ", "").trim();
+};
+
+const requireAuth = (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    res.status(401).json({ error: "Missing token." });
+    return;
+  }
+  const state = loadState();
+  const user = state.users.find((entry) => entry.token === token);
+  if (!user) {
+    res.status(401).json({ error: "Invalid token." });
+    return;
+  }
+  req.user = user;
+  req.state = state;
+  next();
+};
+
+app.post("/api/auth/register", (req, res) => {
+  const { name, email, password } = req.body || {};
+  if (!name || !email || !password) {
+    res.status(400).json({ error: "Name, email, and password are required." });
+    return;
+  }
+
+  const state = loadState();
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const existingUser = state.users.find(
+    (user) => user.email.toLowerCase() === normalizedEmail
+  );
+  if (existingUser) {
+    res.status(409).json({ error: "An account already exists for this email." });
+    return;
+  }
+
+  const salt = crypto.randomBytes(16).toString("hex");
+  const passwordHash = hashPassword(password, salt);
+  const token = createToken();
+  const newUser = {
+    id: crypto.randomUUID(),
+    name: String(name).trim(),
+    email: normalizedEmail,
+    passwordHash,
+    salt,
+    token
+  };
+
+  saveState({
+    ...state,
+    users: [...state.users, newUser]
+  });
+
+  res.json({
+    user: { id: newUser.id, name: newUser.name, email: newUser.email },
+    token
+  });
 });
 
-app.put("/api/state", (req, res) => {
-  const updatedState = saveState(req.body);
-  res.json(updatedState);
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    res.status(400).json({ error: "Email and password are required." });
+    return;
+  }
+
+  const state = loadState();
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const user = state.users.find(
+    (entry) => entry.email.toLowerCase() === normalizedEmail
+  );
+  if (!user) {
+    res.status(401).json({ error: "Invalid credentials." });
+    return;
+  }
+
+  const passwordHash = hashPassword(password, user.salt);
+  if (passwordHash !== user.passwordHash) {
+    res.status(401).json({ error: "Invalid credentials." });
+    return;
+  }
+
+  const token = createToken();
+  const updatedUsers = state.users.map((entry) =>
+    entry.id === user.id ? { ...entry, token } : entry
+  );
+  saveState({ ...state, users: updatedUsers });
+
+  res.json({
+    user: { id: user.id, name: user.name, email: user.email },
+    token
+  });
+});
+
+app.get("/api/state", requireAuth, (req, res) => {
+  const { state, user } = req;
+  const filteredStudents = (state.students || []).filter(
+    (student) => student.teacherId === user.id
+  );
+  res.json({ schoolYears: state.schoolYears, students: filteredStudents });
+});
+
+app.put("/api/state", requireAuth, (req, res) => {
+  const { state, user } = req;
+  const teacherId = user.id;
+  const incomingStudents = Array.isArray(req.body.students)
+    ? req.body.students
+    : [];
+  const normalizedStudents = incomingStudents.map((student) => ({
+    ...student,
+    teacherId
+  }));
+  const otherStudents = (state.students || []).filter(
+    (student) => student.teacherId !== teacherId
+  );
+  const nextState = {
+    ...state,
+    schoolYears: req.body.schoolYears || state.schoolYears,
+    students: [...otherStudents, ...normalizedStudents]
+  };
+  const updatedState = saveState(nextState);
+  const filteredStudents = updatedState.students.filter(
+    (student) => student.teacherId === teacherId
+  );
+  res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
 });
 
 const theme = {
@@ -321,7 +449,7 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   doc.font("Helvetica");
 };
 
-app.post("/api/report", (req, res) => {
+app.post("/api/report", requireAuth, (req, res) => {
   const student = req.body;
   const studentDisplayName = getStudentDisplayName(student);
 

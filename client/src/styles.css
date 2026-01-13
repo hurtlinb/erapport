@@ -751,6 +751,41 @@ textarea {
   color: #0f172a;
 }
 
+.auth-page {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.auth-layout {
+  align-items: start;
+}
+
+.auth-panel {
+  width: min(520px, 100%);
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-actions {
+  align-items: center;
+}
+
+.auth-panel-info {
+  max-width: 420px;
+  gap: 12px;
+}
+
+.auth-benefits {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
