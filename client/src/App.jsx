@@ -452,7 +452,7 @@ const sanitizeFilename = (value) => {
     .trim()
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "");
-  return normalized ? normalized.slice(0, 60) : "report";
+  return normalized ? normalized.slice(0, 60) : "rapport";
 };
 
 const sanitizeReportToken = (value) =>
@@ -475,7 +475,7 @@ const getEvaluationLabel = (evaluationType) => {
 const getStudentNameToken = (student) => {
   const firstName = sanitizeReportToken(student?.firstname);
   const lastName = sanitizeReportToken(student?.name);
-  return `${firstName}${lastName}` || "Student";
+  return `${firstName}${lastName}` || "etudiant";
 };
 
 const buildReportFilename = (student) => {
@@ -700,12 +700,12 @@ function App() {
           clearStoredAuth();
           setAuthUser(null);
           setAuthToken("");
-          setAuthError("Your session expired. Please sign in again.");
+          setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
           resetAppState("");
           return;
         }
         if (!response.ok) {
-          throw new Error("Unable to fetch stored data.");
+          throw new Error("Impossible de récupérer les données enregistrées.");
         }
         const data = await response.json();
         setSchoolYears(normalizeSchoolYears(data.schoolYears, data.modules));
@@ -715,7 +715,7 @@ function App() {
       } catch (error) {
         console.error(error);
         setLoadError(
-          "Unable to load saved data from the server. Please try again."
+          "Impossible de charger les données enregistrées depuis le serveur. Veuillez réessayer."
         );
       } finally {
         setIsLoading(false);
@@ -893,16 +893,16 @@ function App() {
     }
     setAuthError("");
     if (!authForm.email || !authForm.password) {
-      setAuthError("Please enter your email and password.");
+      setAuthError("Veuillez saisir votre e-mail et votre mot de passe.");
       return;
     }
     if (authMode === "register") {
       if (!authForm.name) {
-        setAuthError("Please enter your name.");
+        setAuthError("Veuillez saisir votre nom.");
         return;
       }
       if (authForm.password !== authForm.confirmPassword) {
-        setAuthError("Passwords do not match.");
+        setAuthError("Les mots de passe ne correspondent pas.");
         return;
       }
     }
@@ -928,7 +928,7 @@ function App() {
       );
       const data = await response.json();
       if (!response.ok) {
-        setAuthError(data?.error || "Unable to authenticate.");
+        setAuthError(data?.error || "Impossible de vous authentifier.");
         return;
       }
       setAuthUser(data.user);
@@ -937,7 +937,7 @@ function App() {
       setAuthForm({ name: "", email: "", password: "", confirmPassword: "" });
     } catch (error) {
       console.error(error);
-      setAuthError("Unable to authenticate. Please try again.");
+      setAuthError("Impossible de vous authentifier. Veuillez réessayer.");
     } finally {
       setAuthLoading(false);
     }
@@ -1011,7 +1011,7 @@ function App() {
   };
 
   const handleDeleteStudent = (id) => {
-    if (!confirm("Delete this student?")) return;
+    if (!confirm("Supprimer cet étudiant ?")) return;
     setStudents((prev) => prev.filter((student) => student.id !== id));
     if (selectedId === id) {
       setSelectedId("");
@@ -1136,7 +1136,7 @@ function App() {
 
     if (!rows.length) {
       setImportStudentError(
-        "Paste at least one row with a last name and first name."
+        "Collez au moins une ligne avec un nom et un prénom."
       );
       return;
     }
@@ -1158,7 +1158,7 @@ function App() {
 
   const handleGeneratePdf = async () => {
     if (!hasStudentIdentity(draft)) {
-      alert("Please enter the student's name.");
+      alert("Veuillez saisir le nom de l'étudiant.");
       return;
     }
     const response = await fetch(`${API_BASE_URL}/api/report`, {
@@ -1171,7 +1171,7 @@ function App() {
     });
 
     if (!response.ok) {
-      alert("Unable to generate the PDF.");
+      alert("Impossible de générer le PDF.");
       return;
     }
 
@@ -1188,7 +1188,7 @@ function App() {
 
   const handleExportAllReports = async () => {
     if (moduleStudents.length === 0) {
-      alert("No students available to export.");
+      alert("Aucun étudiant à exporter.");
       return;
     }
     setIsExporting(true);
@@ -1203,17 +1203,17 @@ function App() {
       });
 
       if (!response.ok) {
-        alert("Unable to export the reports.");
+        alert("Impossible d'exporter les rapports.");
         return;
       }
 
       const moduleLabel = sanitizeFilename(activeModule?.title || "module");
-      const evaluationLabel = sanitizeFilename(activeEvaluationType || "report");
+      const evaluationLabel = sanitizeFilename(activeEvaluationType || "rapport");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${moduleLabel}-${evaluationLabel}-reports.zip`;
+      link.download = `${moduleLabel}-${evaluationLabel}-rapports.zip`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1312,11 +1312,11 @@ function App() {
       competencies: [
         ...(prev.competencies || []),
         {
-          category: "New category",
+          category: "Nouveau thème",
           groupEvaluation: false,
           items: [
             {
-              task: "New task",
+              task: "Nouvelle tâche",
               competencyId: prev.competencyOptions?.[0]?.code || "",
               evaluationMethod: ""
             }
@@ -1392,7 +1392,7 @@ function App() {
               items: [
                 ...(section.items || []),
                 {
-                  task: "New task",
+                  task: "Nouvelle tâche",
                   competencyId: prev.competencyOptions?.[0]?.code || "",
                   evaluationMethod: ""
                 }
@@ -1448,7 +1448,7 @@ function App() {
     }
     const newModule = buildDefaultModule(
       {
-        title: "New module"
+        title: "Nouveau module"
       },
       EMPTY_TEMPLATE,
       activeSchoolYear.label
@@ -1494,7 +1494,7 @@ function App() {
   };
 
   const handleRemoveModule = (moduleId) => {
-    if (!confirm("Delete this module?")) return;
+    if (!confirm("Supprimer ce module ?")) return;
     setSchoolYears((prev) =>
       prev.map((year) => {
         if (year.id !== activeSchoolYearId) return year;
@@ -1522,8 +1522,8 @@ function App() {
 
     const isLastType = availableTypes.length === 1;
     const confirmMessage = isLastType
-      ? "Delete this report type? This is the last report type and will delete the entire module and all related students."
-      : "Delete this report type and all related students?";
+      ? "Supprimer ce type de rapport ? C'est le dernier type de rapport et cela supprimera le module entier ainsi que tous les étudiants associés."
+      : "Supprimer ce type de rapport et tous les étudiants associés ?";
     if (!confirm(confirmMessage)) return;
 
     setStudents((prev) =>
@@ -1596,10 +1596,10 @@ function App() {
       <div className="app auth-page">
         <header className="hero">
           <div>
-            <h1>Sign in to access your student reports</h1>
+            <h1>Connectez-vous pour accéder aux rapports des étudiants</h1>
             <p className="subtitle">
-              Each teacher sees only their own reports. Create an account or
-              sign in to continue.
+              Chaque enseignant ne voit que ses propres rapports. Créez un
+              compte ou connectez-vous pour continuer.
             </p>
           </div>
         </header>
@@ -1607,40 +1607,42 @@ function App() {
         <main className="layout auth-layout">
           <section className="panel auth-panel">
             <div className="panel-header">
-              <h2>{authMode === "login" ? "Teacher login" : "New account"}</h2>
+              <h2>
+                {authMode === "login" ? "Connexion enseignant" : "Nouveau compte"}
+              </h2>
               <span className="helper-text">
                 {authMode === "login"
-                  ? "Use your teacher account to access reports."
-                  : "Create a teacher account to keep reports private."}
+                  ? "Utilisez votre compte enseignant pour accéder aux rapports."
+                  : "Créez un compte enseignant pour garder les rapports privés."}
               </span>
             </div>
             <form className="auth-form" onSubmit={handleAuthSubmit}>
               {authMode === "register" && (
                 <label>
-                  Full name
+                  Nom complet
                   <input
                     type="text"
                     value={authForm.name}
                     onChange={(event) =>
                       handleAuthFieldChange("name", event.target.value)
                     }
-                    placeholder="Prof. Martin"
+                    placeholder="Mme Martin"
                   />
                 </label>
               )}
               <label>
-                Email
+                E-mail
                 <input
                   type="email"
                   value={authForm.email}
                   onChange={(event) =>
                     handleAuthFieldChange("email", event.target.value)
                   }
-                  placeholder="teacher@example.com"
+                  placeholder="enseignant@example.com"
                 />
               </label>
               <label>
-                Password
+                Mot de passe
                 <input
                   type="password"
                   value={authForm.password}
@@ -1652,7 +1654,7 @@ function App() {
               </label>
               {authMode === "register" && (
                 <label>
-                  Confirm password
+                  Confirmer le mot de passe
                   <input
                     type="password"
                     value={authForm.confirmPassword}
@@ -1675,10 +1677,10 @@ function App() {
                   disabled={authLoading}
                 >
                   {authLoading
-                    ? "Please wait..."
+                    ? "Veuillez patienter..."
                     : authMode === "login"
-                      ? "Sign in"
-                      : "Create account"}
+                      ? "Se connecter"
+                      : "Créer un compte"}
                 </button>
                 <button
                   type="button"
@@ -1689,24 +1691,24 @@ function App() {
                   }}
                 >
                   {authMode === "login"
-                    ? "Create a new account"
-                    : "Back to login"}
+                    ? "Créer un nouveau compte"
+                    : "Retour à la connexion"}
                 </button>
               </div>
             </form>
           </section>
 
           <section className="panel auth-panel-info">
-            <h2>Private teacher workspaces</h2>
+            <h2>Espaces enseignants privés</h2>
             <p className="helper-text">
-              Your account ensures only you can see and edit your student
-              reports. Use the same login on any device to continue where you
-              left off.
+              Votre compte garantit que vous seul pouvez voir et modifier vos
+              rapports d'étudiants. Utilisez le même identifiant sur n'importe
+              quel appareil pour reprendre où vous vous êtes arrêté.
             </p>
             <ul className="auth-benefits">
-              <li>Separate reports per teacher.</li>
-              <li>Automatic filtering of your student list.</li>
-              <li>Secure access for PDF exports.</li>
+              <li>Rapports séparés par enseignant.</li>
+              <li>Filtrage automatique de votre liste d'étudiants.</li>
+              <li>Accès sécurisé pour les exports PDF.</li>
             </ul>
           </section>
         </main>
@@ -1718,7 +1720,7 @@ function App() {
     return (
       <div className="app">
         <main className="layout">
-          <p className="helper-text">Loading data from the server...</p>
+          <p className="helper-text">Chargement des données depuis le serveur...</p>
         </main>
       </div>
     );
@@ -1728,15 +1730,15 @@ function App() {
     <div className="app">
       <header className="hero">
         <div>
-          <h1>Evaluation Report Builder</h1>
+          <h1>Générateur de rapports d'évaluation</h1>
         </div>
         <div className="hero-card">
           <div>
-            <p className="label">Signed in as</p>
+            <p className="label">Connecté en tant que</p>
             <p className="value">{authUser?.name || authUser?.email}</p>
           </div>
           <button className="button ghost" onClick={handleLogout}>
-            Sign out
+            Se déconnecter
           </button>
         </div>
       </header>
@@ -1750,7 +1752,7 @@ function App() {
         <section className="panel template-panel">
           <div className="panel-header">
             <div>
-              <h2>Template</h2>
+              <h2>Modèle</h2>
             </div>
             <div className="actions">
               <button
@@ -1760,28 +1762,28 @@ function App() {
                 disabled={moduleStudents.length === 0 || isExporting}
                 title={
                   moduleStudents.length === 0
-                    ? "No students available to export."
-                    : "Export all reports for this module and report type"
+                    ? "Aucun étudiant à exporter."
+                    : "Exporter tous les rapports pour ce module et ce type de rapport"
                 }
               >
-                {isExporting ? "Exporting..." : "Export all"}
+                {isExporting ? "Export en cours..." : "Tout exporter"}
               </button>
               <button
                 className="button primary"
                 type="button"
                 onClick={() => setIsTemplateModalOpen(true)}
               >
-                Modify template
+                Modifier le modèle
               </button>
               <button className="button primary" onClick={handleAddModule}>
-                New module
+                Nouveau module
               </button>
             </div>
           </div>
 
           <div className="module-selector">
             <label>
-              School year
+              Année scolaire
               <select
                 value={activeSchoolYearId}
                 onChange={(event) => setActiveSchoolYearId(event.target.value)}
@@ -1794,7 +1796,7 @@ function App() {
               </select>
             </label>
             <label>
-              Active module
+              Module actif
               <select
                 value={activeModuleId}
                 onChange={(event) => setActiveModuleId(event.target.value)}
@@ -1810,7 +1812,7 @@ function App() {
               </select>
             </label>
             <fieldset className="module-evaluation-selector">
-              <legend>Report type</legend>
+              <legend>Type de rapport</legend>
               {EVALUATION_TYPES.map((type) => {
                 const isAvailable = isEvaluationTypeAvailable(activeModule, type);
                 return (
@@ -1837,11 +1839,11 @@ function App() {
                 disabled={e1Students.length === 0}
                 title={
                   e1Students.length === 0
-                    ? "No E1 students available to copy."
-                    : "Copy E1 reports into E2"
+                    ? "Aucun étudiant en E1 à copier."
+                    : "Copier les rapports E1 vers E2"
                 }
               >
-                Copy E1 → E2
+                Copier E1 → E2
               </button>
               <button
                 className="button ghost"
@@ -1849,11 +1851,11 @@ function App() {
                 disabled={e2Students.length === 0}
                 title={
                   e2Students.length === 0
-                    ? "No E2 students available to copy."
-                    : "Copy E2 reports into E3"
+                    ? "Aucun étudiant en E2 à copier."
+                    : "Copier les rapports E2 vers E3"
                 }
               >
-                Copy E2 → E3
+                Copier E2 → E3
               </button>
               <button
                 className="button danger"
@@ -1863,7 +1865,7 @@ function App() {
                   !isEvaluationTypeAvailable(activeModule, activeEvaluationType)
                 }
               >
-                Remove {activeEvaluationType} report
+                Supprimer le rapport {activeEvaluationType}
               </button>
             </div>
           </div>
@@ -1871,18 +1873,18 @@ function App() {
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Student list</h2>
+            <h2>Liste des étudiants</h2>
             <div className="actions">
               <button className="button ghost" onClick={handleImportStudents}>
-                Import students
+                Importer des étudiants
               </button>
             </div>
           </div>
           {template.groupFeatureEnabled && (
             <div className="group-controls">
               <p className="helper-text">
-                Assign students to a group to share results for group-evaluated
-                categories.
+                Attribuez les étudiants à un groupe pour partager les résultats
+                des thèmes évalués en groupe.
               </p>
               <datalist id="group-options">
                 {groupOptions.map((groupName) => (
@@ -1894,7 +1896,7 @@ function App() {
           <ul className="student-list">
             {moduleStudents.length === 0 && (
               <li className="empty">
-                No students yet for this module. Import a list to get started.
+                Aucun étudiant pour ce module. Importez une liste pour démarrer.
               </li>
             )}
             {moduleStudents.map((student) => (
@@ -1911,13 +1913,13 @@ function App() {
               >
                 <div className="student-card-content">
                   <p className="student-name">
-                    {getStudentDisplayName(student) || "Unnamed student"}
+                    {getStudentDisplayName(student) || "Étudiant sans nom"}
                   </p>
                   {template.groupFeatureEnabled && (
                     <p className="student-meta">
                       {getStudentGroupName(student)
-                        ? `Group: ${getStudentGroupName(student)}`
-                        : "No group assigned"}
+                        ? `Groupe : ${getStudentGroupName(student)}`
+                        : "Aucun groupe attribué"}
                     </p>
                   )}
                   {template.groupFeatureEnabled && (
@@ -1926,7 +1928,7 @@ function App() {
                       onClick={(event) => event.stopPropagation()}
                     >
                       <label>
-                        Group
+                        Groupe
                         <input
                           type="text"
                           list="group-options"
@@ -1937,7 +1939,7 @@ function App() {
                               event.target.value
                             )
                           }
-                          placeholder="Group A"
+                          placeholder="Groupe A"
                         />
                       </label>
                     </div>
@@ -1950,7 +1952,7 @@ function App() {
                     handleDeleteStudent(student.id);
                   }}
                 >
-                  Delete
+                  Supprimer
                 </button>
               </li>
             ))}
@@ -1961,12 +1963,12 @@ function App() {
           <div className="panel-header">
             <h2>
               {isEditing
-                ? getStudentDisplayName(draft) || "Edit report"
-                : "New report"}
+                ? getStudentDisplayName(draft) || "Modifier le rapport"
+                : "Nouveau rapport"}
             </h2>
             <div className="actions">
               <button className="button primary" onClick={handleGeneratePdf}>
-                Generate PDF
+                Générer le PDF
               </button>
             </div>
           </div>
@@ -1978,31 +1980,31 @@ function App() {
               onClick={() => setShowDetails((prev) => !prev)}
               aria-expanded={showDetails}
             >
-              {showDetails ? "Hide details" : "Show details"}
+              {showDetails ? "Masquer les détails" : "Afficher les détails"}
             </button>
           </div>
           {showDetails && (
             <div className="form-grid details-grid">
               <label>
-                Last name
+                Nom
                 <input
                   type="text"
                   value={draft.name}
                   readOnly
-                  placeholder="Doe"
+                  placeholder="Dupont"
                 />
               </label>
               <label>
-                First name
+                Prénom
                 <input
                   type="text"
                   value={draft.firstname}
                   readOnly
-                  placeholder="Jane"
+                  placeholder="Jeanne"
                 />
               </label>
               <label>
-                Email
+                E-mail
                 <input
                   type="email"
                   value={draft.email}
@@ -2011,7 +2013,7 @@ function App() {
                 />
               </label>
               <label>
-                School year
+                Année scolaire
                 <input
                   type="text"
                   value={draft.schoolYear}
@@ -2021,37 +2023,37 @@ function App() {
                 />
               </label>
               <label>
-                Evaluation type
+                Type d'évaluation
                 <input
                   type="text"
                   value={draft.evaluationType}
                   readOnly
                   disabled
-                  placeholder="E1, E2, or E3"
+                  placeholder="E1, E2 ou E3"
                 />
               </label>
               <label>
-                Class
+                Classe
                 <input
                   type="text"
                   value={draft.className}
                   readOnly
                   disabled
-                  placeholder="Class set in template"
+                  placeholder="Classe définie dans le modèle"
                 />
               </label>
               <label>
-                Teacher
+                Enseignant
                 <input
                   type="text"
                   value={draft.teacher}
                   readOnly
                   disabled
-                  placeholder="Teacher set in template"
+                  placeholder="Enseignant défini dans le modèle"
                 />
               </label>
               <label>
-                Evaluation date
+                Date d'évaluation
                 <input
                   type="date"
                   value={draft.evaluationDate}
@@ -2060,7 +2062,7 @@ function App() {
                 />
               </label>
               <label>
-                Coaching date
+                Date de coaching
                 <input
                   type="date"
                   value={draft.coachingDate}
@@ -2069,7 +2071,7 @@ function App() {
                 />
               </label>
               <label>
-                Module title
+                Titre du module
                 <input
                   type="text"
                   value={draft.moduleTitle}
@@ -2078,13 +2080,13 @@ function App() {
                 />
               </label>
               <label>
-                Operational competence
+                Compétence opérationnelle
                 <input
                   type="text"
                   value={draft.operationalCompetence}
                   readOnly
                   disabled
-                  placeholder="Set in template"
+                  placeholder="Définie dans le modèle"
                 />
               </label>
             </div>
@@ -2092,31 +2094,31 @@ function App() {
 
           <div className="textarea-block">
             <label>
-              Teacher remarks
+              Remarques de l'enseignant
               <textarea
                 rows="3"
                 value={draft.remarks}
                 onChange={(event) =>
                   handleStudentField("remarks", event.target.value)
                 }
-                placeholder="Additional notes, remediation plan, etc."
+                placeholder="Notes supplémentaires, plan de remédiation, etc."
               />
             </label>
           </div>
 
           <div className="report-summary">
             <div className="report-summary-header">
-              <h3>Summary</h3>
+              <h3>Résumé</h3>
               <p className="helper-text">
-                Categories and results overview (read-only).
+                Aperçu des thèmes et des résultats (lecture seule).
               </p>
             </div>
             {(draft.competencies || []).length ? (
               <table className="report-summary-table">
                 <thead>
                   <tr>
-                    <th scope="col">Category</th>
-                    <th scope="col">Result</th>
+                    <th scope="col">Thème</th>
+                    <th scope="col">Résultat</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2152,7 +2154,7 @@ function App() {
                         }
                         aria-label="Note du module"
                       >
-                        <option value="">Select note</option>
+                        <option value="">Sélectionner une note</option>
                         {[6, 5, 4, 3, 2, 1].map((value) => (
                           <option key={value} value={value}>
                             {value}
@@ -2164,7 +2166,7 @@ function App() {
                 </tbody>
               </table>
             ) : (
-              <p className="helper-text">No categories yet.</p>
+              <p className="helper-text">Aucun thème pour l'instant.</p>
             )}
           </div>
 
@@ -2176,12 +2178,12 @@ function App() {
                     <select
                       className={`status-select ${getStatusClass(section.result)}`}
                       value={section.result}
-                      aria-label="Category result"
+                      aria-label="Résultat du thème"
                       onChange={(event) =>
                         updateCategoryResult(sectionIndex, event.target.value)
                       }
                     >
-                      <option value="">Select result</option>
+                      <option value="">Sélectionner un résultat</option>
                       <option value={STATUS_VALUES.OK}>OK</option>
                       <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>~</option>
                       <option value={STATUS_VALUES.NOT_ASSESSED}>NOK</option>
@@ -2195,7 +2197,7 @@ function App() {
                       item,
                       draft.competencyOptions
                     );
-                    const taskLabel = item.task || item.label || "Task";
+                    const taskLabel = item.task || item.label || "Tâche";
                     const statusClass = getStatusClass(item.status);
 
                     return (
@@ -2207,7 +2209,7 @@ function App() {
                           <p className="competency-label">{taskLabel}</p>
                           <div className="competency-meta-row">
                             <p className="competency-tag">
-                              {competencyLabel || "No competency linked"}
+                              {competencyLabel || "Aucune compétence liée"}
                             </p>
                           </div>
                           <input
@@ -2221,7 +2223,7 @@ function App() {
                                 event.target.value
                               )
                             }
-                            placeholder="Optional comment"
+                            placeholder="Commentaire facultatif"
                           />
                         </div>
                         <select
@@ -2236,7 +2238,7 @@ function App() {
                             )
                           }
                         >
-                          <option value="">Select status</option>
+                          <option value="">Sélectionner un statut</option>
                           <option value={STATUS_VALUES.OK}>OK</option>
                           <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>~</option>
                           <option value={STATUS_VALUES.NOT_ASSESSED}>NOK</option>
@@ -2263,21 +2265,21 @@ function App() {
           <div className="modal modal--compact">
             <div className="modal-header">
               <div>
-                <h2>Import students</h2>
+                <h2>Importer des étudiants</h2>
                 <p className="helper-text">
-                  Paste rows from Excel with columns: nom, prenom, email.
+                  Collez des lignes depuis Excel avec les colonnes : nom, prénom, email.
                 </p>
               </div>
               <button
                 className="button ghost"
                 onClick={() => setIsImportStudentModalOpen(false)}
               >
-                Close
+                Fermer
               </button>
             </div>
             <form onSubmit={handleCreateStudentsFromImport}>
               <label>
-                Student list
+                Liste d'étudiants
                 <textarea
                   rows="6"
                   value={importStudentText}
@@ -2299,10 +2301,10 @@ function App() {
                     className="button ghost"
                     onClick={() => setIsImportStudentModalOpen(false)}
                   >
-                    Cancel
+                    Annuler
                   </button>
                   <button type="submit" className="button primary">
-                    Import students
+                    Importer des étudiants
                   </button>
                 </div>
               </div>
@@ -2317,17 +2319,17 @@ function App() {
             <div className="modal-header">
               <div>
                 <h2>
-                  Copy {copyConfig.source} reports to {copyConfig.target}
+                  Copier les rapports {copyConfig.source} vers {copyConfig.target}
                 </h2>
                 <p className="helper-text">
-                  Select the students to copy. Notes below 4 are pre-selected.
+                  Sélectionnez les étudiants à copier. Les notes sous 4 sont pré-sélectionnées.
                 </p>
               </div>
               <button
                 className="button ghost"
                 onClick={() => setIsCopyStudentsModalOpen(false)}
               >
-                Close
+                Fermer
               </button>
             </div>
             <div className="copy-students-controls">
@@ -2336,24 +2338,24 @@ function App() {
                 className="button ghost"
                 onClick={() => handleSelectAllCopyStudents(true)}
               >
-                Select all
+                Tout sélectionner
               </button>
               <button
                 type="button"
                 className="button ghost"
                 onClick={() => handleSelectAllCopyStudents(false)}
               >
-                Clear
+                Tout désélectionner
               </button>
               <span className="helper-text">
-                {selectedCopyStudentsCount} of {copySourceStudents.length} selected
+                {selectedCopyStudentsCount} sur {copySourceStudents.length} sélectionnés
               </span>
             </div>
             <div className="copy-students-list">
               {copySourceStudents.map((student) => {
                 const displayName =
-                  getStudentDisplayName(student) || "Unnamed student";
-                const noteLabel = student.note ? `Note: ${student.note}` : "No note";
+                  getStudentDisplayName(student) || "Étudiant sans nom";
+                const noteLabel = student.note ? `Note : ${student.note}` : "Aucune note";
                 return (
                   <label key={student.id} className="copy-student-row">
                     <input
@@ -2376,7 +2378,7 @@ function App() {
                   className="button ghost"
                   onClick={() => setIsCopyStudentsModalOpen(false)}
                 >
-                  Cancel
+                  Annuler
                 </button>
                 <button
                   type="button"
@@ -2385,10 +2387,10 @@ function App() {
                   disabled={selectedCopyStudentsCount === 0}
                 >
                   {selectedCopyStudentsCount > 0
-                    ? `Copy ${selectedCopyStudentsCount} report${
+                    ? `Copier ${selectedCopyStudentsCount} rapport${
                         selectedCopyStudentsCount === 1 ? "" : "s"
                       }`
-                    : "Copy reports"}
+                    : "Copier les rapports"}
                 </button>
               </div>
             </div>
@@ -2401,16 +2403,16 @@ function App() {
           <div className="modal">
             <div className="modal-header">
               <div>
-                <h2>Modify template</h2>
+                <h2>Modifier le modèle</h2>
                 <p className="helper-text">
-                  Edit the default module info and competencies for new reports.
+                  Modifiez les informations du module et les compétences par défaut pour les nouveaux rapports.
                 </p>
               </div>
               <button
                 className="button ghost"
                 onClick={() => setIsTemplateModalOpen(false)}
               >
-                Close
+                Fermer
               </button>
             </div>
 
@@ -2418,9 +2420,9 @@ function App() {
               <div className="template-competency">
                 <div className="template-competency-header">
                   <div className="category-name">
-                    <span className="badge">Active module</span>
+                    <span className="badge">Module actif</span>
                     <p className="helper-text">
-                      Update the module information used in the active template.
+                      Mettez à jour les informations du module utilisées dans le modèle actif.
                     </p>
                   </div>
                 </div>
@@ -2428,7 +2430,7 @@ function App() {
                   <>
                     <div className="form-grid">
                       <label>
-                        Module title
+                        Titre du module
                         <input
                           type="text"
                           value={activeModule.title}
@@ -2443,10 +2445,10 @@ function App() {
                         />
                       </label>
                       <label>
-                        School year
+                        Année scolaire
                         <input
                           type="text"
-                          value={activeSchoolYear?.label || "Not set"}
+                          value={activeSchoolYear?.label || "Non défini"}
                           readOnly
                           disabled
                         />
@@ -2462,7 +2464,7 @@ function App() {
                   </>
                 ) : (
                   <p className="helper-text">
-                    No active module selected.
+                    Aucun module actif sélectionné.
                   </p>
                 )}
               </div>
@@ -2470,20 +2472,20 @@ function App() {
 
             <div className="form-grid">
               <label>
-                Default summary
+                Résumé par défaut
                 <textarea
                   rows="2"
                   value={template.note}
                   onChange={(event) =>
                     handleTemplateField("note", event.target.value)
                   }
-                  placeholder="Text that will appear in the summary for new reports."
+                  placeholder="Texte qui apparaîtra dans le résumé des nouveaux rapports."
                 />
               </label>
             </div>
             <div className="form-grid">
               <label>
-                Evaluation type
+                Type d'évaluation
                 <select
                   value={activeEvaluationType}
                   onChange={(event) =>
@@ -2502,7 +2504,7 @@ function App() {
                 </select>
               </label>
               <label className="checkbox-field">
-                <span>Enable group evaluations</span>
+                <span>Activer les évaluations de groupe</span>
                 <input
                   type="checkbox"
                   checked={template.groupFeatureEnabled}
@@ -2511,11 +2513,11 @@ function App() {
                   }
                 />
                 <span className="helper-text">
-                  Allow categories to be shared between students in the same group.
+                  Autoriser les thèmes à être partagés entre les étudiants du même groupe.
                 </span>
               </label>
               <label>
-                Class
+                Classe
                 <input
                   type="text"
                   value={template.className}
@@ -2526,17 +2528,17 @@ function App() {
                 />
               </label>
               <label>
-                Teacher
+                Enseignant
                 <input
                   type="text"
                   value={teacherName}
                   readOnly
                   disabled
-                  placeholder="Signed-in teacher"
+                  placeholder="Enseignant connecté"
                 />
               </label>
               <label>
-                Evaluation date
+                Date d'évaluation
                 <input
                   type="date"
                   value={template.evaluationDate}
@@ -2546,7 +2548,7 @@ function App() {
                 />
               </label>
               <label>
-                Coaching date
+                Date de coaching
                 <input
                   type="date"
                   value={template.coachingDate}
@@ -2556,7 +2558,7 @@ function App() {
                 />
               </label>
               <label>
-                Operational competence
+                Compétence opérationnelle
                 <input
                   type="text"
                   value={template.operationalCompetence}
@@ -2572,16 +2574,16 @@ function App() {
               <div className="template-competency">
                 <div className="template-competency-header">
                   <div className="category-name">
-                    <span className="badge">Competency list</span>
+                    <span className="badge">Liste des compétences</span>
                     <p className="helper-text">
-                      Configure numbered competencies available for every task.
+                      Configurez les compétences numérotées disponibles pour chaque tâche.
                     </p>
                   </div>
                   <button
                     className="button ghost"
                     onClick={handleAddCompetencyOption}
                   >
-                    + Add competency
+                    + Ajouter une compétence
                   </button>
                 </div>
                 <div className="template-tasks">
@@ -2614,9 +2616,9 @@ function App() {
                       <button
                         className="button text"
                         onClick={() => handleRemoveCompetencyOption(index)}
-                        aria-label="Remove competency"
+                        aria-label="Supprimer la compétence"
                       >
-                        Remove
+                        Supprimer
                       </button>
                     </div>
                   ))}
@@ -2629,7 +2631,7 @@ function App() {
                 <div key={sectionIndex} className="template-competency">
                   <div className="template-competency-header">
                     <div className="category-name">
-                      <span className="badge">Category</span>
+                      <span className="badge">Thème</span>
                       <input
                         type="text"
                         className="category-input"
@@ -2654,14 +2656,14 @@ function App() {
                         }
                         disabled={!template.groupFeatureEnabled}
                       />
-                      Group evaluation
+                      Évaluation de groupe
                     </label>
                     <button
                       className="button text"
                       onClick={() => handleRemoveCategory(sectionIndex)}
-                      aria-label="Remove category"
+                      aria-label="Supprimer le thème"
                     >
-                      Remove
+                      Supprimer
                     </button>
                   </div>
                   <div className="template-tasks">
@@ -2695,7 +2697,7 @@ function App() {
                               )
                             }
                           >
-                            <option value="">Select competency</option>
+                            <option value="">Sélectionner une compétence</option>
                             {template.competencyOptions?.map((option) => (
                               <option key={option.code} value={option.code}>
                                 {option.code}
@@ -2713,7 +2715,7 @@ function App() {
                               )
                             }
                           >
-                            <option value="">Select evaluation</option>
+                            <option value="">Sélectionner une évaluation</option>
                             {TASK_EVALUATION_METHODS.map((method) => (
                               <option key={method.value} value={method.value}>
                                 {method.label}
@@ -2725,9 +2727,9 @@ function App() {
                             onClick={() =>
                               handleRemoveTask(sectionIndex, itemIndex)
                             }
-                            aria-label="Remove task"
+                            aria-label="Supprimer la tâche"
                           >
-                            Remove
+                            Supprimer
                           </button>
                         </div>
                       );
@@ -2736,7 +2738,7 @@ function App() {
                       className="button ghost"
                       onClick={() => handleAddTask(sectionIndex)}
                     >
-                      + Add task
+                      + Ajouter une tâche
                     </button>
                   </div>
                 </div>
@@ -2746,15 +2748,15 @@ function App() {
             <div className="actions align-start modal-actions">
               <div className="action-row">
                 <button className="button ghost" onClick={handleAddCategory}>
-                  + Add category
+                  + Ajouter un thème
                 </button>
                 <button className="button primary" onClick={handleApplyTemplate}>
-                  Apply to all reports
+                  Appliquer à tous les rapports
                 </button>
               </div>
               <p className="helper-text">
-                Applying will update every existing student report with the latest
-                template values.
+                L'application mettra à jour chaque rapport d'étudiant existant avec
+                les dernières valeurs du modèle.
               </p>
             </div>
           </div>
