@@ -1143,21 +1143,20 @@ const renderCoachingReport = (doc, student) => {
 
   const objectivesBodyY = objectivesHeaderY + objectivesHeaderHeight;
   if (objectivesBodyHeight > 0) {
-    const lineSpacing = objectivesBodyHeight / 3;
+    const cellHeight = objectivesBodyHeight / 3;
+    const cellX = coachingBoxX + 2;
+    const cellWidth = coachingBoxWidth - 4;
+
     doc.font("Helvetica").fontSize(9).fillColor(theme.text);
 
     Array.from({ length: 3 }).forEach((_, index) => {
-      const rowTop = objectivesBodyY + lineSpacing * index;
-      const numberY = rowTop + 4;
-      const lineY = objectivesBodyY + lineSpacing * (index + 1) - 6;
+      const rowTop = objectivesBodyY + cellHeight * index;
+      const numberY = rowTop + 6;
 
-      doc.text(`${index + 1}.`, coachingBoxX + 12, numberY);
       doc
-        .dash(1, { space: 2 })
-        .moveTo(coachingBoxX + 30, lineY)
-        .lineTo(coachingBoxX + coachingBoxWidth - 10, lineY)
-        .stroke(theme.text)
-        .undash();
+        .rect(cellX, rowTop, cellWidth, cellHeight)
+        .stroke(theme.text);
+      doc.text(`${index + 1}.`, cellX + 10, numberY);
     });
   }
 
