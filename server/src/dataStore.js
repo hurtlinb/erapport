@@ -283,8 +283,23 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
 
 const normalizeStudent = (student) => ({
   ...student,
-  evaluationType: student?.evaluationType || EVALUATION_TYPES[0]
+  evaluationType: student?.evaluationType || EVALUATION_TYPES[0],
+  teacherId: student?.teacherId || ""
 });
+
+const normalizeUsers = (users = []) => {
+  if (!Array.isArray(users)) return [];
+  return users
+    .filter((user) => user && typeof user === "object")
+    .map((user) => ({
+      id: user.id || crypto.randomUUID(),
+      name: user.name || "",
+      email: user.email || "",
+      passwordHash: user.passwordHash || "",
+      salt: user.salt || "",
+      token: user.token || ""
+    }));
+};
 
 const normalizeState = (state) => {
   const nextState = state || {};
@@ -292,7 +307,8 @@ const normalizeState = (state) => {
     schoolYears: normalizeSchoolYears(nextState.schoolYears, nextState.modules),
     students: Array.isArray(nextState.students)
       ? nextState.students.map(normalizeStudent)
-      : []
+      : [],
+    users: normalizeUsers(nextState.users)
   };
 };
 

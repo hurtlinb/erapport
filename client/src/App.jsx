@@ -99,6 +99,7 @@ const TASK_EVALUATION_METHODS = [
 const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const AUTH_STORAGE_KEY = "erapport.auth";
 
 const STATUS_VALUES = {
   OK: "OK",
@@ -109,6 +110,35 @@ const EVALUATION_COPY_PAIRS = [
   { source: "E1", target: "E2" },
   { source: "E2", target: "E3" }
 ];
+
+const loadStoredAuth = () => {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.token || !parsed?.user) return null;
+    return parsed;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+const persistStoredAuth = (payload) => {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const clearStoredAuth = () => {
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 const getStatusClass = (status) => {
   if (status === STATUS_VALUES.OK) return "status-ok";
@@ -390,7 +420,7 @@ const getCompetencyLabel = (item, competencyOptions = []) => {
   return "";
 };
 
-const applyTemplateToStudent = (template, student) => ({
+const applyTemplateToStudent = (template, student, teacherId = "") => ({
   ...student,
   moduleId: template.moduleId || "",
   moduleTitle: template.moduleTitle || "",
@@ -399,6 +429,7 @@ const applyTemplateToStudent = (template, student) => ({
   evaluationType: template.evaluationType || "",
   className: template.className || "",
   teacher: template.teacher || "",
+  teacherId: student.teacherId || teacherId || "",
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
@@ -414,7 +445,7 @@ const getStudentDisplayName = (student) => {
 
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 
-const buildStudentFromTemplate = (template) => ({
+const buildStudentFromTemplate = (template, teacherId = "") => ({
   id: crypto.randomUUID(),
   name: "",
   firstname: "",
@@ -427,6 +458,7 @@ const buildStudentFromTemplate = (template) => ({
   evaluationType: template.evaluationType || "",
   className: template.className || "",
   teacher: template.teacher || "",
+  teacherId,
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
@@ -444,6 +476,17 @@ const cloneStudentReport = (student, evaluationType) => {
 };
 
 function App() {
+  const [authUser, setAuthUser] = useState(() => loadStoredAuth()?.user || null);
+  const [authToken, setAuthToken] = useState(() => loadStoredAuth()?.token || "");
+  const [authMode, setAuthMode] = useState("login");
+  const [authForm, setAuthForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [schoolYears, setSchoolYears] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
   const [activeSchoolYearId, setActiveSchoolYearId] = useState("");
@@ -454,7 +497,7 @@ function App() {
   const [students, setStudents] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(() =>
-    buildStudentFromTemplate(defaultTemplate)
+    buildStudentFromTemplate(defaultTemplate, authUser?.id)
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -468,6 +511,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const isHydratedRef = useRef(false);
+  const isAuthenticated = Boolean(authToken && authUser);
+  const teacherId = authUser?.id || "";
   const moduleStudents = useMemo(
     () =>
       students.filter(
@@ -519,10 +564,41 @@ function App() {
     [activeModuleId, copyConfig.source, students]
   );
 
+  const resetAppState = (nextTeacherId = "") => {
+    isHydratedRef.current = false;
+    setSchoolYears([]);
+    setTemplate(defaultTemplate);
+    setActiveSchoolYearId("");
+    setActiveModuleId("");
+    setActiveEvaluationType(EVALUATION_TYPES[0]);
+    setStudents([]);
+    setSelectedId("");
+    setDraft(buildStudentFromTemplate(defaultTemplate, nextTeacherId));
+    setIsEditing(false);
+    setLoadError("");
+    setIsLoading(false);
+  };
+
   useEffect(() => {
+    if (!authToken) {
+      resetAppState("");
+      return;
+    }
+
     const loadState = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/state`);
+        const response = await fetch(`${API_BASE_URL}/api/state`, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+        if (response.status === 401) {
+          clearStoredAuth();
+          setAuthUser(null);
+          setAuthToken("");
+          setAuthError("Your session expired. Please sign in again.");
+          resetAppState("");
+          return;
+        }
         if (!response.ok) {
           throw new Error("Unable to fetch stored data.");
         }
@@ -542,15 +618,18 @@ function App() {
     };
 
     loadState();
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
-    if (!isHydratedRef.current) return;
+    if (!isHydratedRef.current || !isAuthenticated) return;
     const persistState = async () => {
       try {
         await fetch(`${API_BASE_URL}/api/state`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`
+          },
           body: JSON.stringify({ schoolYears, students })
         });
       } catch (error) {
@@ -559,17 +638,17 @@ function App() {
     };
 
     persistState();
-  }, [schoolYears, students]);
+  }, [authToken, isAuthenticated, schoolYears, students]);
 
   useEffect(() => {
     if (selectedStudent) {
-      setDraft(applyTemplateToStudent(template, selectedStudent));
+      setDraft(applyTemplateToStudent(template, selectedStudent, teacherId));
       setIsEditing(true);
     } else {
-      setDraft(buildStudentFromTemplate(template));
+      setDraft(buildStudentFromTemplate(template, teacherId));
       setIsEditing(false);
     }
-  }, [selectedStudent, template]);
+  }, [selectedStudent, template, teacherId]);
 
   useEffect(() => {
     if (template.evaluationType !== activeEvaluationType) return;
@@ -577,17 +656,17 @@ function App() {
       prev.map((student) =>
         student.moduleId === template.moduleId &&
         getStudentEvaluationType(student) === activeEvaluationType
-          ? applyTemplateToStudent(template, student)
+          ? applyTemplateToStudent(template, student, teacherId)
           : student
       )
     );
     setDraft((prev) =>
       prev.moduleId === template.moduleId &&
       getStudentEvaluationType(prev) === activeEvaluationType
-        ? applyTemplateToStudent(template, prev)
+        ? applyTemplateToStudent(template, prev, teacherId)
         : prev
     );
-  }, [activeEvaluationType, template]);
+  }, [activeEvaluationType, template, teacherId]);
 
   useEffect(() => {
     if (!schoolYears.length) return;
@@ -648,31 +727,34 @@ function App() {
     setDraft((prevDraft) => {
       const nextDraft =
         typeof updater === "function" ? updater(prevDraft) : updater;
+      const nextWithTeacher = teacherId
+        ? { ...nextDraft, teacherId: nextDraft.teacherId || teacherId }
+        : nextDraft;
 
       setStudents((prevStudents) => {
         const exists = prevStudents.some(
-          (student) => student.id === nextDraft.id
+          (student) => student.id === nextWithTeacher.id
         );
 
         if (exists) {
           return prevStudents.map((student) =>
-            student.id === nextDraft.id ? { ...nextDraft } : student
+            student.id === nextWithTeacher.id ? { ...nextWithTeacher } : student
           );
         }
 
-        if (!hasStudentIdentity(nextDraft)) {
+        if (!hasStudentIdentity(nextWithTeacher)) {
           return prevStudents;
         }
 
-        return [...prevStudents, { ...nextDraft }];
+        return [...prevStudents, { ...nextWithTeacher }];
       });
 
-      if (hasStudentIdentity(nextDraft)) {
-        setSelectedId(nextDraft.id);
+      if (hasStudentIdentity(nextWithTeacher)) {
+        setSelectedId(nextWithTeacher.id);
         setIsEditing(true);
       }
 
-      return nextDraft;
+      return nextWithTeacher;
     });
   };
 
@@ -688,6 +770,74 @@ function App() {
       0
     );
   }, [template.competencies]);
+
+  const handleAuthFieldChange = (field, value) => {
+    setAuthForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAuthSubmit = async (event) => {
+    if (event?.preventDefault) {
+      event.preventDefault();
+    }
+    setAuthError("");
+    if (!authForm.email || !authForm.password) {
+      setAuthError("Please enter your email and password.");
+      return;
+    }
+    if (authMode === "register") {
+      if (!authForm.name) {
+        setAuthError("Please enter your name.");
+        return;
+      }
+      if (authForm.password !== authForm.confirmPassword) {
+        setAuthError("Passwords do not match.");
+        return;
+      }
+    }
+
+    const payload =
+      authMode === "register"
+        ? {
+            name: authForm.name,
+            email: authForm.email,
+            password: authForm.password
+          }
+        : { email: authForm.email, password: authForm.password };
+
+    try {
+      setAuthLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/api/auth/${authMode === "register" ? "register" : "login"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setAuthError(data?.error || "Unable to authenticate.");
+        return;
+      }
+      setAuthUser(data.user);
+      setAuthToken(data.token);
+      persistStoredAuth({ user: data.user, token: data.token });
+      setAuthForm({ name: "", email: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      console.error(error);
+      setAuthError("Unable to authenticate. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearStoredAuth();
+    setAuthUser(null);
+    setAuthToken("");
+    setAuthMode("login");
+    resetAppState("");
+  };
 
   const handleStudentField = (field, value) => {
     persistDraftChanges((prev) => ({
@@ -852,7 +1002,7 @@ function App() {
     }
 
     const importedStudents = rows.map(([lastName, firstName, email]) => ({
-      ...buildStudentFromTemplate(template),
+      ...buildStudentFromTemplate(template, teacherId),
       name: lastName || "",
       firstname: firstName || "",
       email: email || ""
@@ -873,7 +1023,10 @@ function App() {
     }
     const response = await fetch(`${API_BASE_URL}/api/report`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`
+      },
       body: JSON.stringify(draft)
     });
 
@@ -1211,14 +1364,14 @@ function App() {
       prev.map((student) =>
         student.moduleId === template.moduleId &&
         getStudentEvaluationType(student) === activeEvaluationType
-          ? applyTemplateToStudent(template, student)
+          ? applyTemplateToStudent(template, student, teacherId)
           : student
       )
     );
     setDraft((prev) =>
       prev.moduleId === template.moduleId &&
       getStudentEvaluationType(prev) === activeEvaluationType
-        ? applyTemplateToStudent(template, prev)
+        ? applyTemplateToStudent(template, prev, teacherId)
         : prev
     );
     setIsTemplateModalOpen(false);
@@ -1230,6 +1383,130 @@ function App() {
         .length,
     [copyStudentSelections, copySourceStudents]
   );
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app auth-page">
+        <header className="hero">
+          <div>
+            <p className="eyebrow">Evaluation Report Builder</p>
+            <h1>Sign in to access your student reports</h1>
+            <p className="subtitle">
+              Each teacher sees only their own reports. Create an account or
+              sign in to continue.
+            </p>
+          </div>
+        </header>
+
+        <main className="layout auth-layout">
+          <section className="panel auth-panel">
+            <div className="panel-header">
+              <h2>{authMode === "login" ? "Teacher login" : "New account"}</h2>
+              <span className="helper-text">
+                {authMode === "login"
+                  ? "Use your teacher account to access reports."
+                  : "Create a teacher account to keep reports private."}
+              </span>
+            </div>
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              {authMode === "register" && (
+                <label>
+                  Full name
+                  <input
+                    type="text"
+                    value={authForm.name}
+                    onChange={(event) =>
+                      handleAuthFieldChange("name", event.target.value)
+                    }
+                    placeholder="Prof. Martin"
+                  />
+                </label>
+              )}
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={authForm.email}
+                  onChange={(event) =>
+                    handleAuthFieldChange("email", event.target.value)
+                  }
+                  placeholder="teacher@example.com"
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  value={authForm.password}
+                  onChange={(event) =>
+                    handleAuthFieldChange("password", event.target.value)
+                  }
+                  placeholder="********"
+                />
+              </label>
+              {authMode === "register" && (
+                <label>
+                  Confirm password
+                  <input
+                    type="password"
+                    value={authForm.confirmPassword}
+                    onChange={(event) =>
+                      handleAuthFieldChange("confirmPassword", event.target.value)
+                    }
+                    placeholder="********"
+                  />
+                </label>
+              )}
+              {authError && (
+                <p className="helper-text error-text" role="alert">
+                  {authError}
+                </p>
+              )}
+              <div className="actions auth-actions">
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={authLoading}
+                >
+                  {authLoading
+                    ? "Please wait..."
+                    : authMode === "login"
+                      ? "Sign in"
+                      : "Create account"}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => {
+                    setAuthMode(authMode === "login" ? "register" : "login");
+                    setAuthError("");
+                  }}
+                >
+                  {authMode === "login"
+                    ? "Create a new account"
+                    : "Back to login"}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="panel auth-panel-info">
+            <h2>Private teacher workspaces</h2>
+            <p className="helper-text">
+              Your account ensures only you can see and edit your student
+              reports. Use the same login on any device to continue where you
+              left off.
+            </p>
+            <ul className="auth-benefits">
+              <li>Separate reports per teacher.</li>
+              <li>Automatic filtering of your student list.</li>
+              <li>Secure access for PDF exports.</li>
+            </ul>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -1251,6 +1528,15 @@ function App() {
             Manage your student list, fill in competencies, and export PDFs that
             match the official summary sheet.
           </p>
+        </div>
+        <div className="hero-card">
+          <div>
+            <p className="label">Signed in as</p>
+            <p className="value">{authUser?.name || authUser?.email}</p>
+          </div>
+          <button className="button ghost" onClick={handleLogout}>
+            Sign out
+          </button>
         </div>
       </header>
 
