@@ -1731,10 +1731,6 @@ function App() {
         <div>
           <p className="eyebrow">Evaluation Report Builder</p>
           <h1>Generate student evaluation reports in minutes</h1>
-          <p className="subtitle">
-            Manage your student list, fill in competencies, and export PDFs that
-            match the official summary sheet.
-          </p>
         </div>
         <div className="hero-card">
           <div>
