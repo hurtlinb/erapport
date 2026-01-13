@@ -184,6 +184,11 @@ h1 {
   cursor: pointer;
 }
 
+.student-card-content {
+  display: grid;
+  gap: 6px;
+}
+
 .student-card.note-ok {
   border-color: #16a34a;
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
@@ -197,6 +202,21 @@ h1 {
 .student-name {
   margin: 0 0 6px;
   font-weight: 600;
+}
+
+.group-controls {
+  display: grid;
+  gap: 4px;
+}
+
+.student-group-field label {
+  font-size: 12px;
+  gap: 4px;
+}
+
+.student-group-field input {
+  padding: 6px 10px;
+  font-size: 13px;
 }
 
 .student-meta {
@@ -238,6 +258,19 @@ label {
   font-size: 13px;
   font-weight: 600;
   color: #475569;
+}
+
+.checkbox-field {
+  align-items: flex-start;
+}
+
+.checkbox-field input {
+  margin-top: 4px;
+}
+
+.checkbox-field .helper-text {
+  margin: 4px 0 0;
+  font-weight: 500;
 }
 
 input,
@@ -355,6 +388,16 @@ select {
   gap: 10px;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.category-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin-top: 4px;
 }
 
 .template-competency-header input {
