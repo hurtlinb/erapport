@@ -906,27 +906,13 @@ const renderStudentReport = (doc, student) => {
 };
 
 const renderCoachingReport = (doc, student) => {
-  const { headerY, headerHeight } = renderReportHeader(
+  const evaluationNumber = getEvaluationNumber(student.evaluationType);
+  const { headerBottomY } = renderStudentHeader(
     doc,
-    "Demande de coaching"
+    student,
+    evaluationNumber
   );
-  const moduleBarY = headerY + headerHeight + 8;
-  const moduleBarHeight = 28;
-
-  doc
-    .rect(40, moduleBarY, 515, moduleBarHeight)
-    .fillAndStroke("#fbd2a3", theme.text)
-    .fillColor(theme.text)
-    .fontSize(11)
-    .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
-      width: 515,
-      align: "center"
-    });
-
-  const infoBoxY = moduleBarY + moduleBarHeight + 8;
-  const { infoBoxHeight } = drawStudentInfoTable(doc, student, infoBoxY);
-  let coachingBoxY = infoBoxY + infoBoxHeight + 16;
+  let coachingBoxY = headerBottomY + 16;
 
   if (coachingBoxY > 720) {
     doc.addPage();
