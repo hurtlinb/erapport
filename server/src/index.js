@@ -116,6 +116,14 @@ app.post("/api/auth/login", (req, res) => {
   });
 });
 
+app.use("/api", (req, res, next) => {
+  if (req.path.startsWith("/auth/")) {
+    next();
+    return;
+  }
+  requireAuth(req, res, next);
+});
+
 app.get("/api/state", requireAuth, (req, res) => {
   const { state, user } = req;
   const filteredStudents = (state.students || []).filter(
