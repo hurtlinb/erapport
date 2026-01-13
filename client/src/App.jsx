@@ -271,7 +271,7 @@ const getModuleTemplate = (module, schoolYearLabel, evaluationType) => {
 
 const normalizeModules = (modules = [], schoolYearLabel) => {
   if (!Array.isArray(modules) || modules.length === 0) {
-    return [buildDefaultModule({}, EMPTY_TEMPLATE, schoolYearLabel)];
+    return [];
   }
 
   return modules.map((module) => {
