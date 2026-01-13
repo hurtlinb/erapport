@@ -160,6 +160,7 @@ const defaultTemplate = {
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
+  groupFeatureEnabled: false,
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -184,6 +185,7 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
+    groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
@@ -386,6 +388,7 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
 
     return {
       category: section.category,
+      groupEvaluation: section.groupEvaluation ?? false,
       result: existingSection?.result ?? "",
       items: items.map((item) => {
         const normalizedItem = normalizeTemplateItem(item);
@@ -426,6 +429,7 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
   note: student.note ?? template.note ?? "",
+  groupName: student.groupName || "",
   evaluationType: template.evaluationType || "",
   className: template.className || "",
   teacher: template.teacher || "",
@@ -444,6 +448,7 @@ const getStudentDisplayName = (student) => {
 };
 
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
+const getStudentGroupName = (student) => student.groupName?.trim() || "";
 
 const buildStudentFromTemplate = (template, teacherId = "") => ({
   id: crypto.randomUUID(),
@@ -455,6 +460,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   schoolYear: template.schoolYear || "",
   note: template.note || "",
   remarks: "",
+  groupName: "",
   evaluationType: template.evaluationType || "",
   className: template.className || "",
   teacher: template.teacher || "",
@@ -522,6 +528,16 @@ function App() {
       ),
     [activeEvaluationType, activeModuleId, students]
   );
+  const groupOptions = useMemo(() => {
+    const groupSet = new Set();
+    moduleStudents.forEach((student) => {
+      const groupName = getStudentGroupName(student);
+      if (groupName) {
+        groupSet.add(groupName);
+      }
+    });
+    return Array.from(groupSet);
+  }, [moduleStudents]);
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
@@ -846,10 +862,38 @@ function App() {
     }));
   };
 
+  const syncGroupCategory = (sectionIndex, updater) => {
+    setDraft((prevDraft) => {
+      const nextDraft = updater(prevDraft);
+      const groupName = getStudentGroupName(nextDraft);
+      const shouldSync =
+        template.groupFeatureEnabled &&
+        groupName &&
+        nextDraft.competencies?.[sectionIndex]?.groupEvaluation;
+
+      setStudents((prevStudents) =>
+        prevStudents.map((student) => {
+          if (student.id === nextDraft.id) {
+            return updater(student);
+          }
+          if (!shouldSync) return student;
+          if (student.moduleId !== activeModuleId) return student;
+          if (getStudentEvaluationType(student) !== activeEvaluationType) {
+            return student;
+          }
+          if (getStudentGroupName(student) !== groupName) return student;
+          return updater(student);
+        })
+      );
+
+      return nextDraft;
+    });
+  };
+
   const updateCompetency = (sectionIndex, itemIndex, field, value) => {
-    persistDraftChanges((prev) => ({
-      ...prev,
-      competencies: (prev.competencies || []).map((section, sIndex) => {
+    syncGroupCategory(sectionIndex, (student) => ({
+      ...student,
+      competencies: (student.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
         return {
           ...section,
@@ -862,9 +906,9 @@ function App() {
   };
 
   const updateCategoryResult = (sectionIndex, value) => {
-    persistDraftChanges((prev) => ({
-      ...prev,
-      competencies: (prev.competencies || []).map((section, sIndex) =>
+    syncGroupCategory(sectionIndex, (student) => ({
+      ...student,
+      competencies: (student.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex ? { ...section, result: value } : section
       )
     }));
@@ -1098,6 +1142,15 @@ function App() {
     }));
   };
 
+  const handleTemplateCategoryGroupChange = (sectionIndex, value) => {
+    updateTemplate((prev) => ({
+      ...prev,
+      competencies: (prev.competencies || []).map((section, sIndex) =>
+        sIndex === sectionIndex ? { ...section, groupEvaluation: value } : section
+      )
+    }));
+  };
+
   const handleTemplateTaskFieldChange = (
     sectionIndex,
     itemIndex,
@@ -1127,6 +1180,7 @@ function App() {
         ...(prev.competencies || []),
         {
           category: "New category",
+          groupEvaluation: false,
           items: [
             {
               task: "New task",
@@ -1214,6 +1268,17 @@ function App() {
           : section
       )
     }));
+  };
+
+  const handleStudentGroupChange = (studentId, value) => {
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === studentId ? { ...student, groupName: value } : student
+      )
+    );
+    if (selectedId === studentId) {
+      setDraft((prev) => ({ ...prev, groupName: value }));
+    }
   };
 
   const handleRemoveTask = (sectionIndex, itemIndex) => {
@@ -1668,6 +1733,19 @@ function App() {
               </button>
             </div>
           </div>
+          {template.groupFeatureEnabled && (
+            <div className="group-controls">
+              <p className="helper-text">
+                Assign students to a group to share results for group-evaluated
+                categories.
+              </p>
+              <datalist id="group-options">
+                {groupOptions.map((groupName) => (
+                  <option key={groupName} value={groupName} />
+                ))}
+              </datalist>
+            </div>
+          )}
           <ul className="student-list">
             {moduleStudents.length === 0 && (
               <li className="empty">
@@ -1686,10 +1764,39 @@ function App() {
                   .join(" ")}
                 onClick={() => setSelectedId(student.id)}
               >
-                <div>
+                <div className="student-card-content">
                   <p className="student-name">
                     {getStudentDisplayName(student) || "Unnamed student"}
                   </p>
+                  {template.groupFeatureEnabled && (
+                    <p className="student-meta">
+                      {getStudentGroupName(student)
+                        ? `Group: ${getStudentGroupName(student)}`
+                        : "No group assigned"}
+                    </p>
+                  )}
+                  {template.groupFeatureEnabled && (
+                    <div
+                      className="student-group-field"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <label>
+                        Group
+                        <input
+                          type="text"
+                          list="group-options"
+                          value={student.groupName || ""}
+                          onChange={(event) =>
+                            handleStudentGroupChange(
+                              student.id,
+                              event.target.value
+                            )
+                          }
+                          placeholder="Group A"
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
                 <button
                   className="button text"
@@ -2249,6 +2356,19 @@ function App() {
                   ))}
                 </select>
               </label>
+              <label className="checkbox-field">
+                <span>Enable group evaluations</span>
+                <input
+                  type="checkbox"
+                  checked={template.groupFeatureEnabled}
+                  onChange={(event) =>
+                    handleTemplateField("groupFeatureEnabled", event.target.checked)
+                  }
+                />
+                <span className="helper-text">
+                  Allow categories to be shared between students in the same group.
+                </span>
+              </label>
               <label>
                 Class
                 <input
@@ -2378,6 +2498,20 @@ function App() {
                         }
                       />
                     </div>
+                    <label className="category-group-toggle">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(section.groupEvaluation)}
+                        onChange={(event) =>
+                          handleTemplateCategoryGroupChange(
+                            sectionIndex,
+                            event.target.checked
+                          )
+                        }
+                        disabled={!template.groupFeatureEnabled}
+                      />
+                      Group evaluation
+                    </label>
                     <button
                       className="button text"
                       onClick={() => handleRemoveCategory(sectionIndex)}
