@@ -447,6 +447,14 @@ const getStudentDisplayName = (student) => {
   return [firstName, lastName].filter(Boolean).join(" ");
 };
 
+const sanitizeFilename = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized ? normalized.slice(0, 60) : "report";
+};
+
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
 
@@ -560,6 +568,7 @@ function App() {
   const [copyStudentSelections, setCopyStudentSelections] = useState({});
   const [copyConfig, setCopyConfig] = useState(EVALUATION_COPY_PAIRS[0]);
   const [showDetails, setShowDetails] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const isHydratedRef = useRef(false);
@@ -1136,6 +1145,43 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportAllReports = async () => {
+    if (moduleStudents.length === 0) {
+      alert("No students available to export.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/report/export-all`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ students: moduleStudents })
+      });
+
+      if (!response.ok) {
+        alert("Unable to export the reports.");
+        return;
+      }
+
+      const moduleLabel = sanitizeFilename(activeModule?.title || "module");
+      const evaluationLabel = sanitizeFilename(activeEvaluationType || "report");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${moduleLabel}-${evaluationLabel}-reports.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const updateTemplate = (updater) => {
     setTemplate((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
@@ -1676,6 +1722,19 @@ function App() {
               </p>
             </div>
             <div className="actions">
+              <button
+                className="button ghost"
+                type="button"
+                onClick={handleExportAllReports}
+                disabled={moduleStudents.length === 0 || isExporting}
+                title={
+                  moduleStudents.length === 0
+                    ? "No students available to export."
+                    : "Export all reports for this module and report type"
+                }
+              >
+                {isExporting ? "Exporting..." : "Export all"}
+              </button>
               <button
                 className="button primary"
                 type="button"

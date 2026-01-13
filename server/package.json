@@ -7,6 +7,7 @@
     "dev": "node src/index.js"
   },
   "dependencies": {
+    "archiver": "^6.0.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "pdfkit": "^0.15.0"
