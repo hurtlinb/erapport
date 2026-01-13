@@ -787,6 +787,84 @@ const drawStudentInfoTable = (doc, student, infoBoxY) => {
   return { infoBoxHeight, infoRowHeight };
 };
 
+const drawCoachingInfoTable = (doc, student, infoBoxY) => {
+  const studentDisplayName = getStudentDisplayName(student);
+  const evaluationNumber = getEvaluationNumber(student.evaluationType);
+  const noteValue = student.note || "-";
+  const noteLabel = `Note du rapport d'évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  } =`;
+  const infoRowHeight = 26;
+  const noteRowHeight = 28;
+  const infoBoxHeight = infoRowHeight + noteRowHeight;
+  const infoTableX = 40;
+  const infoColumnWidths = [170, 255, 90];
+
+  doc.lineWidth(0.6).strokeColor(theme.text).font("Helvetica").fontSize(9);
+
+  infoColumnWidths.reduce((x, width) => {
+    doc.rect(x, infoBoxY, width, infoRowHeight).stroke();
+    return x + width;
+  }, infoTableX);
+
+  const noteRowY = infoBoxY + infoRowHeight;
+  const mergedWidth = infoColumnWidths[0] + infoColumnWidths[1];
+  const rightColumnX = infoTableX + mergedWidth;
+
+  doc.rect(infoTableX, noteRowY, mergedWidth, noteRowHeight).stroke();
+  doc.rect(rightColumnX, noteRowY, infoColumnWidths[2], noteRowHeight).stroke();
+
+  const leftColumnX = infoTableX + 8;
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text("Apprenant(e)", leftColumnX, infoBoxY + 5, {
+      width: infoColumnWidths[0] - 16
+    })
+    .font("Helvetica")
+    .fontSize(8)
+    .text("Nom + prénom / classe", leftColumnX, infoBoxY + 16, {
+      width: infoColumnWidths[0] - 16
+    });
+
+  const middleColumnX = infoTableX + infoColumnWidths[0];
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(studentDisplayName || "-", middleColumnX, infoBoxY + 6, {
+      width: infoColumnWidths[1],
+      align: "center"
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(student.className || "-", rightColumnX, infoBoxY + 6, {
+      width: infoColumnWidths[2],
+      align: "center"
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor(theme.text)
+    .text(noteLabel, infoTableX, noteRowY + 8, {
+      width: mergedWidth,
+      align: "center"
+    })
+    .font("Helvetica-Bold")
+    .fontSize(18)
+    .fillColor("#d10000")
+    .text(noteValue, rightColumnX, noteRowY + 4, {
+      width: infoColumnWidths[2],
+      align: "center"
+    })
+    .fillColor(theme.text)
+    .font("Helvetica");
+
+  return { infoBoxHeight, infoRowHeight };
+};
+
 const renderStudentReport = (doc, student) => {
   const evaluationNumber = getEvaluationNumber(student.evaluationType);
   const { headerBottomY } = renderStudentHeader(doc, student, evaluationNumber);
@@ -925,7 +1003,7 @@ const renderCoachingReport = (doc, student) => {
     });
 
   const infoBoxY = moduleBarY + moduleBarHeight + 8;
-  const { infoBoxHeight } = drawStudentInfoTable(doc, student, infoBoxY);
+  const { infoBoxHeight } = drawCoachingInfoTable(doc, student, infoBoxY);
   let coachingBoxY = infoBoxY + infoBoxHeight + 16;
 
   if (coachingBoxY > 720) {
