@@ -12,6 +12,9 @@ import { loadState, saveState } from "./dataStore.js";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
@@ -248,6 +251,13 @@ const buildReportFilename = (student) => {
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
+const buildCoachingFilename = (student) => {
+  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const evaluationLabel = getEvaluationLabel(student?.evaluationType);
+  const studentName = getStudentNameToken(student);
+  return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
+};
+
 const csvEscape = (value) => {
   const stringValue = String(value ?? "");
   if (/["\n,]/.test(stringValue)) {
@@ -275,14 +285,28 @@ foreach ($student in $students) {
   $mail.To = $student.StudentEmail
   $mail.Subject = "Evaluation report - $($student.StudentName)"
   $attachmentPath = Join-Path $PSScriptRoot $student.ReportFilename
+  $coachingPath = $null
+
+  if ($student.CoachingFilename) {
+    $coachingPath = Join-Path $PSScriptRoot $student.CoachingFilename
+  }
 
   if (Test-Path $attachmentPath) {
     $null = $mail.Attachments.Add($attachmentPath)
   }
 
+  if ($coachingPath -and (Test-Path $coachingPath)) {
+    $null = $mail.Attachments.Add($coachingPath)
+  }
+
   $mail.Save()
 }
 `;
+
+const shouldIncludeCoaching = (student) => {
+  const numericNote = Number(student?.note);
+  return [1, 2, 3].includes(numericNote);
+};
 
 const getStatusStyle = (status) => {
   if (status === STATUS_VALUES.OK) {
@@ -533,11 +557,7 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   doc.font("Helvetica");
 };
 
-const renderStudentReport = (doc, student) => {
-  const studentDisplayName = getStudentDisplayName(student);
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const logoPath = path.join(__dirname, "emf.png");
+const renderReportHeader = (doc, reportTitle) => {
   const headerX = 40;
   const headerY = 40;
   const headerWidth = 515;
@@ -545,10 +565,7 @@ const renderStudentReport = (doc, student) => {
   const logoWidth = 150;
   const dateWidth = 90;
   const titleWidth = headerWidth - logoWidth - dateWidth;
-  const evaluationNumber = getEvaluationNumber(student.evaluationType);
-  const reportTitle = `Rapport d'évaluation sommative${
-    evaluationNumber ? ` ${evaluationNumber}` : ""
-  }`;
+  const logoPath = path.join(__dirname, "emf.png");
 
   doc.lineWidth(0.6).strokeColor(theme.text);
   doc.rect(headerX, headerY, logoWidth, headerHeight).stroke();
@@ -594,21 +611,11 @@ const renderStudentReport = (doc, student) => {
       align: "center"
     });
 
-  const moduleBarY = headerY + headerHeight + 8;
-  const moduleBarHeight = 28;
+  return { headerX, headerY, headerHeight, headerWidth };
+};
 
-  doc
-    .rect(40, moduleBarY, 515, moduleBarHeight)
-    .fillAndStroke("#fbd2a3", theme.text)
-    .fillColor(theme.text)
-    .fontSize(11)
-    .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
-      width: 515,
-      align: "center"
-    });
-
-  const infoBoxY = moduleBarY + moduleBarHeight + 8;
+const drawStudentInfoTable = (doc, student, infoBoxY) => {
+  const studentDisplayName = getStudentDisplayName(student);
   const infoRowHeight = 26;
   const infoRows = 2;
   const infoBoxHeight = infoRowHeight * infoRows;
@@ -618,9 +625,11 @@ const renderStudentReport = (doc, student) => {
 
   doc.lineWidth(0.6).strokeColor(theme.text).font("Helvetica").fontSize(9);
 
-  infoColumnWidths.reduce((x, width, columnIndex) => {
+  infoColumnWidths.reduce((x, width) => {
     for (let rowIndex = 0; rowIndex < infoRows; rowIndex += 1) {
-      doc.rect(x, infoBoxY + rowIndex * infoRowHeight, width, infoRowHeight).stroke();
+      doc
+        .rect(x, infoBoxY + rowIndex * infoRowHeight, width, infoRowHeight)
+        .stroke();
     }
     return x + width;
   }, infoTableX);
@@ -680,6 +689,32 @@ const renderStudentReport = (doc, student) => {
       valign: "center"
     });
   }
+
+  return { infoBoxHeight, infoRowHeight };
+};
+
+const renderStudentReport = (doc, student) => {
+  const evaluationNumber = getEvaluationNumber(student.evaluationType);
+  const reportTitle = `Rapport d'évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  }`;
+  const { headerY, headerHeight } = renderReportHeader(doc, reportTitle);
+  const moduleBarY = headerY + headerHeight + 8;
+  const moduleBarHeight = 28;
+
+  doc
+    .rect(40, moduleBarY, 515, moduleBarHeight)
+    .fillAndStroke("#fbd2a3", theme.text)
+    .fillColor(theme.text)
+    .fontSize(11)
+    .font("Helvetica-Bold")
+    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
+      width: 515,
+      align: "center"
+    });
+
+  const infoBoxY = moduleBarY + moduleBarHeight + 8;
+  const { infoBoxHeight } = drawStudentInfoTable(doc, student, infoBoxY);
 
   const operationalTitleY = infoBoxY + infoBoxHeight + 12;
   const operationalBodyY = operationalTitleY + 12;
@@ -805,6 +840,62 @@ const renderStudentReport = (doc, student) => {
     .text(student.remarks || "-", 120, cursorY + 5, { width: 430 });
 };
 
+const renderCoachingReport = (doc, student) => {
+  const { headerY, headerHeight } = renderReportHeader(doc, "Coaching");
+  const moduleBarY = headerY + headerHeight + 8;
+  const moduleBarHeight = 28;
+
+  doc
+    .rect(40, moduleBarY, 515, moduleBarHeight)
+    .fillAndStroke("#fbd2a3", theme.text)
+    .fillColor(theme.text)
+    .fontSize(11)
+    .font("Helvetica-Bold")
+    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
+      width: 515,
+      align: "center"
+    });
+
+  const infoBoxY = moduleBarY + moduleBarHeight + 8;
+  const { infoBoxHeight } = drawStudentInfoTable(doc, student, infoBoxY);
+  let coachingBoxY = infoBoxY + infoBoxHeight + 16;
+
+  if (coachingBoxY > 720) {
+    doc.addPage();
+    coachingBoxY = 40;
+  }
+
+  const coachingBoxHeight = 760 - coachingBoxY;
+  doc
+    .rect(40, coachingBoxY, 515, coachingBoxHeight)
+    .stroke(theme.text);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor(theme.text)
+    .text("Coaching", 40, coachingBoxY + 8, { width: 515, align: "center" });
+
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor(theme.text)
+    .text(`Note du module : ${student.note || "-"}`, 50, coachingBoxY + 32);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text("Observations :", 50, coachingBoxY + 54);
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor(theme.muted)
+    .text(student.remarks || "-", 50, coachingBoxY + 68, {
+      width: 495
+    });
+};
+
 const createReportBuffer = (student) =>
   new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 40, size: "A4" });
@@ -818,6 +909,22 @@ const createReportBuffer = (student) =>
 
     doc.pipe(stream);
     renderStudentReport(doc, student);
+    doc.end();
+  });
+
+const createCoachingBuffer = (student) =>
+  new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 40, size: "A4" });
+    const stream = new PassThrough();
+    const chunks = [];
+
+    doc.on("error", reject);
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+
+    doc.pipe(stream);
+    renderCoachingReport(doc, student);
     doc.end();
   });
 
@@ -863,7 +970,12 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
   });
   archive.pipe(res);
 
-  const csvRows = [["StudentName", "StudentEmail", "ReportFilename"]];
+  const csvRows = [[
+    "StudentName",
+    "StudentEmail",
+    "ReportFilename",
+    "CoachingFilename"
+  ]];
 
   try {
     for (const student of students) {
@@ -871,10 +983,18 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
       const pdfBuffer = await createReportBuffer(student);
       archive.append(pdfBuffer, { name: reportFilename });
 
+      let coachingFilename = "";
+      if (shouldIncludeCoaching(student)) {
+        coachingFilename = buildCoachingFilename(student);
+        const coachingBuffer = await createCoachingBuffer(student);
+        archive.append(coachingBuffer, { name: coachingFilename });
+      }
+
       csvRows.push([
         getStudentDisplayName(student) || "-",
         student.email || "",
-        reportFilename
+        reportFilename,
+        coachingFilename
       ]);
     }
 
