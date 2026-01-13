@@ -1596,7 +1596,6 @@ function App() {
       <div className="app auth-page">
         <header className="hero">
           <div>
-            <p className="eyebrow">Evaluation Report Builder</p>
             <h1>Sign in to access your student reports</h1>
             <p className="subtitle">
               Each teacher sees only their own reports. Create an account or
@@ -1729,7 +1728,6 @@ function App() {
     <div className="app">
       <header className="hero">
         <div>
-          <p className="eyebrow">Evaluation Report Builder</p>
           <h1>Generate student evaluation reports in minutes</h1>
         </div>
         <div className="hero-card">
