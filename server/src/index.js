@@ -614,6 +614,100 @@ const renderReportHeader = (doc, reportTitle) => {
   return { headerX, headerY, headerHeight, headerWidth };
 };
 
+const renderStudentHeader = (doc, student, evaluationNumber) => {
+  const headerX = 40;
+  const headerY = 40;
+  const headerWidth = 515;
+  const moduleBarHeight = 30;
+  const infoRowHeight = 26;
+  const noteRowHeight = 28;
+  const infoColumnWidths = [170, 255, 90];
+  const studentDisplayName = getStudentDisplayName(student);
+  const noteValue = student.note || "-";
+  const noteLabel = `Note du rapport d'évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  } =`;
+
+  doc
+    .lineWidth(0.6)
+    .strokeColor(theme.text)
+    .rect(headerX, headerY, headerWidth, moduleBarHeight)
+    .fillAndStroke("#fbd2a3", theme.text)
+    .fillColor(theme.text)
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(student.moduleTitle || "Module", headerX, headerY + 8, {
+      width: headerWidth,
+      align: "center"
+    });
+
+  const infoRowY = headerY + moduleBarHeight + 8;
+  const middleColumnX = headerX + infoColumnWidths[0];
+  const rightColumnX = middleColumnX + infoColumnWidths[1];
+
+  infoColumnWidths.reduce((x, width) => {
+    doc.rect(x, infoRowY, width, infoRowHeight).stroke();
+    return x + width;
+  }, headerX);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor(theme.text)
+    .text("Apprenant(e)", headerX + 8, infoRowY + 4, {
+      width: infoColumnWidths[0] - 16
+    })
+    .font("Helvetica")
+    .fontSize(8)
+    .text("Nom + prénom / classe", headerX + 8, infoRowY + 15, {
+      width: infoColumnWidths[0] - 16
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(studentDisplayName || "-", middleColumnX, infoRowY + 6, {
+      width: infoColumnWidths[1],
+      align: "center"
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(16)
+    .text(student.className || "-", rightColumnX, infoRowY + 4, {
+      width: infoColumnWidths[2],
+      align: "center"
+    });
+
+  const noteRowY = infoRowY + infoRowHeight;
+  const noteLeftWidth = infoColumnWidths[0] + infoColumnWidths[1];
+  doc
+    .rect(headerX, noteRowY, noteLeftWidth, noteRowHeight)
+    .stroke()
+    .rect(rightColumnX, noteRowY, infoColumnWidths[2], noteRowHeight)
+    .stroke();
+
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor(theme.text)
+    .text(noteLabel, headerX, noteRowY + 8, {
+      width: noteLeftWidth,
+      align: "center"
+    })
+    .font("Helvetica-Bold")
+    .fontSize(18)
+    .fillColor("#d10000")
+    .text(noteValue, rightColumnX, noteRowY + 4, {
+      width: infoColumnWidths[2],
+      align: "center"
+    })
+    .fillColor(theme.text)
+    .font("Helvetica");
+
+  return { headerBottomY: noteRowY + noteRowHeight };
+};
+
 const drawStudentInfoTable = (doc, student, infoBoxY) => {
   const studentDisplayName = getStudentDisplayName(student);
   const infoRowHeight = 26;
@@ -695,28 +789,9 @@ const drawStudentInfoTable = (doc, student, infoBoxY) => {
 
 const renderStudentReport = (doc, student) => {
   const evaluationNumber = getEvaluationNumber(student.evaluationType);
-  const reportTitle = `Rapport d'évaluation sommative${
-    evaluationNumber ? ` ${evaluationNumber}` : ""
-  }`;
-  const { headerY, headerHeight } = renderReportHeader(doc, reportTitle);
-  const moduleBarY = headerY + headerHeight + 8;
-  const moduleBarHeight = 28;
+  const { headerBottomY } = renderStudentHeader(doc, student, evaluationNumber);
 
-  doc
-    .rect(40, moduleBarY, 515, moduleBarHeight)
-    .fillAndStroke("#fbd2a3", theme.text)
-    .fillColor(theme.text)
-    .fontSize(11)
-    .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
-      width: 515,
-      align: "center"
-    });
-
-  const infoBoxY = moduleBarY + moduleBarHeight + 8;
-  const { infoBoxHeight } = drawStudentInfoTable(doc, student, infoBoxY);
-
-  const operationalTitleY = infoBoxY + infoBoxHeight + 12;
+  const operationalTitleY = headerBottomY + 12;
   const operationalBodyY = operationalTitleY + 12;
   const objectivesTitleY = operationalBodyY + 22;
   const objectivesBodyY = objectivesTitleY + 12;
@@ -760,16 +835,6 @@ const renderStudentReport = (doc, student) => {
     drawSummaryRow(doc, section.category, section.result, cursorY, rowHeight);
     cursorY += rowHeight;
   });
-
-  const noteRowHeight = summaryTable.noteRowHeight;
-  if (cursorY + noteRowHeight > 760) {
-    doc.addPage();
-    cursorY = 40;
-    drawSummaryHeaderRow(doc, cursorY);
-    cursorY += summaryTable.headerHeight;
-  }
-  drawSummaryNoteRow(doc, student.note, cursorY, noteRowHeight);
-  cursorY += noteRowHeight;
 
   cursorY += 16;
   student.competencies?.forEach((section, sectionIndex) => {
