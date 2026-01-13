@@ -574,6 +574,10 @@ function App() {
   const isHydratedRef = useRef(false);
   const isAuthenticated = Boolean(authToken && authUser);
   const teacherId = authUser?.id || "";
+  const teacherName = useMemo(
+    () => authUser?.name || authUser?.email || "",
+    [authUser]
+  );
   const moduleStudents = useMemo(
     () =>
       students.filter(
@@ -720,6 +724,13 @@ function App() {
       setIsEditing(false);
     }
   }, [selectedStudent, template, teacherId]);
+
+  useEffect(() => {
+    if (!teacherName) return;
+    setTemplate((prev) =>
+      prev.teacher === teacherName ? prev : { ...prev, teacher: teacherName }
+    );
+  }, [teacherName]);
 
   useEffect(() => {
     if (template.evaluationType !== activeEvaluationType) return;
@@ -2498,11 +2509,10 @@ function App() {
                 Teacher
                 <input
                   type="text"
-                  value={template.teacher}
-                  onChange={(event) =>
-                    handleTemplateField("teacher", event.target.value)
-                  }
-                  placeholder="Prof. Martin"
+                  value={teacherName}
+                  readOnly
+                  disabled
+                  placeholder="Signed-in teacher"
                 />
               </label>
               <label>
