@@ -1,9 +1,11 @@
+import archiver from "archiver";
 import cors from "cors";
 import crypto from "crypto";
 import express from "express";
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
+import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
 import { loadState, saveState } from "./dataStore.js";
 
@@ -207,6 +209,57 @@ const getStudentDisplayName = (student) => {
   const lastName = student?.name?.trim() || "";
   return [firstName, lastName].filter(Boolean).join(" ");
 };
+
+const sanitizeFilename = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized ? normalized.slice(0, 60) : "report";
+};
+
+const buildReportFilename = (student) => {
+  const baseName = sanitizeFilename(getStudentDisplayName(student) || "report");
+  const evaluationLabel = sanitizeFilename(student?.evaluationType || "report");
+  const idSuffix = student?.id ? `-${String(student.id).slice(0, 8)}` : "";
+  return `${baseName}-${evaluationLabel}${idSuffix}-evaluation-report.pdf`;
+};
+
+const csvEscape = (value) => {
+  const stringValue = String(value ?? "");
+  if (/["\n,]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, "\"\"")}"`;
+  }
+  return stringValue;
+};
+
+const buildOutlookDraftScript = () => `# Creates Outlook draft emails from students.csv
+$csvPath = Join-Path $PSScriptRoot "students.csv"
+if (-not (Test-Path $csvPath)) {
+  Write-Error "students.csv not found in the same folder as this script."
+  exit 1
+}
+
+$outlook = New-Object -ComObject Outlook.Application
+$students = Import-Csv $csvPath
+
+foreach ($student in $students) {
+  if (-not $student.StudentEmail) {
+    continue
+  }
+
+  $mail = $outlook.CreateItem(0)
+  $mail.To = $student.StudentEmail
+  $mail.Subject = "Evaluation report - $($student.StudentName)"
+  $attachmentPath = Join-Path $PSScriptRoot $student.ReportFilename
+
+  if (Test-Path $attachmentPath) {
+    $null = $mail.Attachments.Add($attachmentPath)
+  }
+
+  $mail.Save()
+}
+`;
 
 const getStatusStyle = (status) => {
   if (status === STATUS_VALUES.OK) {
@@ -457,18 +510,8 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   doc.font("Helvetica");
 };
 
-app.post("/api/report", requireAuth, (req, res) => {
-  const student = req.body;
+const renderStudentReport = (doc, student) => {
   const studentDisplayName = getStudentDisplayName(student);
-
-  const doc = new PDFDocument({ margin: 40, size: "A4" });
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="${studentDisplayName || "report"}.pdf"`
-  );
-  doc.pipe(res);
-
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const logoPath = path.join(__dirname, "emf.png");
@@ -737,8 +780,98 @@ app.post("/api/report", requireAuth, (req, res) => {
     .text("Remarques :", 46, cursorY + 5)
     .font("Helvetica")
     .text(student.remarks || "-", 120, cursorY + 5, { width: 430 });
+};
+
+const createReportBuffer = (student) =>
+  new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 40, size: "A4" });
+    const stream = new PassThrough();
+    const chunks = [];
+
+    doc.on("error", reject);
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+
+    doc.pipe(stream);
+    renderStudentReport(doc, student);
+    doc.end();
+  });
+
+app.post("/api/report", requireAuth, (req, res) => {
+  const student = req.body;
+  const studentDisplayName = getStudentDisplayName(student);
+
+  const doc = new PDFDocument({ margin: 40, size: "A4" });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${studentDisplayName || "report"}.pdf"`
+  );
+  doc.pipe(res);
+
+  renderStudentReport(doc, student);
 
   doc.end();
+});
+
+app.post("/api/report/export-all", requireAuth, async (req, res) => {
+  const students = Array.isArray(req.body?.students) ? req.body.students : [];
+
+  if (students.length === 0) {
+    res.status(400).json({ error: "No students provided for export." });
+    return;
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="evaluation-reports.zip"'
+  );
+
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  archive.on("error", (error) => {
+    console.error(error);
+    if (!res.headersSent) {
+      res.status(500).end();
+    } else {
+      res.end();
+    }
+  });
+  archive.pipe(res);
+
+  const csvRows = [["StudentName", "StudentEmail", "ReportFilename"]];
+
+  try {
+    for (const student of students) {
+      const reportFilename = buildReportFilename(student);
+      const pdfBuffer = await createReportBuffer(student);
+      archive.append(pdfBuffer, { name: reportFilename });
+
+      csvRows.push([
+        getStudentDisplayName(student) || "-",
+        student.email || "",
+        reportFilename
+      ]);
+    }
+
+    const csvContent = csvRows
+      .map((row) => row.map(csvEscape).join(","))
+      .join("\n");
+    archive.append(csvContent, { name: "students.csv" });
+    archive.append(buildOutlookDraftScript(), {
+      name: "create-outlook-drafts.ps1"
+    });
+
+    await archive.finalize();
+  } catch (error) {
+    console.error(error);
+    if (!res.headersSent) {
+      res.status(500).end();
+    } else {
+      res.end();
+    }
+  }
 });
 
 app.listen(PORT, () => {
