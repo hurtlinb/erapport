@@ -841,7 +841,10 @@ const renderStudentReport = (doc, student) => {
 };
 
 const renderCoachingReport = (doc, student) => {
-  const { headerY, headerHeight } = renderReportHeader(doc, "Coaching");
+  const { headerY, headerHeight } = renderReportHeader(
+    doc,
+    "Demande de coaching"
+  );
   const moduleBarY = headerY + headerHeight + 8;
   const moduleBarHeight = 28;
 
