@@ -116,6 +116,11 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
+const EMPTY_TEMPLATE = {
+  competencyOptions: [],
+  competencies: []
+};
+
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
   return {
@@ -190,7 +195,7 @@ const buildDefaultModule = (
 
 const normalizeModules = (modules = [], schoolYearLabel) => {
   if (!Array.isArray(modules) || modules.length === 0) {
-    return [buildDefaultModule({}, {}, schoolYearLabel)];
+    return [buildDefaultModule({}, EMPTY_TEMPLATE, schoolYearLabel)];
   }
 
   return modules.map((module) => {

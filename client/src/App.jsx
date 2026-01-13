@@ -139,6 +139,11 @@ const defaultTemplate = {
   competencies: DEFAULT_COMPETENCIES
 };
 
+const EMPTY_TEMPLATE = {
+  competencyOptions: [],
+  competencies: []
+};
+
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
   return {
@@ -236,7 +241,7 @@ const getModuleTemplate = (module, schoolYearLabel, evaluationType) => {
 
 const normalizeModules = (modules = [], schoolYearLabel) => {
   if (!Array.isArray(modules) || modules.length === 0) {
-    return [buildDefaultModule({}, {}, schoolYearLabel)];
+    return [buildDefaultModule({}, EMPTY_TEMPLATE, schoolYearLabel)];
   }
 
   return modules.map((module) => {
@@ -1081,9 +1086,13 @@ function App() {
       setActiveModuleId(fallbackSchoolYear.modules[0]?.id || "");
       return;
     }
-    const newModule = buildDefaultModule({
-      title: "New module"
-    }, {}, activeSchoolYear.label);
+    const newModule = buildDefaultModule(
+      {
+        title: "New module"
+      },
+      EMPTY_TEMPLATE,
+      activeSchoolYear.label
+    );
     setSchoolYears((prev) =>
       prev.map((year) =>
         year.id === activeSchoolYearId
@@ -1137,7 +1146,7 @@ function App() {
           modules:
             remainingModules.length > 0
               ? remainingModules
-              : [buildDefaultModule({}, {}, year.label)]
+              : [buildDefaultModule({}, EMPTY_TEMPLATE, year.label)]
         };
       })
     );
