@@ -1728,7 +1728,7 @@ function App() {
     <div className="app">
       <header className="hero">
         <div>
-          <h1>Generate student evaluation reports in minutes</h1>
+          <h1>Evaluation Report Builder</h1>
         </div>
         <div className="hero-card">
           <div>
