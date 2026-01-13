@@ -455,6 +455,36 @@ const sanitizeFilename = (value) => {
   return normalized ? normalized.slice(0, 60) : "report";
 };
 
+const sanitizeReportToken = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[^a-z0-9]/gi, "");
+
+const getModuleNumberToken = (moduleTitle) => {
+  const firstWord = String(moduleTitle || "")
+    .trim()
+    .split(/\s+/)[0];
+  return sanitizeReportToken(firstWord) || "module";
+};
+
+const getEvaluationLabel = (evaluationType) => {
+  const normalized = String(evaluationType || "").trim().toUpperCase();
+  return sanitizeReportToken(normalized) || "E1";
+};
+
+const getStudentNameToken = (student) => {
+  const firstName = sanitizeReportToken(student?.firstname);
+  const lastName = sanitizeReportToken(student?.name);
+  return `${firstName}${lastName}` || "Student";
+};
+
+const buildReportFilename = (student) => {
+  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const evaluationLabel = getEvaluationLabel(student?.evaluationType);
+  const studentName = getStudentNameToken(student);
+  return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
+};
+
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
 
@@ -1138,7 +1168,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${getStudentDisplayName(draft)}-evaluation-report.pdf`;
+    link.download = buildReportFilename(draft);
     document.body.appendChild(link);
     link.click();
     link.remove();

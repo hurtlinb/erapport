@@ -218,11 +218,34 @@ const sanitizeFilename = (value) => {
   return normalized ? normalized.slice(0, 60) : "report";
 };
 
+const sanitizeReportToken = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/[^a-z0-9]/gi, "");
+
+const getModuleNumberToken = (moduleTitle) => {
+  const firstWord = String(moduleTitle || "")
+    .trim()
+    .split(/\s+/)[0];
+  return sanitizeReportToken(firstWord) || "module";
+};
+
+const getEvaluationLabel = (evaluationType) => {
+  const normalized = String(evaluationType || "").trim().toUpperCase();
+  return sanitizeReportToken(normalized) || "E1";
+};
+
+const getStudentNameToken = (student) => {
+  const firstName = sanitizeReportToken(student?.firstname);
+  const lastName = sanitizeReportToken(student?.name);
+  return `${firstName}${lastName}` || "Student";
+};
+
 const buildReportFilename = (student) => {
-  const baseName = sanitizeFilename(getStudentDisplayName(student) || "report");
-  const evaluationLabel = sanitizeFilename(student?.evaluationType || "report");
-  const idSuffix = student?.id ? `-${String(student.id).slice(0, 8)}` : "";
-  return `${baseName}-${evaluationLabel}${idSuffix}-evaluation-report.pdf`;
+  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const evaluationLabel = getEvaluationLabel(student?.evaluationType);
+  const studentName = getStudentNameToken(student);
+  return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const csvEscape = (value) => {
@@ -800,13 +823,13 @@ const createReportBuffer = (student) =>
 
 app.post("/api/report", requireAuth, (req, res) => {
   const student = req.body;
-  const studentDisplayName = getStudentDisplayName(student);
+  const reportFilename = buildReportFilename(student);
 
   const doc = new PDFDocument({ margin: 40, size: "A4" });
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename="${studentDisplayName || "report"}.pdf"`
+    `attachment; filename="${reportFilename}"`
   );
   doc.pipe(res);
 
