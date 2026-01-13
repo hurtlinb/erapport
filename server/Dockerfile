@@ -1,4 +1,8 @@
+ARG APP_VERSION=1.1
+
 FROM node:20-alpine
+ARG APP_VERSION=1.1
+LABEL org.opencontainers.image.version=$APP_VERSION
 
 WORKDIR /app
 ENV NODE_ENV=production
