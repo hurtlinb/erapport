@@ -1750,11 +1750,7 @@ function App() {
         <section className="panel template-panel">
           <div className="panel-header">
             <div>
-              <h2>Report template</h2>
-              <p className="helper-text">
-                Configure the shared information and task list used for every new
-                report.
-              </p>
+              <h2>Template</h2>
             </div>
             <div className="actions">
               <button
