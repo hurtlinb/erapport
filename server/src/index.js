@@ -1016,30 +1016,161 @@ const renderCoachingReport = (doc, student) => {
     .rect(40, coachingBoxY, 515, coachingBoxHeight)
     .stroke(theme.text);
 
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(12)
-    .fillColor(theme.text)
-    .text("Coaching", 40, coachingBoxY + 8, { width: 515, align: "center" });
+  const coachingBoxX = 40;
+  const coachingBoxWidth = 515;
+  const contentX = coachingBoxX + 10;
+  const contentWidth = coachingBoxWidth - 20;
+  const coachingDate = formatDate(student.coachingDate) || "-";
 
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor(theme.text)
-    .text(`Note du module : ${student.note || "-"}`, 50, coachingBoxY + 32);
-
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .text("Observations :", 50, coachingBoxY + 54);
+  let cursorY = coachingBoxY + 12;
 
   doc
     .font("Helvetica")
     .fontSize(9)
-    .fillColor(theme.muted)
-    .text(student.remarks || "-", 50, coachingBoxY + 68, {
-      width: 495
+    .fillColor(theme.text)
+    .text(
+      "Un accompagnement pédagogique appelé \"coaching\" vous est proposé sur une base volontaire (voir la directive spécifique présentant le concept).",
+      contentX,
+      cursorY,
+      { width: contentWidth }
+    );
+
+  cursorY = doc.y + 8;
+
+  const checkboxLabelX = coachingBoxX + coachingBoxWidth - 120;
+  const checkboxSize = 10;
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .text("Je suis volontaire pour un coaching (cocher)", coachingBoxX, cursorY, {
+      width: coachingBoxWidth - 140,
+      align: "center"
     });
+
+  doc
+    .fontSize(8)
+    .text("OUI", checkboxLabelX + 6, cursorY - 2)
+    .text("NON", checkboxLabelX + 56, cursorY - 2);
+
+  doc
+    .rect(checkboxLabelX + 6, cursorY + 10, checkboxSize, checkboxSize)
+    .stroke(theme.text);
+  doc
+    .rect(checkboxLabelX + 56, cursorY + 10, checkboxSize, checkboxSize)
+    .stroke(theme.text);
+
+  cursorY += 32;
+
+  const signatureLabelWidth = 300;
+  const signatureLineStart = coachingBoxX + signatureLabelWidth + 16;
+  const signatureLineEnd = coachingBoxX + coachingBoxWidth - 10;
+
+  const drawSignatureLine = (label, y) => {
+    doc.font("Helvetica").fontSize(9).text(label, contentX, y, {
+      width: signatureLabelWidth
+    });
+    const labelHeight = doc.heightOfString(label, {
+      width: signatureLabelWidth
+    });
+    const lineY = y + labelHeight - 2;
+    doc
+      .dash(1, { space: 2 })
+      .moveTo(signatureLineStart, lineY)
+      .lineTo(signatureLineEnd, lineY)
+      .stroke(theme.text)
+      .undash();
+    return y + labelHeight + 10;
+  };
+
+  cursorY = drawSignatureLine("Ma signature :", cursorY);
+  cursorY = drawSignatureLine(
+    "Signature du représentant légal (obligatoire) :",
+    cursorY
+  );
+  cursorY = drawSignatureLine(
+    "Autre professeur souhaité pour le coaching :\n(uniquement avec son accord préalable)",
+    cursorY
+  );
+
+  const footerHeight = 16;
+  const footerY = coachingBoxY + coachingBoxHeight - footerHeight;
+  const sectionStartY = cursorY + 8;
+  const remediationHeight = 32;
+  const objectivesHeaderHeight = 20;
+  const availableHeight = footerY - sectionStartY;
+  const objectivesBodyHeight = Math.max(
+    0,
+    availableHeight - remediationHeight - objectivesHeaderHeight
+  );
+
+  doc
+    .rect(
+      coachingBoxX + 2,
+      sectionStartY,
+      coachingBoxWidth - 4,
+      remediationHeight
+    )
+    .fillAndStroke("#f8cf6b", theme.text)
+    .fillColor(theme.text)
+    .font("Helvetica")
+    .fontSize(8)
+    .text(
+      "En cas de remédiation, la PEF sera libérée sans autres dès que les compétences seront acquises et que les éventuelles activités de remédiation prévues soient réalisées, réceptionnées et acceptées par l'enseignant.",
+      coachingBoxX + 8,
+      sectionStartY + 6,
+      { width: coachingBoxWidth - 16, align: "center" }
+    );
+
+  const objectivesHeaderY = sectionStartY + remediationHeight;
+  doc
+    .rect(
+      coachingBoxX + 2,
+      objectivesHeaderY,
+      coachingBoxWidth - 4,
+      objectivesHeaderHeight
+    )
+    .fillAndStroke("#fff4b0", theme.text)
+    .fillColor(theme.text)
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .text(
+      "Mes objectifs pour ce coaching",
+      coachingBoxX + 2,
+      objectivesHeaderY + 5,
+      { width: coachingBoxWidth - 4, align: "center" }
+    );
+
+  const objectivesBodyY = objectivesHeaderY + objectivesHeaderHeight;
+  if (objectivesBodyHeight > 0) {
+    const lineSpacing = objectivesBodyHeight / 3;
+    doc.font("Helvetica").fontSize(9).fillColor(theme.text);
+
+    Array.from({ length: 3 }).forEach((_, index) => {
+      const rowTop = objectivesBodyY + lineSpacing * index;
+      const numberY = rowTop + 4;
+      const lineY = objectivesBodyY + lineSpacing * (index + 1) - 6;
+
+      doc.text(`${index + 1}.`, coachingBoxX + 12, numberY);
+      doc
+        .dash(1, { space: 2 })
+        .moveTo(coachingBoxX + 30, lineY)
+        .lineTo(coachingBoxX + coachingBoxWidth - 10, lineY)
+        .stroke(theme.text)
+        .undash();
+    });
+  }
+
+  doc
+    .font("Helvetica")
+    .fontSize(8)
+    .fillColor(theme.text)
+    .text(
+      `Retour du document signé jusqu'au ${coachingDate}`,
+      coachingBoxX,
+      footerY,
+      { width: coachingBoxWidth, align: "center" }
+    );
 };
 
 const createReportBuffer = (student) =>
