@@ -276,11 +276,24 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
   }));
 };
 
-const normalizeStudent = (student) => ({
-  ...student,
-  evaluationType: student?.evaluationType || EVALUATION_TYPES[0],
-  teacherId: student?.teacherId || ""
-});
+const normalizeTextValue = (value) => {
+  if (typeof value === "string") {
+    return value.normalize("NFC");
+  }
+  if (value === null || value === undefined) return "";
+  return String(value).normalize("NFC");
+};
+
+const normalizeStudent = (student) => {
+  const baseStudent = student && typeof student === "object" ? student : {};
+  return {
+    ...baseStudent,
+    firstname: normalizeTextValue(baseStudent.firstname),
+    name: normalizeTextValue(baseStudent.name),
+    evaluationType: baseStudent?.evaluationType || EVALUATION_TYPES[0],
+    teacherId: baseStudent?.teacherId || ""
+  };
+};
 
 const normalizeUsers = (users = []) => {
   if (!Array.isArray(users)) return [];
