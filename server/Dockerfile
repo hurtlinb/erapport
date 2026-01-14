@@ -6,11 +6,11 @@ LABEL org.opencontainers.image.version=$APP_VERSION
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PGHOST=postgres
-ENV PGPORT=5432
-ENV PGDATABASE=erapport
-ENV PGUSER=erapport
-ENV PGPASSWORD=erapport
+ENV MARIADB_HOST=mariadb
+ENV MARIADB_PORT=3306
+ENV MARIADB_DATABASE=erapport
+ENV MARIADB_USER=erapport
+ENV MARIADB_PASSWORD=erapport
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
