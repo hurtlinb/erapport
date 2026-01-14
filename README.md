@@ -64,15 +64,40 @@ docker run --name erapport-client -p 8080:80 erapport-client
 The frontend will be available on `http://localhost:8080` and it will connect to
 the API using the `VITE_API_BASE_URL` used at build time.
 
-### Persisting server state
+### PostgreSQL configuration
 
-The server stores data in `server/src/data.json`. If you want data to survive
-container restarts, mount a volume:
+The server now stores state in PostgreSQL. It automatically creates the
+`app_state` table and seeds it with the default state on first run. Configure
+the connection using either `DATABASE_URL` or the `PG*` environment variables.
+
+#### Local development (using a local PostgreSQL)
 
 ```bash
-docker run \
-  --name erapport-server \
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/erapport
+cd server
+npm run dev
+```
+
+#### Docker example (server + postgres)
+
+```bash
+docker network create erapport-net
+
+docker run --name erapport-postgres \
+  --network erapport-net \
+  -e POSTGRES_DB=erapport \
+  -e POSTGRES_USER=erapport \
+  -e POSTGRES_PASSWORD=erapport \
+  -p 5432:5432 \
+  postgres:16
+
+docker run --name erapport-server \
+  --network erapport-net \
   -p 3001:3001 \
-  -v $(pwd)/server/src/data.json:/app/src/data.json \
+  -e PGHOST=erapport-postgres \
+  -e PGPORT=5432 \
+  -e PGDATABASE=erapport \
+  -e PGUSER=erapport \
+  -e PGPASSWORD=erapport \
   erapport-server
 ```
