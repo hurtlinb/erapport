@@ -307,13 +307,16 @@ const normalizeState = (state) => {
 
 const DEFAULT_STATE_ID = 1;
 
+const getOptionalString = (value) =>
+  typeof value === "string" && value.trim() ? value : undefined;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || undefined,
-  host: process.env.PGHOST,
+  connectionString: getOptionalString(process.env.DATABASE_URL),
+  host: getOptionalString(process.env.PGHOST),
   port: process.env.PGPORT ? Number(process.env.PGPORT) : undefined,
-  database: process.env.PGDATABASE,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD
+  database: getOptionalString(process.env.PGDATABASE),
+  user: getOptionalString(process.env.PGUSER),
+  password: getOptionalString(process.env.PGPASSWORD)
 });
 
 let initializationPromise;
