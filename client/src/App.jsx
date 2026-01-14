@@ -278,9 +278,9 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
 
   return modules.map((module) => {
     const normalizedModule = {
-      id: module.id || crypto.randomUUID(),
+      id: String(module.id ?? crypto.randomUUID()),
       title: module.title || "",
-      schoolYear: module.schoolYear || schoolYearLabel
+      schoolYear: schoolYearLabel
     };
 
     return {
@@ -305,7 +305,7 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
         schoolYear.year ||
         defaultTemplate.schoolYear;
       return {
-        id: schoolYear.id || crypto.randomUUID(),
+        id: String(schoolYear.id ?? crypto.randomUUID()),
         label,
         modules: normalizeModules(schoolYear.modules || [], label)
       };
@@ -335,7 +335,7 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
 
     const normalizedYears = Object.entries(groupedModules).map(
       ([label, yearModules]) => ({
-        id: crypto.randomUUID(),
+        id: String(crypto.randomUUID()),
         label,
         modules: normalizeModules(yearModules, label)
       })
@@ -353,14 +353,14 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
   }
 
   return SCHOOL_YEARS.map((label) => ({
-    id: crypto.randomUUID(),
+    id: String(crypto.randomUUID()),
     label,
     modules: normalizeModules([], label)
   }));
 };
 
 const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
-  id: crypto.randomUUID(),
+  id: String(crypto.randomUUID()),
   label,
   modules: normalizeModules([], label)
 });
