@@ -678,6 +678,11 @@ export const saveState = async (nextState) => {
       studentIds
     ]);
     for (const student of students) {
+      const competencyOptions = normalizeJsonValue(
+        student.competencyOptions,
+        []
+      );
+      const competencies = normalizeJsonValue(student.competencies, []);
       await client.query(
         `
           INSERT INTO students (
@@ -744,8 +749,8 @@ export const saveState = async (nextState) => {
           student.evaluationDate || "",
           student.coachingDate || "",
           student.operationalCompetence || "",
-          student.competencyOptions || [],
-          student.competencies || []
+          competencyOptions,
+          competencies
         ]
       );
     }
