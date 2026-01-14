@@ -166,6 +166,22 @@ app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
   res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
 }));
 
+app.post("/api/logs", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
+  const { user } = req;
+  const { event, payload } = req.body || {};
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    userId: user.id,
+    event: event || "unknown",
+    payload: payload || {}
+  };
+  const logsDir = path.join(__dirname, "logs");
+  fs.mkdirSync(logsDir, { recursive: true });
+  const logFile = path.join(logsDir, "client-events.log");
+  fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`, "utf8");
+  res.json({ status: "ok" });
+}));
+
 const theme = {
   text: "#0f172a",
   muted: "#334155",

@@ -630,6 +630,21 @@ function App() {
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
+  const logClientEvent = async (event, payload) => {
+    if (!authToken) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/logs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ event, payload })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const activeSchoolYear = useMemo(
     () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
     [activeSchoolYearId, schoolYears]
@@ -637,6 +652,11 @@ function App() {
   useEffect(() => {
     if (!activeSchoolYearId) return;
     console.info("Active school year updated", {
+      activeSchoolYearId,
+      activeSchoolYear,
+      schoolYears
+    });
+    logClientEvent("school-year-updated", {
       activeSchoolYearId,
       activeSchoolYear,
       schoolYears
@@ -1800,6 +1820,12 @@ function App() {
                     (year) => year.id === nextId
                   );
                   console.info("School year changed", {
+                    nextId,
+                    previousId: activeSchoolYearId,
+                    selectedYear,
+                    availableYears: schoolYears
+                  });
+                  logClientEvent("school-year-change", {
                     nextId,
                     previousId: activeSchoolYearId,
                     selectedYear,
