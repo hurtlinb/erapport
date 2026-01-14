@@ -78,6 +78,22 @@ cd server
 npm run dev
 ```
 
+PowerShell (Windows):
+
+```powershell
+$env:DATABASE_URL="postgres://postgres:postgres@localhost:5432/erapport"
+cd server
+npm run dev
+```
+
+Windows Command Prompt:
+
+```cmd
+set DATABASE_URL=postgres://postgres:postgres@localhost:5432/erapport
+cd server
+npm run dev
+```
+
 #### Docker example (server + postgres)
 
 ```bash
