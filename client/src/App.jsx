@@ -730,18 +730,34 @@ function App() {
           setAuthToken("");
           setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
           resetAppState("");
+          logClientEvent("state-load-unauthorized", {
+            status: response.status
+          });
           return;
         }
         if (!response.ok) {
+          logClientEvent("state-load-error", {
+            status: response.status
+          });
           throw new Error("Impossible de récupérer les données enregistrées.");
         }
         const data = await response.json();
         setSchoolYears(normalizeSchoolYears(data.schoolYears, data.modules));
         setStudents(data.students || []);
+        logClientEvent("state-loaded", {
+          schoolYears: Array.isArray(data.schoolYears)
+            ? data.schoolYears.length
+            : 0,
+          students: Array.isArray(data.students) ? data.students.length : 0,
+          hasModules: Array.isArray(data.modules) ? data.modules.length : 0
+        });
         setLoadError("");
         isHydratedRef.current = true;
       } catch (error) {
         console.error(error);
+        logClientEvent("state-load-exception", {
+          message: error?.message || "unknown"
+        });
         setLoadError(
           "Impossible de charger les données enregistrées depuis le serveur. Veuillez réessayer."
         );
