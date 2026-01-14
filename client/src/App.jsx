@@ -280,7 +280,7 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
     const normalizedModule = {
       id: String(module.id ?? crypto.randomUUID()),
       title: module.title || "",
-      schoolYear: module.schoolYear || schoolYearLabel
+      schoolYear: schoolYearLabel
     };
 
     return {
