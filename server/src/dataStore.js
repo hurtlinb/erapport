@@ -471,17 +471,25 @@ const ensureInitialized = async () => {
   return initializationPromise;
 };
 
-const buildTemplatePayload = (template) => ({
-  note: template.note || "",
-  groupFeatureEnabled: Boolean(template.groupFeatureEnabled),
-  className: template.className || "",
-  teacher: template.teacher || "",
-  evaluationDate: template.evaluationDate || "",
-  coachingDate: template.coachingDate || "",
-  operationalCompetence: template.operationalCompetence || "",
-  competencyOptions: template.competencyOptions || EMPTY_TEMPLATE.competencyOptions,
-  competencies: template.competencies || EMPTY_TEMPLATE.competencies
-});
+const serializeJsonValue = (value, fallback) =>
+  JSON.stringify(normalizeJsonValue(value, fallback));
+
+const buildTemplatePayload = (template) =>
+  serializeJsonValue(
+    {
+      note: template.note || "",
+      groupFeatureEnabled: Boolean(template.groupFeatureEnabled),
+      className: template.className || "",
+      teacher: template.teacher || "",
+      evaluationDate: template.evaluationDate || "",
+      coachingDate: template.coachingDate || "",
+      operationalCompetence: template.operationalCompetence || "",
+      competencyOptions:
+        template.competencyOptions || EMPTY_TEMPLATE.competencyOptions,
+      competencies: template.competencies || EMPTY_TEMPLATE.competencies
+    },
+    EMPTY_TEMPLATE
+  );
 
 const readTemplatesByModule = (rows) => {
   return rows.reduce((acc, row) => {
