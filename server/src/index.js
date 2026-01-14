@@ -29,13 +29,17 @@ const getTokenFromRequest = (req) => {
   return authHeader.replace("Bearer ", "").trim();
 };
 
-const requireAuth = (req, res, next) => {
+const asyncHandler = (handler) => (req, res, next) => {
+  Promise.resolve(handler(req, res, next)).catch(next);
+};
+
+const requireAuth = async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) {
     res.status(401).json({ error: "Jeton manquant." });
     return;
   }
-  const state = loadState();
+  const state = await loadState();
   const user = state.users.find((entry) => entry.token === token);
   if (!user) {
     res.status(401).json({ error: "Jeton invalide." });
@@ -46,14 +50,14 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", asyncHandler(async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) {
     res.status(400).json({ error: "Nom, e-mail et mot de passe requis." });
     return;
   }
 
-  const state = loadState();
+  const state = await loadState();
   const normalizedEmail = String(email).trim().toLowerCase();
   const existingUser = state.users.find(
     (user) => user.email.toLowerCase() === normalizedEmail
@@ -75,7 +79,7 @@ app.post("/api/auth/register", (req, res) => {
     token
   };
 
-  saveState({
+  await saveState({
     ...state,
     users: [...state.users, newUser]
   });
@@ -84,16 +88,16 @@ app.post("/api/auth/register", (req, res) => {
     user: { id: newUser.id, name: newUser.name, email: newUser.email },
     token
   });
-});
+}));
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", asyncHandler(async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     res.status(400).json({ error: "E-mail et mot de passe requis." });
     return;
   }
 
-  const state = loadState();
+  const state = await loadState();
   const normalizedEmail = String(email).trim().toLowerCase();
   const user = state.users.find(
     (entry) => entry.email.toLowerCase() === normalizedEmail
@@ -113,31 +117,31 @@ app.post("/api/auth/login", (req, res) => {
   const updatedUsers = state.users.map((entry) =>
     entry.id === user.id ? { ...entry, token } : entry
   );
-  saveState({ ...state, users: updatedUsers });
+  await saveState({ ...state, users: updatedUsers });
 
   res.json({
     user: { id: user.id, name: user.name, email: user.email },
     token
   });
-});
+}));
 
 app.use("/api", (req, res, next) => {
   if (req.path.startsWith("/auth/")) {
     next();
     return;
   }
-  requireAuth(req, res, next);
+  asyncHandler(requireAuth)(req, res, next);
 });
 
-app.get("/api/state", requireAuth, (req, res) => {
+app.get("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
   const { state, user } = req;
   const filteredStudents = (state.students || []).filter(
     (student) => student.teacherId === user.id
   );
   res.json({ schoolYears: state.schoolYears, students: filteredStudents });
-});
+}));
 
-app.put("/api/state", requireAuth, (req, res) => {
+app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
   const { state, user } = req;
   const teacherId = user.id;
   const incomingStudents = Array.isArray(req.body.students)
@@ -155,12 +159,12 @@ app.put("/api/state", requireAuth, (req, res) => {
     schoolYears: req.body.schoolYears || state.schoolYears,
     students: [...otherStudents, ...normalizedStudents]
   };
-  const updatedState = saveState(nextState);
+  const updatedState = await saveState(nextState);
   const filteredStudents = updatedState.students.filter(
     (student) => student.teacherId === teacherId
   );
   res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
-});
+}));
 
 const theme = {
   text: "#0f172a",
@@ -1291,6 +1295,15 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
       res.end();
     }
   }
+});
+
+app.use((error, req, res, next) => {
+  console.error(error);
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+  res.status(500).json({ error: "Erreur serveur." });
 });
 
 app.listen(PORT, () => {

@@ -1,12 +1,5 @@
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const DATA_PATH = path.join(__dirname, "data.json");
+import { Pool } from "pg";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
   {
@@ -312,27 +305,73 @@ const normalizeState = (state) => {
   };
 };
 
-export const loadState = () => {
-  if (!fs.existsSync(DATA_PATH)) {
-    const initialState = normalizeState({});
-    fs.writeFileSync(DATA_PATH, JSON.stringify(initialState, null, 2));
-    return initialState;
-  }
+const DEFAULT_STATE_ID = 1;
 
-  try {
-    const raw = fs.readFileSync(DATA_PATH, "utf-8");
-    const parsed = JSON.parse(raw);
-    return normalizeState(parsed);
-  } catch (error) {
-    console.error(error);
-    const fallbackState = normalizeState({});
-    fs.writeFileSync(DATA_PATH, JSON.stringify(fallbackState, null, 2));
-    return fallbackState;
-  }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || undefined,
+  host: process.env.PGHOST,
+  port: process.env.PGPORT ? Number(process.env.PGPORT) : undefined,
+  database: process.env.PGDATABASE,
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD
+});
+
+let initializationPromise;
+
+const ensureInitialized = async () => {
+  if (initializationPromise) return initializationPromise;
+  initializationPromise = (async () => {
+    const client = await pool.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS app_state (
+          id INT PRIMARY KEY,
+          data JSONB NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await client.query(
+        `
+          INSERT INTO app_state (id, data)
+          VALUES ($1, $2)
+          ON CONFLICT (id) DO NOTHING
+        `,
+        [DEFAULT_STATE_ID, normalizeState({})]
+      );
+    } finally {
+      client.release();
+    }
+  })();
+  return initializationPromise;
 };
 
-export const saveState = (nextState) => {
+export const loadState = async () => {
+  await ensureInitialized();
+  const result = await pool.query(
+    "SELECT data FROM app_state WHERE id = $1",
+    [DEFAULT_STATE_ID]
+  );
+  if (!result.rows.length) {
+    const fallbackState = normalizeState({});
+    await pool.query(
+      `
+        INSERT INTO app_state (id, data)
+        VALUES ($1, $2)
+        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
+      `,
+      [DEFAULT_STATE_ID, fallbackState]
+    );
+    return fallbackState;
+  }
+  return normalizeState(result.rows[0].data);
+};
+
+export const saveState = async (nextState) => {
+  await ensureInitialized();
   const normalizedState = normalizeState(nextState);
-  fs.writeFileSync(DATA_PATH, JSON.stringify(normalizedState, null, 2));
+  await pool.query(
+    "UPDATE app_state SET data = $2, updated_at = NOW() WHERE id = $1",
+    [DEFAULT_STATE_ID, normalizedState]
+  );
   return normalizedState;
 };
