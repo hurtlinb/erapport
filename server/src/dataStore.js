@@ -724,11 +724,11 @@ export const saveState = async (nextState) => {
     const studentIds = students.map((student) => student.id);
     await deleteWhereNotIn("students", "id", studentIds);
     for (const student of students) {
-      const competencyOptions = normalizeJsonValue(
+      const competencyOptions = serializeJsonValue(
         student.competencyOptions,
         []
       );
-      const competencies = normalizeJsonValue(student.competencies, []);
+      const competencies = serializeJsonValue(student.competencies, []);
       await client.query(
         `
           INSERT INTO students (
