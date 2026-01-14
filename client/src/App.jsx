@@ -278,9 +278,9 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
 
   return modules.map((module) => {
     const normalizedModule = {
-      id: module.id || crypto.randomUUID(),
+      id: String(module.id ?? crypto.randomUUID()),
       title: module.title || "",
-      schoolYear: module.schoolYear || schoolYearLabel
+      schoolYear: schoolYearLabel
     };
 
     return {
@@ -305,7 +305,7 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
         schoolYear.year ||
         defaultTemplate.schoolYear;
       return {
-        id: schoolYear.id || crypto.randomUUID(),
+        id: String(schoolYear.id ?? crypto.randomUUID()),
         label,
         modules: normalizeModules(schoolYear.modules || [], label)
       };
@@ -335,7 +335,7 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
 
     const normalizedYears = Object.entries(groupedModules).map(
       ([label, yearModules]) => ({
-        id: crypto.randomUUID(),
+        id: String(crypto.randomUUID()),
         label,
         modules: normalizeModules(yearModules, label)
       })
@@ -353,14 +353,14 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
   }
 
   return SCHOOL_YEARS.map((label) => ({
-    id: crypto.randomUUID(),
+    id: String(crypto.randomUUID()),
     label,
     modules: normalizeModules([], label)
   }));
 };
 
 const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
-  id: crypto.randomUUID(),
+  id: String(crypto.randomUUID()),
   label,
   modules: normalizeModules([], label)
 });
@@ -630,10 +630,38 @@ function App() {
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
+  const logClientEvent = async (event, payload) => {
+    if (!authToken) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/logs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ event, payload })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const activeSchoolYear = useMemo(
     () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
     [activeSchoolYearId, schoolYears]
   );
+  useEffect(() => {
+    if (!activeSchoolYearId) return;
+    console.info("Active school year updated", {
+      activeSchoolYearId,
+      activeSchoolYear,
+      schoolYears
+    });
+    logClientEvent("school-year-updated", {
+      activeSchoolYearId,
+      activeSchoolYear,
+      schoolYears
+    });
+  }, [activeSchoolYear, activeSchoolYearId, schoolYears]);
   const activeModules = useMemo(
     () =>
       (activeSchoolYear?.modules || []).filter(
@@ -1786,7 +1814,25 @@ function App() {
               Année scolaire
               <select
                 value={activeSchoolYearId}
-                onChange={(event) => setActiveSchoolYearId(event.target.value)}
+                onChange={(event) => {
+                  const nextId = event.target.value;
+                  const selectedYear = schoolYears.find(
+                    (year) => year.id === nextId
+                  );
+                  console.info("School year changed", {
+                    nextId,
+                    previousId: activeSchoolYearId,
+                    selectedYear,
+                    availableYears: schoolYears
+                  });
+                  logClientEvent("school-year-change", {
+                    nextId,
+                    previousId: activeSchoolYearId,
+                    selectedYear,
+                    availableYears: schoolYears
+                  });
+                  setActiveSchoolYearId(nextId);
+                }}
               >
                 {schoolYears.map((year) => (
                   <option key={year.id} value={year.id}>
