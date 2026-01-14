@@ -634,6 +634,14 @@ function App() {
     () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
     [activeSchoolYearId, schoolYears]
   );
+  useEffect(() => {
+    if (!activeSchoolYearId) return;
+    console.info("Active school year updated", {
+      activeSchoolYearId,
+      activeSchoolYear,
+      schoolYears
+    });
+  }, [activeSchoolYear, activeSchoolYearId, schoolYears]);
   const activeModules = useMemo(
     () =>
       (activeSchoolYear?.modules || []).filter(
@@ -1791,7 +1799,7 @@ function App() {
                   const selectedYear = schoolYears.find(
                     (year) => year.id === nextId
                   );
-                  console.debug("School year changed", {
+                  console.info("School year changed", {
                     nextId,
                     previousId: activeSchoolYearId,
                     selectedYear,
