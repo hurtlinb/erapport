@@ -100,6 +100,7 @@ const defaultTemplate = {
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
+  groupFeatureEnabled: false,
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -124,6 +125,7 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
+    groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
@@ -305,8 +307,6 @@ const normalizeState = (state) => {
   };
 };
 
-const DEFAULT_STATE_ID = 1;
-
 const getOptionalString = (value) =>
   typeof value === "string" && value.trim() ? value : undefined;
 
@@ -321,26 +321,87 @@ const pool = new Pool({
 
 let initializationPromise;
 
+const seedSchoolYears = async (client) => {
+  const result = await client.query("SELECT COUNT(*)::int AS count FROM school_years");
+  if (result.rows[0].count > 0) return;
+  const entries = SCHOOL_YEARS.map((label) => ({
+    id: crypto.randomUUID(),
+    label
+  }));
+  const placeholders = entries
+    .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
+    .join(", ");
+  const values = entries.flatMap((entry) => [entry.id, entry.label]);
+  await client.query(
+    `INSERT INTO school_years (id, label) VALUES ${placeholders}`,
+    values
+  );
+};
+
 const ensureInitialized = async () => {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
     const client = await pool.connect();
     try {
+      await client.query("BEGIN");
       await client.query(`
-        CREATE TABLE IF NOT EXISTS app_state (
-          id INT PRIMARY KEY,
-          data JSONB NOT NULL,
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        CREATE TABLE IF NOT EXISTS users (
+          id UUID PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          salt TEXT NOT NULL,
+          token TEXT NOT NULL DEFAULT '',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `);
-      await client.query(
-        `
-          INSERT INTO app_state (id, data)
-          VALUES ($1, $2)
-          ON CONFLICT (id) DO NOTHING
-        `,
-        [DEFAULT_STATE_ID, normalizeState({})]
-      );
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS school_years (
+          id UUID PRIMARY KEY,
+          label TEXT NOT NULL UNIQUE
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS modules (
+          id UUID PRIMARY KEY,
+          school_year_id UUID NOT NULL REFERENCES school_years(id) ON DELETE CASCADE,
+          title TEXT NOT NULL
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS module_templates (
+          id UUID PRIMARY KEY,
+          module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+          evaluation_type TEXT NOT NULL,
+          template JSONB NOT NULL,
+          UNIQUE (module_id, evaluation_type)
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS students (
+          id UUID PRIMARY KEY,
+          teacher_id UUID REFERENCES users(id) ON DELETE SET NULL,
+          module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+          evaluation_type TEXT NOT NULL,
+          firstname TEXT,
+          name TEXT,
+          note TEXT,
+          group_name TEXT,
+          class_name TEXT,
+          teacher_name TEXT,
+          evaluation_date TEXT,
+          coaching_date TEXT,
+          operational_competence TEXT,
+          competency_options JSONB,
+          competencies JSONB,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await seedSchoolYears(client);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
     } finally {
       client.release();
     }
@@ -348,33 +409,322 @@ const ensureInitialized = async () => {
   return initializationPromise;
 };
 
+const buildTemplatePayload = (template) => ({
+  note: template.note || "",
+  groupFeatureEnabled: Boolean(template.groupFeatureEnabled),
+  className: template.className || "",
+  teacher: template.teacher || "",
+  evaluationDate: template.evaluationDate || "",
+  coachingDate: template.coachingDate || "",
+  operationalCompetence: template.operationalCompetence || "",
+  competencyOptions: template.competencyOptions || EMPTY_TEMPLATE.competencyOptions,
+  competencies: template.competencies || EMPTY_TEMPLATE.competencies
+});
+
+const readTemplatesByModule = (rows) => {
+  return rows.reduce((acc, row) => {
+    if (!acc[row.module_id]) {
+      acc[row.module_id] = {};
+    }
+    acc[row.module_id][row.evaluation_type] = row.template;
+    return acc;
+  }, {});
+};
+
 export const loadState = async () => {
   await ensureInitialized();
-  const result = await pool.query(
-    "SELECT data FROM app_state WHERE id = $1",
-    [DEFAULT_STATE_ID]
+  const [yearResult, moduleResult, templateResult, studentResult, userResult] =
+    await Promise.all([
+      pool.query("SELECT id, label FROM school_years ORDER BY label"),
+      pool.query("SELECT id, school_year_id, title FROM modules"),
+      pool.query(
+        "SELECT module_id, evaluation_type, template FROM module_templates"
+      ),
+      pool.query("SELECT * FROM students"),
+      pool.query("SELECT id, name, email, password_hash, salt, token FROM users")
+    ]);
+
+  const templatesByModule = readTemplatesByModule(templateResult.rows);
+  const schoolYearMap = new Map(
+    yearResult.rows.map((year) => [year.id, { ...year, modules: [] }])
   );
-  if (!result.rows.length) {
-    const fallbackState = normalizeState({});
-    await pool.query(
-      `
-        INSERT INTO app_state (id, data)
-        VALUES ($1, $2)
-        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
-      `,
-      [DEFAULT_STATE_ID, fallbackState]
-    );
-    return fallbackState;
-  }
-  return normalizeState(result.rows[0].data);
+
+  moduleResult.rows.forEach((module) => {
+    const year = schoolYearMap.get(module.school_year_id);
+    if (!year) return;
+    const modulePayload = {
+      id: module.id,
+      title: module.title,
+      schoolYear: year.label,
+      templates: templatesByModule[module.id] || {}
+    };
+    year.modules.push(modulePayload);
+  });
+
+  const schoolYears = Array.from(schoolYearMap.values());
+
+  const moduleLookup = moduleResult.rows.reduce((acc, module) => {
+    const schoolYear = schoolYearMap.get(module.school_year_id);
+    acc[module.id] = {
+      title: module.title,
+      schoolYear: schoolYear?.label || "",
+      templates: templatesByModule[module.id] || {}
+    };
+    return acc;
+  }, {});
+
+  const students = studentResult.rows.map((student) => {
+    const moduleInfo = moduleLookup[student.module_id] || {
+      title: "",
+      schoolYear: "",
+      templates: {}
+    };
+    const template =
+      moduleInfo.templates?.[student.evaluation_type] || defaultTemplate;
+    return normalizeStudent({
+      id: student.id,
+      moduleId: student.module_id,
+      moduleTitle: moduleInfo.title || "",
+      schoolYear: moduleInfo.schoolYear || "",
+      evaluationType: student.evaluation_type || EVALUATION_TYPES[0],
+      firstname: student.firstname || "",
+      name: student.name || "",
+      note: student.note ?? "",
+      groupName: student.group_name || "",
+      className: student.class_name || "",
+      teacher: student.teacher_name || "",
+      teacherId: student.teacher_id || "",
+      evaluationDate: student.evaluation_date || "",
+      coachingDate: student.coaching_date || "",
+      operationalCompetence: student.operational_competence || "",
+      competencyOptions:
+        student.competency_options || template.competencyOptions || [],
+      competencies: student.competencies || template.competencies || []
+    });
+  });
+
+  const users = userResult.rows.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    passwordHash: user.password_hash,
+    salt: user.salt,
+    token: user.token
+  }));
+
+  return normalizeState({
+    schoolYears,
+    students,
+    users
+  });
 };
 
 export const saveState = async (nextState) => {
   await ensureInitialized();
   const normalizedState = normalizeState(nextState);
-  await pool.query(
-    "UPDATE app_state SET data = $2, updated_at = NOW() WHERE id = $1",
-    [DEFAULT_STATE_ID, normalizedState]
-  );
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const users = normalizedState.users;
+    const userIds = users.map((user) => user.id);
+    await client.query("DELETE FROM users WHERE id <> ALL($1::uuid[])", [
+      userIds
+    ]);
+    for (const user of users) {
+      await client.query(
+        `
+          INSERT INTO users (id, name, email, password_hash, salt, token)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            password_hash = EXCLUDED.password_hash,
+            salt = EXCLUDED.salt,
+            token = EXCLUDED.token
+        `,
+        [
+          user.id,
+          user.name,
+          user.email,
+          user.passwordHash,
+          user.salt,
+          user.token
+        ]
+      );
+    }
+
+    const schoolYears = normalizedState.schoolYears;
+    const schoolYearIds = schoolYears.map((year) => year.id);
+    await client.query(
+      "DELETE FROM school_years WHERE id <> ALL($1::uuid[])",
+      [schoolYearIds]
+    );
+    for (const year of schoolYears) {
+      await client.query(
+        `
+          INSERT INTO school_years (id, label)
+          VALUES ($1, $2)
+          ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label
+        `,
+        [year.id, year.label]
+      );
+    }
+
+    const modules = schoolYears.flatMap((year) =>
+      (year.modules || []).map((module) => ({
+        ...module,
+        schoolYearId: year.id
+      }))
+    );
+    const moduleIds = modules.map((module) => module.id);
+    await client.query("DELETE FROM modules WHERE id <> ALL($1::uuid[])", [
+      moduleIds
+    ]);
+    for (const module of modules) {
+      await client.query(
+        `
+          INSERT INTO modules (id, school_year_id, title)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (id) DO UPDATE SET
+            school_year_id = EXCLUDED.school_year_id,
+            title = EXCLUDED.title
+        `,
+        [module.id, module.schoolYearId, module.title]
+      );
+    }
+
+    const templateEntries = modules.flatMap((module) => {
+      const templates = module.templates || {};
+      return Object.entries(templates).map(([evaluationType, template]) => ({
+        moduleId: module.id,
+        evaluationType,
+        template: buildTemplatePayload(template)
+      }));
+    });
+
+    if (templateEntries.length === 0) {
+      await client.query("DELETE FROM module_templates");
+    } else {
+      const templateValues = templateEntries.flatMap((entry) => [
+        entry.moduleId,
+        entry.evaluationType
+      ]);
+      const placeholders = templateEntries
+        .map((_, index) => `($${index * 2 + 1}::uuid, $${index * 2 + 2})`)
+        .join(", ");
+      await client.query(
+        `
+          DELETE FROM module_templates
+          WHERE (module_id, evaluation_type) NOT IN (${placeholders})
+        `,
+        templateValues
+      );
+    }
+
+    for (const template of templateEntries) {
+      await client.query(
+        `
+          INSERT INTO module_templates (id, module_id, evaluation_type, template)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (module_id, evaluation_type) DO UPDATE SET
+            template = EXCLUDED.template
+        `,
+        [
+          crypto.randomUUID(),
+          template.moduleId,
+          template.evaluationType,
+          template.template
+        ]
+      );
+    }
+
+    const students = normalizedState.students;
+    const studentIds = students.map((student) => student.id);
+    await client.query("DELETE FROM students WHERE id <> ALL($1::uuid[])", [
+      studentIds
+    ]);
+    for (const student of students) {
+      await client.query(
+        `
+          INSERT INTO students (
+            id,
+            teacher_id,
+            module_id,
+            evaluation_type,
+            firstname,
+            name,
+            note,
+            group_name,
+            class_name,
+            teacher_name,
+            evaluation_date,
+            coaching_date,
+            operational_competence,
+            competency_options,
+            competencies
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $12,
+            $13,
+            $14,
+            $15
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            teacher_id = EXCLUDED.teacher_id,
+            module_id = EXCLUDED.module_id,
+            evaluation_type = EXCLUDED.evaluation_type,
+            firstname = EXCLUDED.firstname,
+            name = EXCLUDED.name,
+            note = EXCLUDED.note,
+            group_name = EXCLUDED.group_name,
+            class_name = EXCLUDED.class_name,
+            teacher_name = EXCLUDED.teacher_name,
+            evaluation_date = EXCLUDED.evaluation_date,
+            coaching_date = EXCLUDED.coaching_date,
+            operational_competence = EXCLUDED.operational_competence,
+            competency_options = EXCLUDED.competency_options,
+            competencies = EXCLUDED.competencies
+        `,
+        [
+          student.id,
+          student.teacherId || null,
+          student.moduleId,
+          student.evaluationType || EVALUATION_TYPES[0],
+          student.firstname || "",
+          student.name || "",
+          student.note ?? "",
+          student.groupName || "",
+          student.className || "",
+          student.teacher || "",
+          student.evaluationDate || "",
+          student.coachingDate || "",
+          student.operationalCompetence || "",
+          student.competencyOptions || [],
+          student.competencies || []
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
   return normalizedState;
 };
