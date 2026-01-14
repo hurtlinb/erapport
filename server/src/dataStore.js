@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { Pool } from "pg";
+import mysql from "mysql2/promise";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
   {
@@ -342,27 +342,33 @@ const normalizeState = (state) => {
 const getOptionalString = (value) =>
   typeof value === "string" && value.trim() ? value : undefined;
 
-const pool = new Pool({
-  connectionString: getOptionalString(process.env.DATABASE_URL),
-  host: getOptionalString(process.env.PGHOST),
-  port: process.env.PGPORT ? Number(process.env.PGPORT) : undefined,
-  database: getOptionalString(process.env.PGDATABASE),
-  user: getOptionalString(process.env.PGUSER),
-  password: getOptionalString(process.env.PGPASSWORD)
+const databaseUrl = getOptionalString(process.env.DATABASE_URL);
+const poolConfig = databaseUrl
+  ? { uri: databaseUrl }
+  : {
+      host: getOptionalString(process.env.MARIADB_HOST),
+      port: process.env.MARIADB_PORT ? Number(process.env.MARIADB_PORT) : undefined,
+      database: getOptionalString(process.env.MARIADB_DATABASE),
+      user: getOptionalString(process.env.MARIADB_USER),
+      password: getOptionalString(process.env.MARIADB_PASSWORD)
+    };
+const pool = mysql.createPool({
+  ...poolConfig,
+  connectionLimit: 10
 });
 
 let initializationPromise;
 
 const seedSchoolYears = async (client) => {
-  const result = await client.query("SELECT COUNT(*)::int AS count FROM school_years");
-  if (result.rows[0].count > 0) return;
+  const [rows] = await client.query(
+    "SELECT COUNT(*) AS count FROM school_years"
+  );
+  if (Number(rows[0]?.count ?? 0) > 0) return;
   const entries = SCHOOL_YEARS.map((label) => ({
     id: crypto.randomUUID(),
     label
   }));
-  const placeholders = entries
-    .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
-    .join(", ");
+  const placeholders = entries.map(() => "(?, ?)").join(", ");
   const values = entries.flatMap((entry) => [entry.id, entry.label]);
   await client.query(
     `INSERT INTO school_years (id, label) VALUES ${placeholders}`,
@@ -373,47 +379,47 @@ const seedSchoolYears = async (client) => {
 const ensureInitialized = async () => {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
-    const client = await pool.connect();
+    const client = await pool.getConnection();
     try {
-      await client.query("BEGIN");
+      await client.beginTransaction();
       await client.query(`
         CREATE TABLE IF NOT EXISTS users (
-          id UUID PRIMARY KEY,
+          id CHAR(36) PRIMARY KEY,
           name TEXT NOT NULL,
           email TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
           salt TEXT NOT NULL,
           token TEXT NOT NULL DEFAULT '',
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
       `);
       await client.query(`
         CREATE TABLE IF NOT EXISTS school_years (
-          id UUID PRIMARY KEY,
+          id CHAR(36) PRIMARY KEY,
           label TEXT NOT NULL UNIQUE
         )
       `);
       await client.query(`
         CREATE TABLE IF NOT EXISTS modules (
-          id UUID PRIMARY KEY,
-          school_year_id UUID NOT NULL REFERENCES school_years(id) ON DELETE CASCADE,
+          id CHAR(36) PRIMARY KEY,
+          school_year_id CHAR(36) NOT NULL,
           title TEXT NOT NULL
         )
       `);
       await client.query(`
         CREATE TABLE IF NOT EXISTS module_templates (
-          id UUID PRIMARY KEY,
-          module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+          id CHAR(36) PRIMARY KEY,
+          module_id CHAR(36) NOT NULL,
           evaluation_type TEXT NOT NULL,
-          template JSONB NOT NULL,
+          template JSON NOT NULL,
           UNIQUE (module_id, evaluation_type)
         )
       `);
       await client.query(`
         CREATE TABLE IF NOT EXISTS students (
-          id UUID PRIMARY KEY,
-          teacher_id UUID REFERENCES users(id) ON DELETE SET NULL,
-          module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
+          id CHAR(36) PRIMARY KEY,
+          teacher_id CHAR(36) NULL,
+          module_id CHAR(36) NOT NULL,
           evaluation_type TEXT NOT NULL,
           firstname TEXT,
           name TEXT,
@@ -424,15 +430,39 @@ const ensureInitialized = async () => {
           evaluation_date TEXT,
           coaching_date TEXT,
           operational_competence TEXT,
-          competency_options JSONB,
-          competencies JSONB,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          competency_options JSON,
+          competencies JSON,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await client.query(`
+        ALTER TABLE modules
+        ADD CONSTRAINT modules_school_year_fk
+          FOREIGN KEY (school_year_id) REFERENCES school_years(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE module_templates
+        ADD CONSTRAINT module_templates_module_fk
+          FOREIGN KEY (module_id) REFERENCES modules(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD CONSTRAINT students_module_fk
+          FOREIGN KEY (module_id) REFERENCES modules(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD CONSTRAINT students_teacher_fk
+          FOREIGN KEY (teacher_id) REFERENCES users(id)
+          ON DELETE SET NULL
+      `).catch(() => {});
       await seedSchoolYears(client);
-      await client.query("COMMIT");
+      await client.commit();
     } catch (error) {
-      await client.query("ROLLBACK");
+      await client.rollback();
       throw error;
     } finally {
       client.release();
@@ -458,7 +488,10 @@ const readTemplatesByModule = (rows) => {
     if (!acc[row.module_id]) {
       acc[row.module_id] = {};
     }
-    acc[row.module_id][row.evaluation_type] = row.template;
+    acc[row.module_id][row.evaluation_type] = normalizeJsonValue(
+      row.template,
+      EMPTY_TEMPLATE
+    );
     return acc;
   }, {});
 };
@@ -475,13 +508,18 @@ export const loadState = async () => {
       pool.query("SELECT * FROM students"),
       pool.query("SELECT id, name, email, password_hash, salt, token FROM users")
     ]);
+  const [yearRows] = yearResult;
+  const [moduleRows] = moduleResult;
+  const [templateRows] = templateResult;
+  const [studentRows] = studentResult;
+  const [userRows] = userResult;
 
-  const templatesByModule = readTemplatesByModule(templateResult.rows);
+  const templatesByModule = readTemplatesByModule(templateRows);
   const schoolYearMap = new Map(
-    yearResult.rows.map((year) => [year.id, { ...year, modules: [] }])
+    yearRows.map((year) => [year.id, { ...year, modules: [] }])
   );
 
-  moduleResult.rows.forEach((module) => {
+  moduleRows.forEach((module) => {
     const year = schoolYearMap.get(module.school_year_id);
     if (!year) return;
     const modulePayload = {
@@ -495,7 +533,7 @@ export const loadState = async () => {
 
   const schoolYears = Array.from(schoolYearMap.values());
 
-  const moduleLookup = moduleResult.rows.reduce((acc, module) => {
+  const moduleLookup = moduleRows.reduce((acc, module) => {
     const schoolYear = schoolYearMap.get(module.school_year_id);
     acc[module.id] = {
       title: module.title,
@@ -505,7 +543,7 @@ export const loadState = async () => {
     return acc;
   }, {});
 
-  const students = studentResult.rows.map((student) => {
+  const students = studentRows.map((student) => {
     const moduleInfo = moduleLookup[student.module_id] || {
       title: "",
       schoolYear: "",
@@ -535,7 +573,7 @@ export const loadState = async () => {
     });
   });
 
-  const users = userResult.rows.map((user) => ({
+  const users = userRows.map((user) => ({
     id: user.id,
     name: user.name,
     email: user.email,
@@ -554,27 +592,36 @@ export const loadState = async () => {
 export const saveState = async (nextState) => {
   await ensureInitialized();
   const normalizedState = normalizeState(nextState);
-  const client = await pool.connect();
+  const client = await pool.getConnection();
+  const deleteWhereNotIn = async (table, idColumn, ids) => {
+    if (ids.length === 0) {
+      await client.query(`DELETE FROM ${table}`);
+      return;
+    }
+    const placeholders = ids.map(() => "?").join(", ");
+    await client.query(
+      `DELETE FROM ${table} WHERE ${idColumn} NOT IN (${placeholders})`,
+      ids
+    );
+  };
 
   try {
-    await client.query("BEGIN");
+    await client.beginTransaction();
 
     const users = normalizedState.users;
     const userIds = users.map((user) => user.id);
-    await client.query("DELETE FROM users WHERE id <> ALL($1::uuid[])", [
-      userIds
-    ]);
+    await deleteWhereNotIn("users", "id", userIds);
     for (const user of users) {
       await client.query(
         `
           INSERT INTO users (id, name, email, password_hash, salt, token)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name,
-            email = EXCLUDED.email,
-            password_hash = EXCLUDED.password_hash,
-            salt = EXCLUDED.salt,
-            token = EXCLUDED.token
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            email = VALUES(email),
+            password_hash = VALUES(password_hash),
+            salt = VALUES(salt),
+            token = VALUES(token)
         `,
         [
           user.id,
@@ -589,16 +636,13 @@ export const saveState = async (nextState) => {
 
     const schoolYears = normalizedState.schoolYears;
     const schoolYearIds = schoolYears.map((year) => year.id);
-    await client.query(
-      "DELETE FROM school_years WHERE id <> ALL($1::uuid[])",
-      [schoolYearIds]
-    );
+    await deleteWhereNotIn("school_years", "id", schoolYearIds);
     for (const year of schoolYears) {
       await client.query(
         `
           INSERT INTO school_years (id, label)
-          VALUES ($1, $2)
-          ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label
+          VALUES (?, ?)
+          ON DUPLICATE KEY UPDATE label = VALUES(label)
         `,
         [year.id, year.label]
       );
@@ -611,17 +655,15 @@ export const saveState = async (nextState) => {
       }))
     );
     const moduleIds = modules.map((module) => module.id);
-    await client.query("DELETE FROM modules WHERE id <> ALL($1::uuid[])", [
-      moduleIds
-    ]);
+    await deleteWhereNotIn("modules", "id", moduleIds);
     for (const module of modules) {
       await client.query(
         `
           INSERT INTO modules (id, school_year_id, title)
-          VALUES ($1, $2, $3)
-          ON CONFLICT (id) DO UPDATE SET
-            school_year_id = EXCLUDED.school_year_id,
-            title = EXCLUDED.title
+          VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            school_year_id = VALUES(school_year_id),
+            title = VALUES(title)
         `,
         [module.id, module.schoolYearId, module.title]
       );
@@ -643,9 +685,7 @@ export const saveState = async (nextState) => {
         entry.moduleId,
         entry.evaluationType
       ]);
-      const placeholders = templateEntries
-        .map((_, index) => `($${index * 2 + 1}::uuid, $${index * 2 + 2})`)
-        .join(", ");
+      const placeholders = templateEntries.map(() => "(?, ?)").join(", ");
       await client.query(
         `
           DELETE FROM module_templates
@@ -659,9 +699,9 @@ export const saveState = async (nextState) => {
       await client.query(
         `
           INSERT INTO module_templates (id, module_id, evaluation_type, template)
-          VALUES ($1, $2, $3, $4)
-          ON CONFLICT (module_id, evaluation_type) DO UPDATE SET
-            template = EXCLUDED.template
+          VALUES (?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            template = VALUES(template)
         `,
         [
           crypto.randomUUID(),
@@ -674,9 +714,7 @@ export const saveState = async (nextState) => {
 
     const students = normalizedState.students;
     const studentIds = students.map((student) => student.id);
-    await client.query("DELETE FROM students WHERE id <> ALL($1::uuid[])", [
-      studentIds
-    ]);
+    await deleteWhereNotIn("students", "id", studentIds);
     for (const student of students) {
       const competencyOptions = normalizeJsonValue(
         student.competencyOptions,
@@ -703,37 +741,37 @@ export const saveState = async (nextState) => {
             competencies
           )
           VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9,
-            $10,
-            $11,
-            $12,
-            $13,
-            $14,
-            $15
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
           )
-          ON CONFLICT (id) DO UPDATE SET
-            teacher_id = EXCLUDED.teacher_id,
-            module_id = EXCLUDED.module_id,
-            evaluation_type = EXCLUDED.evaluation_type,
-            firstname = EXCLUDED.firstname,
-            name = EXCLUDED.name,
-            note = EXCLUDED.note,
-            group_name = EXCLUDED.group_name,
-            class_name = EXCLUDED.class_name,
-            teacher_name = EXCLUDED.teacher_name,
-            evaluation_date = EXCLUDED.evaluation_date,
-            coaching_date = EXCLUDED.coaching_date,
-            operational_competence = EXCLUDED.operational_competence,
-            competency_options = EXCLUDED.competency_options,
-            competencies = EXCLUDED.competencies
+          ON DUPLICATE KEY UPDATE
+            teacher_id = VALUES(teacher_id),
+            module_id = VALUES(module_id),
+            evaluation_type = VALUES(evaluation_type),
+            firstname = VALUES(firstname),
+            name = VALUES(name),
+            note = VALUES(note),
+            group_name = VALUES(group_name),
+            class_name = VALUES(class_name),
+            teacher_name = VALUES(teacher_name),
+            evaluation_date = VALUES(evaluation_date),
+            coaching_date = VALUES(coaching_date),
+            operational_competence = VALUES(operational_competence),
+            competency_options = VALUES(competency_options),
+            competencies = VALUES(competencies)
         `,
         [
           student.id,
@@ -755,9 +793,9 @@ export const saveState = async (nextState) => {
       );
     }
 
-    await client.query("COMMIT");
+    await client.commit();
   } catch (error) {
-    await client.query("ROLLBACK");
+    await client.rollback();
     throw error;
   } finally {
     client.release();
