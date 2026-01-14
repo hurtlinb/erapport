@@ -33,6 +33,18 @@ const asyncHandler = (handler) => (req, res, next) => {
   Promise.resolve(handler(req, res, next)).catch(next);
 };
 
+const logServerEvent = (event, payload) => {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event,
+    payload
+  };
+  const logsDir = path.join(__dirname, "logs");
+  fs.mkdirSync(logsDir, { recursive: true });
+  const logFile = path.join(logsDir, "server-events.log");
+  fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`, "utf8");
+};
+
 const requireAuth = async (req, res, next) => {
   const token = getTokenFromRequest(req);
   if (!token) {
@@ -138,6 +150,12 @@ app.get("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
   const filteredStudents = (state.students || []).filter(
     (student) => student.teacherId === user.id
   );
+  logServerEvent("state-read", {
+    userId: user.id,
+    totalStudents: (state.students || []).length,
+    filteredStudents: filteredStudents.length,
+    schoolYears: (state.schoolYears || []).length
+  });
   res.json({ schoolYears: state.schoolYears, students: filteredStudents });
 }));
 
@@ -163,7 +181,30 @@ app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
   const filteredStudents = updatedState.students.filter(
     (student) => student.teacherId === teacherId
   );
+  logServerEvent("state-write", {
+    userId: user.id,
+    incomingStudents: incomingStudents.length,
+    totalStudents: updatedState.students.length,
+    filteredStudents: filteredStudents.length,
+    schoolYears: (updatedState.schoolYears || []).length
+  });
   res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
+}));
+
+app.post("/api/logs", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
+  const { user } = req;
+  const { event, payload } = req.body || {};
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    userId: user.id,
+    event: event || "unknown",
+    payload: payload || {}
+  };
+  const logsDir = path.join(__dirname, "logs");
+  fs.mkdirSync(logsDir, { recursive: true });
+  const logFile = path.join(logsDir, "client-events.log");
+  fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`, "utf8");
+  res.json({ status: "ok" });
 }));
 
 const theme = {
