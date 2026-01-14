@@ -284,6 +284,23 @@ const normalizeTextValue = (value) => {
   return String(value).normalize("NFC");
 };
 
+const normalizeJsonValue = (value, fallback) => {
+  if (value && typeof value === "object") {
+    return value;
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object") {
+        return parsed;
+      }
+    } catch (error) {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
 const normalizeStudent = (student) => {
   const baseStudent = student && typeof student === "object" ? student : {};
   return {
@@ -291,7 +308,9 @@ const normalizeStudent = (student) => {
     firstname: normalizeTextValue(baseStudent.firstname),
     name: normalizeTextValue(baseStudent.name),
     evaluationType: baseStudent?.evaluationType || EVALUATION_TYPES[0],
-    teacherId: baseStudent?.teacherId || ""
+    teacherId: baseStudent?.teacherId || "",
+    competencyOptions: normalizeJsonValue(baseStudent.competencyOptions, []),
+    competencies: normalizeJsonValue(baseStudent.competencies, [])
   };
 };
 
