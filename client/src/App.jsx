@@ -1786,7 +1786,19 @@ function App() {
               Année scolaire
               <select
                 value={activeSchoolYearId}
-                onChange={(event) => setActiveSchoolYearId(event.target.value)}
+                onChange={(event) => {
+                  const nextId = event.target.value;
+                  const selectedYear = schoolYears.find(
+                    (year) => year.id === nextId
+                  );
+                  console.debug("School year changed", {
+                    nextId,
+                    previousId: activeSchoolYearId,
+                    selectedYear,
+                    availableYears: schoolYears
+                  });
+                  setActiveSchoolYearId(nextId);
+                }}
               >
                 {schoolYears.map((year) => (
                   <option key={year.id} value={year.id}>
