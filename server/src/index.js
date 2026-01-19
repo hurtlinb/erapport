@@ -436,9 +436,39 @@ const summaryTable = {
   }
 };
 
-const getSummaryRowHeight = (doc, category) => {
+const getSummaryLabel = (student, section) => {
+  if (!student.summaryByCompetencies) {
+    return section.category || "";
+  }
+
+  const competencyOptions = student.competencyOptions || [];
+  const items = section.items || [];
+  const seen = new Set();
+  const labels = [];
+
+  items.forEach((item) => {
+    const competencyId = item.competencyId || "";
+    if (!competencyId || seen.has(competencyId)) return;
+    seen.add(competencyId);
+
+    const option = competencyOptions.find(
+      (candidate) => candidate.code === competencyId
+    );
+    labels.push(
+      option ? `${option.code} - ${option.description}` : competencyId
+    );
+  });
+
+  if (!labels.length) {
+    return section.category || "";
+  }
+
+  return labels.join(", ");
+};
+
+const getSummaryRowHeight = (doc, label) => {
   const textPadding = 4;
-  const categoryHeight = doc.heightOfString(category || "", {
+  const categoryHeight = doc.heightOfString(label || "", {
     width: summaryTable.columnWidths.category - textPadding * 2
   });
   return Math.max(
@@ -978,14 +1008,15 @@ const renderStudentReport = (doc, student) => {
   cursorY += summaryTable.headerHeight;
 
   (student.competencies || []).forEach((section) => {
-    const rowHeight = getSummaryRowHeight(doc, section.category);
+    const summaryLabel = getSummaryLabel(student, section);
+    const rowHeight = getSummaryRowHeight(doc, summaryLabel);
     if (cursorY + rowHeight > 760) {
       doc.addPage();
       cursorY = 40;
       drawSummaryHeaderRow(doc, cursorY);
       cursorY += summaryTable.headerHeight;
     }
-    drawSummaryRow(doc, section.category, section.result, cursorY, rowHeight);
+    drawSummaryRow(doc, summaryLabel, section.result, cursorY, rowHeight);
     cursorY += rowHeight;
   });
 

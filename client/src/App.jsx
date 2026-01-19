@@ -169,6 +169,7 @@ const defaultTemplate = {
   note: "",
   evaluationType: EVALUATION_TYPES[0],
   groupFeatureEnabled: false,
+  summaryByCompetencies: false,
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -194,6 +195,7 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
+    summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
@@ -431,6 +433,39 @@ const getCompetencyLabel = (item, competencyOptions = []) => {
   return "";
 };
 
+const getSummaryLabel = (
+  section,
+  competencyOptions = [],
+  summaryByCompetencies = false
+) => {
+  if (!summaryByCompetencies) {
+    return section.category || "";
+  }
+
+  const items = section.items || [];
+  const seen = new Set();
+  const labels = [];
+
+  items.forEach((item) => {
+    const competencyId = item.competencyId || "";
+    if (!competencyId || seen.has(competencyId)) return;
+    seen.add(competencyId);
+
+    const option = competencyOptions.find(
+      (candidate) => candidate.code === competencyId
+    );
+    labels.push(
+      option ? `${option.code} - ${option.description}` : competencyId
+    );
+  });
+
+  if (!labels.length) {
+    return section.category || "";
+  }
+
+  return labels.join(", ");
+};
+
 const applyTemplateToStudent = (template, student, teacherId = "") => ({
   ...student,
   moduleId: template.moduleId || "",
@@ -445,6 +480,7 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
+  summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
@@ -560,6 +596,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
+  summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template)
 });
@@ -2244,20 +2281,27 @@ function App() {
               <table className="report-summary-table">
                 <thead>
                   <tr>
-                    <th scope="col">Thème</th>
+                    <th scope="col">
+                      {draft.summaryByCompetencies ? "Compétence" : "Thème"}
+                    </th>
                     <th scope="col">Résultat</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(draft.competencies || []).map((section, sectionIndex) => {
                     const statusClass = getStatusClass(section.result);
+                    const summaryLabel = getSummaryLabel(
+                      section,
+                      draft.competencyOptions,
+                      draft.summaryByCompetencies
+                    );
                     return (
                       <tr
                         key={`${section.category}-${sectionIndex}`}
                         className={`report-summary-row ${statusClass}`}
                       >
                         <td className="summary-category">
-                          {section.category || "—"}
+                          {summaryLabel || "—"}
                         </td>
                         <td className="summary-result">
                           <span className="summary-result-value">
@@ -2634,6 +2678,22 @@ function App() {
                 />
                 <span className="helper-text">
                   Autoriser les thèmes à être partagés entre les étudiants du même groupe.
+                </span>
+              </label>
+              <label className="checkbox-field">
+                <span>Résumé par compétences</span>
+                <input
+                  type="checkbox"
+                  checked={template.summaryByCompetencies}
+                  onChange={(event) =>
+                    handleTemplateField(
+                      "summaryByCompetencies",
+                      event.target.checked
+                    )
+                  }
+                />
+                <span className="helper-text">
+                  Afficher les compétences plutôt que les thèmes dans le résumé.
                 </span>
               </label>
               <label>
