@@ -134,23 +134,23 @@ h1 {
 }
 
 .button.primary {
-  background: #2563eb;
-  color: #fff;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .button.ghost {
-  background: #f1f5f9;
+  background: #e2e8f0;
 }
 
 .button.text {
-  background: transparent;
-  color: #dc2626;
-  padding: 4px 8px;
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 10px 16px;
 }
 
 .button.danger {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .button:disabled {
