@@ -97,7 +97,6 @@ const TASK_EVALUATION_METHODS = [
   { value: "Evaluation pratique", label: "🧪 Evaluation pratique" },
   { value: "Documentation", label: "📚 Documentation" }
 ];
-const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 const CLIENT_VERSION = clientPackage.version || "dev";
@@ -306,9 +305,9 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   });
 };
 
-const normalizeSchoolYears = (schoolYears = [], modules = []) => {
+const normalizeSchoolYears = (schoolYears = []) => {
   if (Array.isArray(schoolYears) && schoolYears.length > 0) {
-    const normalizedYears = schoolYears.map((schoolYear) => {
+    return schoolYears.map((schoolYear) => {
       const label =
         schoolYear.label ||
         schoolYear.schoolYear ||
@@ -320,53 +319,9 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
         modules: normalizeModules(schoolYear.modules || [], label)
       };
     });
-    const existingLabels = new Set(normalizedYears.map((year) => year.label));
-    SCHOOL_YEARS.forEach((label) => {
-      if (existingLabels.has(label)) return;
-      normalizedYears.push({
-        id: crypto.randomUUID(),
-        label,
-        modules: normalizeModules([], label)
-      });
-    });
-    return normalizedYears;
   }
 
-  if (Array.isArray(modules) && modules.length > 0) {
-    const groupedModules = modules.reduce((acc, module) => {
-      const label = module.schoolYear || defaultTemplate.schoolYear;
-      if (!acc[label]) {
-        acc[label] = [];
-      }
-      const { schoolYear, ...rest } = module;
-      acc[label].push(rest);
-      return acc;
-    }, {});
-
-    const normalizedYears = Object.entries(groupedModules).map(
-      ([label, yearModules]) => ({
-        id: String(crypto.randomUUID()),
-        label,
-        modules: normalizeModules(yearModules, label)
-      })
-    );
-    const existingLabels = new Set(normalizedYears.map((year) => year.label));
-    SCHOOL_YEARS.forEach((label) => {
-      if (existingLabels.has(label)) return;
-      normalizedYears.push({
-        id: crypto.randomUUID(),
-        label,
-        modules: normalizeModules([], label)
-      });
-    });
-    return normalizedYears;
-  }
-
-  return SCHOOL_YEARS.map((label) => ({
-    id: String(crypto.randomUUID()),
-    label,
-    modules: normalizeModules([], label)
-  }));
+  return [];
 };
 
 const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
@@ -898,7 +853,7 @@ function App() {
           throw new Error("Impossible de récupérer les données enregistrées.");
         }
         const data = await response.json();
-        setSchoolYears(normalizeSchoolYears(data.schoolYears, data.modules));
+        setSchoolYears(normalizeSchoolYears(data.schoolYears));
         setStudents(data.students || []);
         logClientEvent("state-loaded", {
           schoolYears: Array.isArray(data.schoolYears)
