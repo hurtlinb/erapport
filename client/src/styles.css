@@ -375,6 +375,11 @@ select {
   white-space: nowrap;
 }
 
+.module-selector-fields > fieldset.module-evaluation-selector {
+  flex-direction: row;
+  align-items: center;
+}
+
 .module-evaluation-selector legend {
   font-size: 12px;
   font-weight: 600;
