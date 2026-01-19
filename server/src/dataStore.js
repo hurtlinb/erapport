@@ -504,6 +504,20 @@ const readTemplatesByModule = (rows) => {
   }, {});
 };
 
+export const checkDatabaseStatus = async () => {
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.ping();
+    } finally {
+      connection.release();
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+};
+
 export const loadState = async () => {
   await ensureInitialized();
   const [yearResult, moduleResult, templateResult, studentResult, userResult] =
