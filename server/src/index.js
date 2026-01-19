@@ -777,6 +777,7 @@ const renderStudentHeader = (
   const noteLabel = `Note du rapport d'évaluation sommative${
     evaluationNumber ? ` ${evaluationNumber}` : ""
   } =`;
+  const sigPath = path.join(__dirname, "sig.png");
 
   doc
     .lineWidth(0.6)
@@ -796,7 +797,11 @@ const renderStudentHeader = (
   const rightColumnX = middleColumnX + infoColumnWidths[1];
 
   infoColumnWidths.reduce((x, width) => {
-    doc.rect(x, infoRowY, width, infoRowHeight).stroke();
+    doc
+      .rect(x, infoRowY, width, infoRowHeight)
+      .stroke()
+      .rect(x, infoRowY + infoRowHeight, width, infoRowHeight)
+      .stroke();
     return x + width;
   }, headerX);
 
@@ -829,7 +834,36 @@ const renderStudentHeader = (
       align: "center"
     });
 
-  const noteRowY = infoRowY + infoRowHeight;
+  const teacherRowY = infoRowY + infoRowHeight;
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text("Enseignants", headerX + 8, teacherRowY + 4, {
+      width: infoColumnWidths[0] - 16
+    })
+    .font("Helvetica")
+    .fontSize(8)
+    .text("Prénom + nom / signature", headerX + 8, teacherRowY + 15, {
+      width: infoColumnWidths[0] - 16
+    });
+
+  doc
+    .font("Helvetica-Oblique")
+    .fontSize(11)
+    .text(student.teacher || "-", middleColumnX, teacherRowY + 6, {
+      width: infoColumnWidths[1],
+      align: "center"
+    });
+
+  if (fs.existsSync(sigPath)) {
+    doc.image(sigPath, rightColumnX + 6, teacherRowY + 4, {
+      fit: [infoColumnWidths[2] - 12, infoRowHeight - 8],
+      align: "center",
+      valign: "center"
+    });
+  }
+
+  const noteRowY = infoRowY + infoRowHeight * 2;
   const noteLeftWidth = infoColumnWidths[0] + infoColumnWidths[1];
   doc
     .rect(headerX, noteRowY, noteLeftWidth, noteRowHeight)
