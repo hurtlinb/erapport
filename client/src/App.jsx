@@ -466,6 +466,61 @@ const getSummaryLabel = (
   return labels.join("\n");
 };
 
+const aggregateCompetencyStatus = (statuses = []) => {
+  const normalized = statuses.filter(Boolean);
+  if (!normalized.length) return "";
+  if (normalized.includes(STATUS_VALUES.NOT_ASSESSED)) {
+    return STATUS_VALUES.NOT_ASSESSED;
+  }
+  if (normalized.includes(STATUS_VALUES.NEEDS_IMPROVEMENT)) {
+    return STATUS_VALUES.NEEDS_IMPROVEMENT;
+  }
+  if (normalized.every((status) => status === STATUS_VALUES.OK)) {
+    return STATUS_VALUES.OK;
+  }
+  return normalized[0] || "";
+};
+
+const getCompetencySummaryRows = (
+  sections = [],
+  competencyOptions = []
+) => {
+  const items = sections.flatMap((section) => section.items || []);
+  const summaryMap = new Map();
+  const order = [];
+
+  items.forEach((item) => {
+    const competencyId = item.competencyId || "";
+    if (!competencyId) return;
+    if (!summaryMap.has(competencyId)) {
+      summaryMap.set(competencyId, []);
+      order.push(competencyId);
+    }
+    summaryMap.get(competencyId).push(item.status || "");
+  });
+
+  const rows = [];
+  const optionCodes = new Set();
+  competencyOptions.forEach((option) => {
+    if (!option?.code || !summaryMap.has(option.code)) return;
+    optionCodes.add(option.code);
+    rows.push({
+      label: `${option.code} - ${option.description}`,
+      result: aggregateCompetencyStatus(summaryMap.get(option.code))
+    });
+  });
+
+  order.forEach((competencyId) => {
+    if (optionCodes.has(competencyId)) return;
+    rows.push({
+      label: competencyId,
+      result: aggregateCompetencyStatus(summaryMap.get(competencyId))
+    });
+  });
+
+  return rows;
+};
+
 const applyTemplateToStudent = (template, student, teacherId = "") => ({
   ...student,
   moduleId: template.moduleId || "",
@@ -2344,24 +2399,32 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(draft.competencies || []).map((section, sectionIndex) => {
-                    const statusClass = getStatusClass(section.result);
-                    const summaryLabel = getSummaryLabel(
-                      section,
-                      draft.competencyOptions,
-                      draft.summaryByCompetencies
-                    );
+                  {(draft.summaryByCompetencies
+                    ? getCompetencySummaryRows(
+                        draft.competencies,
+                        draft.competencyOptions
+                      )
+                    : (draft.competencies || []).map((section) => ({
+                        label: getSummaryLabel(
+                          section,
+                          draft.competencyOptions,
+                          draft.summaryByCompetencies
+                        ),
+                        result: section.result
+                      }))
+                  ).map((row, rowIndex) => {
+                    const statusClass = getStatusClass(row.result);
                     return (
                       <tr
-                        key={`${section.category}-${sectionIndex}`}
+                        key={`${row.label}-${rowIndex}`}
                         className={`report-summary-row ${statusClass}`}
                       >
                         <td className="summary-category">
-                          {summaryLabel || "—"}
+                          {row.label || "—"}
                         </td>
                         <td className="summary-result">
                           <span className="summary-result-value">
-                            {section.result || "—"}
+                            {row.result || "—"}
                           </span>
                         </td>
                       </tr>

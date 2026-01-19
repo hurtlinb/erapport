@@ -466,6 +466,60 @@ const getSummaryLabel = (student, section) => {
   return labels.join("\n");
 };
 
+const aggregateCompetencyStatus = (statuses = []) => {
+  const normalized = statuses.filter(Boolean);
+  if (!normalized.length) return "";
+  if (normalized.includes(STATUS_VALUES.NOT_ASSESSED)) {
+    return STATUS_VALUES.NOT_ASSESSED;
+  }
+  if (normalized.includes(STATUS_VALUES.NEEDS_IMPROVEMENT)) {
+    return STATUS_VALUES.NEEDS_IMPROVEMENT;
+  }
+  if (normalized.every((status) => status === STATUS_VALUES.OK)) {
+    return STATUS_VALUES.OK;
+  }
+  return normalized[0] || "";
+};
+
+const getCompetencySummaryRows = (student) => {
+  const items = (student.competencies || []).flatMap(
+    (section) => section.items || []
+  );
+  const summaryMap = new Map();
+  const order = [];
+
+  items.forEach((item) => {
+    const competencyId = item.competencyId || "";
+    if (!competencyId) return;
+    if (!summaryMap.has(competencyId)) {
+      summaryMap.set(competencyId, []);
+      order.push(competencyId);
+    }
+    summaryMap.get(competencyId).push(item.status || "");
+  });
+
+  const rows = [];
+  const optionCodes = new Set();
+  (student.competencyOptions || []).forEach((option) => {
+    if (!option?.code || !summaryMap.has(option.code)) return;
+    optionCodes.add(option.code);
+    rows.push({
+      label: `${option.code} - ${option.description}`,
+      result: aggregateCompetencyStatus(summaryMap.get(option.code))
+    });
+  });
+
+  order.forEach((competencyId) => {
+    if (optionCodes.has(competencyId)) return;
+    rows.push({
+      label: competencyId,
+      result: aggregateCompetencyStatus(summaryMap.get(competencyId))
+    });
+  });
+
+  return rows;
+};
+
 const getSummaryRowHeight = (doc, label) => {
   const textPadding = 4;
   const categoryHeight = doc.heightOfString(label || "", {
@@ -1007,8 +1061,15 @@ const renderStudentReport = (doc, student) => {
   drawSummaryHeaderRow(doc, cursorY);
   cursorY += summaryTable.headerHeight;
 
-  (student.competencies || []).forEach((section) => {
-    const summaryLabel = getSummaryLabel(student, section);
+  const summaryRows = student.summaryByCompetencies
+    ? getCompetencySummaryRows(student)
+    : (student.competencies || []).map((section) => ({
+        label: getSummaryLabel(student, section),
+        result: section.result
+      }));
+
+  summaryRows.forEach((row) => {
+    const summaryLabel = row.label || "";
     const rowHeight = getSummaryRowHeight(doc, summaryLabel);
     if (cursorY + rowHeight > 760) {
       doc.addPage();
@@ -1016,7 +1077,7 @@ const renderStudentReport = (doc, student) => {
       drawSummaryHeaderRow(doc, cursorY);
       cursorY += summaryTable.headerHeight;
     }
-    drawSummaryRow(doc, summaryLabel, section.result, cursorY, rowHeight);
+    drawSummaryRow(doc, summaryLabel, row.result, cursorY, rowHeight);
     cursorY += rowHeight;
   });
 
