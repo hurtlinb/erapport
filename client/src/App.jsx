@@ -2380,8 +2380,6 @@ function App() {
         </section>
       </main>
 
-      <footer className="app-footer" />
-
       {isImportStudentModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
           <div className="modal modal--compact">
