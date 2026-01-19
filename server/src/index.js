@@ -14,6 +14,10 @@ const PORT = process.env.PORT || 3001;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const serverPackage = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8")
+);
+const SERVER_VERSION = serverPackage.version || "unknown";
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -38,6 +42,7 @@ app.get("/status", asyncHandler(async (req, res) => {
   const statusCode = dbStatus.ok ? 200 : 503;
   res.status(statusCode).json({
     status: dbStatus.ok ? "ok" : "degraded",
+    version: SERVER_VERSION,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     db: dbStatus
