@@ -2026,7 +2026,7 @@ function App() {
                     : "Exporter tous les rapports pour ce module et ce type de rapport"
                 }
               >
-                {isExporting ? "Export en cours..." : "Tout exporter"}
+                {isExporting ? "Export en cours..." : "Générer les rapports"}
               </button>
               <button
                 className="button primary"
@@ -2246,7 +2246,7 @@ function App() {
             </h2>
             <div className="actions">
               <button className="button primary" onClick={handleGeneratePdf}>
-                Générer le PDF
+                Générer le rapport
               </button>
               {shouldIncludeCoaching(draft) && (
                 <button
@@ -2254,7 +2254,7 @@ function App() {
                   type="button"
                   onClick={handleGenerateCoachingPdf}
                 >
-                  Generate coaching
+                  Générer la demande de coaching
                 </button>
               )}
             </div>
