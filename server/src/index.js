@@ -7,7 +7,7 @@ import path from "path";
 import PDFDocument from "pdfkit";
 import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
-import { loadState, saveState } from "./dataStore.js";
+import { checkDatabaseStatus, loadState, saveState } from "./dataStore.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +32,17 @@ const getTokenFromRequest = (req) => {
 const asyncHandler = (handler) => (req, res, next) => {
   Promise.resolve(handler(req, res, next)).catch(next);
 };
+
+app.get("/status", asyncHandler(async (req, res) => {
+  const dbStatus = await checkDatabaseStatus();
+  const statusCode = dbStatus.ok ? 200 : 503;
+  res.status(statusCode).json({
+    status: dbStatus.ok ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    db: dbStatus
+  });
+}));
 
 const logServerEvent = (event, payload) => {
   const logEntry = {
