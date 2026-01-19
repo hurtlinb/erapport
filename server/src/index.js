@@ -463,7 +463,7 @@ const getSummaryLabel = (student, section) => {
     return section.category || "";
   }
 
-  return labels.join(", ");
+  return labels.join("\n");
 };
 
 const getSummaryRowHeight = (doc, label) => {

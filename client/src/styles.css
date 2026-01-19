@@ -554,6 +554,7 @@ textarea {
 
 .summary-category {
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .summary-result {
