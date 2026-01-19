@@ -712,6 +712,8 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [draggedTask, setDraggedTask] = useState(null);
+  const [dragOverTask, setDragOverTask] = useState(null);
   const [serverStatus, setServerStatus] = useState({
     status: "unknown",
     version: ""
@@ -1637,23 +1639,59 @@ function App() {
     }));
   };
 
-  const handleMoveTask = (sectionIndex, itemIndex, direction) => {
+  const handleReorderTask = (sectionIndex, fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
     updateTemplate((prev) => ({
       ...prev,
       competencies: (prev.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
         const items = [...(section.items || [])];
-        const targetIndex = itemIndex + direction;
-        if (targetIndex < 0 || targetIndex >= items.length) {
+        if (
+          fromIndex < 0 ||
+          fromIndex >= items.length ||
+          toIndex < 0 ||
+          toIndex >= items.length
+        ) {
           return section;
         }
-        [items[itemIndex], items[targetIndex]] = [items[targetIndex], items[itemIndex]];
+        const [moved] = items.splice(fromIndex, 1);
+        items.splice(toIndex, 0, moved);
         return {
           ...section,
           items
         };
       })
     }));
+  };
+
+  const handleTaskDragStart = (sectionIndex, itemIndex) => (event) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", "drag-task");
+    setDraggedTask({ sectionIndex, itemIndex });
+  };
+
+  const handleTaskDragOver = (sectionIndex, itemIndex) => (event) => {
+    if (!draggedTask) return;
+    event.preventDefault();
+    setDragOverTask({ sectionIndex, itemIndex });
+  };
+
+  const handleTaskDrop = (sectionIndex, itemIndex) => (event) => {
+    if (!draggedTask) return;
+    event.preventDefault();
+    if (draggedTask.sectionIndex !== sectionIndex) {
+      setDraggedTask(null);
+      setDragOverTask(null);
+      return;
+    }
+    handleReorderTask(sectionIndex, draggedTask.itemIndex, itemIndex);
+    setDraggedTask(null);
+    setDragOverTask(null);
+  };
+
+  const handleTaskDragEnd = () => {
+    setDraggedTask(null);
+    setDragOverTask(null);
   };
 
   const handleStudentGroupChange = (studentId, value) => {
@@ -2990,7 +3028,14 @@ function App() {
                       return (
                         <div
                           key={itemIndex}
-                          className="template-task-row template-task-row--task"
+                          className={`template-task-row template-task-row--task${
+                            dragOverTask?.sectionIndex === sectionIndex &&
+                            dragOverTask?.itemIndex === itemIndex
+                              ? " is-drag-over"
+                              : ""
+                          }`}
+                          onDragOver={handleTaskDragOver(sectionIndex, itemIndex)}
+                          onDrop={handleTaskDrop(sectionIndex, itemIndex)}
                         >
                           <input
                             type="text"
@@ -3040,24 +3085,6 @@ function App() {
                               </option>
                             ))}
                           </select>
-                          <div className="template-task-actions">
-                            <button
-                              className="button text"
-                              onClick={() => handleMoveTask(sectionIndex, itemIndex, -1)}
-                              disabled={itemIndex === 0}
-                              aria-label="Déplacer la tâche vers le haut"
-                            >
-                              Monter
-                            </button>
-                            <button
-                              className="button text"
-                              onClick={() => handleMoveTask(sectionIndex, itemIndex, 1)}
-                              disabled={itemIndex === section.items.length - 1}
-                              aria-label="Déplacer la tâche vers le bas"
-                            >
-                              Descendre
-                            </button>
-                          </div>
                           <button
                             className="button text"
                             onClick={() =>
@@ -3067,6 +3094,18 @@ function App() {
                           >
                             Supprimer
                           </button>
+                          <a
+                            href="#"
+                            className="task-drag-handle"
+                            role="button"
+                            draggable
+                            onClick={(event) => event.preventDefault()}
+                            onDragStart={handleTaskDragStart(sectionIndex, itemIndex)}
+                            onDragEnd={handleTaskDragEnd}
+                            aria-label="Réorganiser la tâche"
+                          >
+                            ⠿
+                          </a>
                         </div>
                       );
                     })}
