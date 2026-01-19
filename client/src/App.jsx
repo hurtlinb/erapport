@@ -2090,35 +2090,37 @@ function App() {
                   })}
                 </select>
               </label>
-              <div
-                className="module-evaluation-selector"
-                role="group"
-                aria-label="Type de rapport"
-              >
-                <span className="module-evaluation-label">
+              <div className="module-evaluation-group">
+                <span className="module-evaluation-title">
                   Type de rapport
                 </span>
-                {EVALUATION_TYPES.map((type) => {
-                  const isAvailable = isEvaluationTypeAvailable(
-                    activeModule,
-                    type
-                  );
-                  return (
-                    <label key={type} className="module-evaluation-option">
-                      <input
-                        type="radio"
-                        name="module-evaluation-type"
-                        value={type}
-                        checked={activeEvaluationType === type}
-                        onChange={(event) =>
-                          handleEvaluationTypeChange(event.target.value)
-                        }
-                        disabled={!isAvailable}
-                      />
-                      <span>{type}</span>
-                    </label>
-                  );
-                })}
+                <div
+                  className="module-evaluation-selector"
+                  role="group"
+                  aria-label="Type de rapport"
+                >
+                  {EVALUATION_TYPES.map((type) => {
+                    const isAvailable = isEvaluationTypeAvailable(
+                      activeModule,
+                      type
+                    );
+                    return (
+                      <label key={type} className="module-evaluation-option">
+                        <input
+                          type="radio"
+                          name="module-evaluation-type"
+                          value={type}
+                          checked={activeEvaluationType === type}
+                          onChange={(event) =>
+                            handleEvaluationTypeChange(event.target.value)
+                          }
+                          disabled={!isAvailable}
+                        />
+                        <span>{type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div className="module-actions">
