@@ -2379,13 +2379,10 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <div className="footer-item">
-          <span>Serveur backend utilisé :</span>
+        <p className="helper-text">
+          Serveur backend utilisé :{" "}
           <span className="backend-url">{API_BASE_URL}</span>
-          <span aria-hidden="true">•</span>
-          <span className={statusIndicatorClass} aria-hidden="true" />
-          <span>Serveur : {serverStatusLabel}</span>
-        </div>
+        </p>
       </footer>
 
       {isImportStudentModalOpen && (
