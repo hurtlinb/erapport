@@ -101,6 +101,7 @@ const defaultTemplate = {
   note: "",
   evaluationType: EVALUATION_TYPES[0],
   groupFeatureEnabled: false,
+  summaryByCompetencies: false,
   className: "",
   teacher: "",
   evaluationDate: "",
@@ -126,6 +127,7 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
+    summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
     competencyOptions:
       baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
     competencies: baseTemplate.competencies || defaultTemplate.competencies
@@ -309,6 +311,7 @@ const normalizeStudent = (student) => {
     name: normalizeTextValue(baseStudent.name),
     evaluationType: baseStudent?.evaluationType || EVALUATION_TYPES[0],
     teacherId: baseStudent?.teacherId || "",
+    summaryByCompetencies: Boolean(baseStudent?.summaryByCompetencies),
     competencyOptions: normalizeJsonValue(baseStudent.competencyOptions, []),
     competencies: normalizeJsonValue(baseStudent.competencies, [])
   };
@@ -430,6 +433,7 @@ const ensureInitialized = async () => {
           evaluation_date TEXT,
           coaching_date TEXT,
           operational_competence TEXT,
+          summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0,
           competency_options JSON,
           competencies JSON,
           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -459,6 +463,10 @@ const ensureInitialized = async () => {
           FOREIGN KEY (teacher_id) REFERENCES users(id)
           ON DELETE SET NULL
       `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD COLUMN summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0
+      `).catch(() => {});
       await seedSchoolYears(client);
       await client.commit();
     } catch (error) {
@@ -479,6 +487,7 @@ const buildTemplatePayload = (template) =>
     {
       note: template.note || "",
       groupFeatureEnabled: Boolean(template.groupFeatureEnabled),
+      summaryByCompetencies: Boolean(template.summaryByCompetencies),
       className: template.className || "",
       teacher: template.teacher || "",
       evaluationDate: template.evaluationDate || "",
@@ -589,6 +598,7 @@ export const loadState = async () => {
       evaluationDate: student.evaluation_date || "",
       coachingDate: student.coaching_date || "",
       operationalCompetence: student.operational_competence || "",
+      summaryByCompetencies: Boolean(student.summary_by_competencies),
       competencyOptions:
         student.competency_options || template.competencyOptions || [],
       competencies: student.competencies || template.competencies || []
@@ -759,10 +769,12 @@ export const saveState = async (nextState) => {
             evaluation_date,
             coaching_date,
             operational_competence,
+            summary_by_competencies,
             competency_options,
             competencies
           )
           VALUES (
+            ?,
             ?,
             ?,
             ?,
@@ -792,6 +804,7 @@ export const saveState = async (nextState) => {
             evaluation_date = VALUES(evaluation_date),
             coaching_date = VALUES(coaching_date),
             operational_competence = VALUES(operational_competence),
+            summary_by_competencies = VALUES(summary_by_competencies),
             competency_options = VALUES(competency_options),
             competencies = VALUES(competencies)
         `,
@@ -809,6 +822,7 @@ export const saveState = async (nextState) => {
           student.evaluationDate || "",
           student.coachingDate || "",
           student.operationalCompetence || "",
+          student.summaryByCompetencies ? 1 : 0,
           competencyOptions,
           competencies
         ]
