@@ -92,7 +92,6 @@ const DEFAULT_COMPETENCIES = [
 ];
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
-const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 
 const defaultTemplate = {
   moduleId: "",
@@ -215,9 +214,9 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   });
 };
 
-const normalizeSchoolYears = (schoolYears = [], modules = []) => {
+const normalizeSchoolYears = (schoolYears = []) => {
   if (Array.isArray(schoolYears) && schoolYears.length > 0) {
-    const normalizedYears = schoolYears.map((schoolYear) => {
+    return schoolYears.map((schoolYear) => {
       const label =
         schoolYear.label ||
         schoolYear.schoolYear ||
@@ -229,53 +228,9 @@ const normalizeSchoolYears = (schoolYears = [], modules = []) => {
         modules: normalizeModules(schoolYear.modules || [], label)
       };
     });
-    const existingLabels = new Set(normalizedYears.map((year) => year.label));
-    SCHOOL_YEARS.forEach((label) => {
-      if (existingLabels.has(label)) return;
-      normalizedYears.push({
-        id: crypto.randomUUID(),
-        label,
-        modules: normalizeModules([], label)
-      });
-    });
-    return normalizedYears;
   }
 
-  if (Array.isArray(modules) && modules.length > 0) {
-    const groupedModules = modules.reduce((acc, module) => {
-      const label = module.schoolYear || defaultTemplate.schoolYear;
-      if (!acc[label]) {
-        acc[label] = [];
-      }
-      const { schoolYear, ...rest } = module;
-      acc[label].push(rest);
-      return acc;
-    }, {});
-
-    const normalizedYears = Object.entries(groupedModules).map(
-      ([label, yearModules]) => ({
-        id: crypto.randomUUID(),
-        label,
-        modules: normalizeModules(yearModules, label)
-      })
-    );
-    const existingLabels = new Set(normalizedYears.map((year) => year.label));
-    SCHOOL_YEARS.forEach((label) => {
-      if (existingLabels.has(label)) return;
-      normalizedYears.push({
-        id: crypto.randomUUID(),
-        label,
-        modules: normalizeModules([], label)
-      });
-    });
-    return normalizedYears;
-  }
-
-  return SCHOOL_YEARS.map((label) => ({
-    id: crypto.randomUUID(),
-    label,
-    modules: normalizeModules([], label)
-  }));
+  return [];
 };
 
 const normalizeTextValue = (value) => {
@@ -334,7 +289,7 @@ const normalizeUsers = (users = []) => {
 const normalizeState = (state) => {
   const nextState = state || {};
   return {
-    schoolYears: normalizeSchoolYears(nextState.schoolYears, nextState.modules),
+    schoolYears: normalizeSchoolYears(nextState.schoolYears),
     students: Array.isArray(nextState.students)
       ? nextState.students.map(normalizeStudent)
       : [],
@@ -361,23 +316,6 @@ const pool = mysql.createPool({
 });
 
 let initializationPromise;
-
-const seedSchoolYears = async (client) => {
-  const [rows] = await client.query(
-    "SELECT COUNT(*) AS count FROM school_years"
-  );
-  if (Number(rows[0]?.count ?? 0) > 0) return;
-  const entries = SCHOOL_YEARS.map((label) => ({
-    id: crypto.randomUUID(),
-    label
-  }));
-  const placeholders = entries.map(() => "(?, ?)").join(", ");
-  const values = entries.flatMap((entry) => [entry.id, entry.label]);
-  await client.query(
-    `INSERT INTO school_years (id, label) VALUES ${placeholders}`,
-    values
-  );
-};
 
 const ensureInitialized = async () => {
   if (initializationPromise) return initializationPromise;
@@ -467,7 +405,6 @@ const ensureInitialized = async () => {
         ALTER TABLE students
         ADD COLUMN summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0
       `).catch(() => {});
-      await seedSchoolYears(client);
       await client.commit();
     } catch (error) {
       await client.rollback();
