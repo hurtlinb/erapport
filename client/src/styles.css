@@ -397,6 +397,7 @@ select {
 
 .module-evaluation-option {
   display: inline-flex;
+  flex-direction: row-reverse;
   align-items: center;
   gap: 6px;
   font-size: 13px;
