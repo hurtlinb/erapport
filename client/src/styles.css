@@ -343,8 +343,18 @@ select {
 }
 
 .module-selector {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.module-selector > label,
+.module-selector > fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 220px;
 }
 
 .module-evaluation-selector {
