@@ -375,16 +375,16 @@ select {
   white-space: nowrap;
 }
 
-.module-selector-fields > fieldset.module-evaluation-selector {
+.module-selector-fields > .module-evaluation-selector {
   flex-direction: row;
   align-items: center;
 }
 
-.module-evaluation-selector legend {
+.module-evaluation-label {
   font-size: 12px;
   font-weight: 600;
   color: #64748b;
-  padding: 0 6px;
+  padding-right: 6px;
 }
 
 .module-evaluation-option {
