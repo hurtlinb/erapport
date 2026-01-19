@@ -494,7 +494,13 @@ select {
 }
 
 .template-task-row--task {
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr auto auto;
+}
+
+.template-task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 textarea {

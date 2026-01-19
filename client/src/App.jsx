@@ -1637,6 +1637,25 @@ function App() {
     }));
   };
 
+  const handleMoveTask = (sectionIndex, itemIndex, direction) => {
+    updateTemplate((prev) => ({
+      ...prev,
+      competencies: (prev.competencies || []).map((section, sIndex) => {
+        if (sIndex !== sectionIndex) return section;
+        const items = [...(section.items || [])];
+        const targetIndex = itemIndex + direction;
+        if (targetIndex < 0 || targetIndex >= items.length) {
+          return section;
+        }
+        [items[itemIndex], items[targetIndex]] = [items[targetIndex], items[itemIndex]];
+        return {
+          ...section,
+          items
+        };
+      })
+    }));
+  };
+
   const handleStudentGroupChange = (studentId, value) => {
     setStudents((prev) => {
       let updatedStudent = null;
@@ -3021,6 +3040,24 @@ function App() {
                               </option>
                             ))}
                           </select>
+                          <div className="template-task-actions">
+                            <button
+                              className="button text"
+                              onClick={() => handleMoveTask(sectionIndex, itemIndex, -1)}
+                              disabled={itemIndex === 0}
+                              aria-label="Déplacer la tâche vers le haut"
+                            >
+                              Monter
+                            </button>
+                            <button
+                              className="button text"
+                              onClick={() => handleMoveTask(sectionIndex, itemIndex, 1)}
+                              disabled={itemIndex === section.items.length - 1}
+                              aria-label="Déplacer la tâche vers le bas"
+                            >
+                              Descendre
+                            </button>
+                          </div>
                           <button
                             className="button text"
                             onClick={() =>
