@@ -1,7 +1,7 @@
-ARG APP_VERSION=1.1
+ARG APP_VERSION=1.3.1
 
 FROM node:20-alpine
-ARG APP_VERSION=1.1
+ARG APP_VERSION=1.3.1
 LABEL org.opencontainers.image.version=$APP_VERSION
 
 WORKDIR /app
