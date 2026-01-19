@@ -2134,6 +2134,9 @@ function App() {
               <button className="button primary" onClick={handleGeneratePdf}>
                 Générer le PDF
               </button>
+              <button className="button ghost" type="button">
+                Generate coaching
+              </button>
             </div>
           </div>
 
