@@ -358,7 +358,8 @@ select {
 }
 
 .module-selector-fields > label,
-.module-selector-fields > fieldset {
+.module-selector-fields > fieldset,
+.module-selector-fields > .module-evaluation-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -373,18 +374,13 @@ select {
   flex-wrap: nowrap;
   gap: 12px;
   white-space: nowrap;
-}
-
-.module-selector-fields > .module-evaluation-selector {
-  flex-direction: row;
   align-items: center;
 }
 
-.module-evaluation-label {
+.module-evaluation-title {
   font-size: 12px;
   font-weight: 600;
   color: #64748b;
-  padding-right: 6px;
 }
 
 .module-evaluation-option {
