@@ -2012,7 +2012,7 @@ function App() {
         <section className="panel template-panel">
           <div className="panel-header">
             <div>
-              <h2>Modèle</h2>
+              <h2>Evaluation</h2>
             </div>
             <div className="actions">
               <button
