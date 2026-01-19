@@ -2042,74 +2042,79 @@ function App() {
           </div>
 
           <div className="module-selector">
-            <label>
-              Année scolaire
-              <select
-                value={activeSchoolYearId}
-                onChange={(event) => {
-                  const nextId = event.target.value;
-                  const selectedYear = schoolYears.find(
-                    (year) => year.id === nextId
-                  );
-                  console.info("School year changed", {
-                    nextId,
-                    previousId: activeSchoolYearId,
-                    selectedYear,
-                    availableYears: schoolYears
-                  });
-                  logClientEvent("school-year-change", {
-                    nextId,
-                    previousId: activeSchoolYearId,
-                    selectedYear,
-                    availableYears: schoolYears
-                  });
-                  setActiveSchoolYearId(nextId);
-                }}
-              >
-                {schoolYears.map((year) => (
-                  <option key={year.id} value={year.id}>
-                    {year.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Module actif
-              <select
-                value={activeModuleId}
-                onChange={(event) => setActiveModuleId(event.target.value)}
-              >
-                {activeModules.map((module) => {
-                  const title = module.title || "Module";
-                  return (
-                    <option key={module.id} value={module.id}>
-                      {title}
+            <div className="module-selector-fields">
+              <label>
+                Année scolaire
+                <select
+                  value={activeSchoolYearId}
+                  onChange={(event) => {
+                    const nextId = event.target.value;
+                    const selectedYear = schoolYears.find(
+                      (year) => year.id === nextId
+                    );
+                    console.info("School year changed", {
+                      nextId,
+                      previousId: activeSchoolYearId,
+                      selectedYear,
+                      availableYears: schoolYears
+                    });
+                    logClientEvent("school-year-change", {
+                      nextId,
+                      previousId: activeSchoolYearId,
+                      selectedYear,
+                      availableYears: schoolYears
+                    });
+                    setActiveSchoolYearId(nextId);
+                  }}
+                >
+                  {schoolYears.map((year) => (
+                    <option key={year.id} value={year.id}>
+                      {year.label}
                     </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Module actif
+                <select
+                  value={activeModuleId}
+                  onChange={(event) => setActiveModuleId(event.target.value)}
+                >
+                  {activeModules.map((module) => {
+                    const title = module.title || "Module";
+                    return (
+                      <option key={module.id} value={module.id}>
+                        {title}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+              <fieldset className="module-evaluation-selector">
+                <legend>Type de rapport</legend>
+                {EVALUATION_TYPES.map((type) => {
+                  const isAvailable = isEvaluationTypeAvailable(
+                    activeModule,
+                    type
+                  );
+                  return (
+                    <label key={type} className="module-evaluation-option">
+                      <input
+                        type="radio"
+                        name="module-evaluation-type"
+                        value={type}
+                        checked={activeEvaluationType === type}
+                        onChange={(event) =>
+                          handleEvaluationTypeChange(event.target.value)
+                        }
+                        disabled={!isAvailable}
+                      />
+                      <span>{type}</span>
+                    </label>
                   );
                 })}
-              </select>
-            </label>
-            <fieldset className="module-evaluation-selector">
-              <legend>Type de rapport</legend>
-              {EVALUATION_TYPES.map((type) => {
-                const isAvailable = isEvaluationTypeAvailable(activeModule, type);
-                return (
-                  <label key={type} className="module-evaluation-option">
-                    <input
-                      type="radio"
-                      name="module-evaluation-type"
-                      value={type}
-                      checked={activeEvaluationType === type}
-                      onChange={(event) =>
-                        handleEvaluationTypeChange(event.target.value)
-                      }
-                      disabled={!isAvailable}
-                    />
-                    <span>{type}</span>
-                  </label>
-                );
-              })}
-            </fieldset>
+              </fieldset>
+            </div>
             <div className="module-actions">
               <button
                 className="button ghost"
