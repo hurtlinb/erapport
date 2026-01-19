@@ -675,9 +675,14 @@ const renderReportHeader = (doc, reportTitle) => {
   return { headerX, headerY, headerHeight, headerWidth };
 };
 
-const renderStudentHeader = (doc, student, evaluationNumber) => {
+const renderStudentHeader = (
+  doc,
+  student,
+  evaluationNumber,
+  startY = 40
+) => {
   const headerX = 40;
-  const headerY = 40;
+  const headerY = startY;
   const headerWidth = 515;
   const moduleBarHeight = 30;
   const infoRowHeight = 26;
@@ -928,7 +933,16 @@ const drawCoachingInfoTable = (doc, student, infoBoxY) => {
 
 const renderStudentReport = (doc, student) => {
   const evaluationNumber = getEvaluationNumber(student.evaluationType);
-  const { headerBottomY } = renderStudentHeader(doc, student, evaluationNumber);
+  const reportTitle = `Rapport d’évaluation sommative${
+    evaluationNumber ? ` ${evaluationNumber}` : ""
+  }`;
+  const { headerY, headerHeight } = renderReportHeader(doc, reportTitle);
+  const { headerBottomY } = renderStudentHeader(
+    doc,
+    student,
+    evaluationNumber,
+    headerY + headerHeight + 8
+  );
 
   const operationalTitleY = headerBottomY + 12;
   const operationalBodyY = operationalTitleY + 12;
