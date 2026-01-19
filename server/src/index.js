@@ -610,6 +610,13 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
 
   doc
     .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor(theme.text)
+    .text("Note du module", summaryTable.x, y + 6, {
+      width: summaryTable.columnWidths.category,
+      align: "center"
+    })
+    .font("Helvetica-Bold")
     .fontSize(12)
     .fillColor(theme.text)
     .text(noteValue, resultX, y + 7, {
@@ -770,13 +777,8 @@ const renderStudentHeader = (
   const headerWidth = 515;
   const moduleBarHeight = 30;
   const infoRowHeight = 26;
-  const noteRowHeight = 28;
   const infoColumnWidths = [170, 255, 90];
   const studentDisplayName = getStudentDisplayName(student);
-  const noteValue = student.note || "-";
-  const noteLabel = `Note du rapport d'évaluation sommative${
-    evaluationNumber ? ` ${evaluationNumber}` : ""
-  } =`;
   const sigPath = path.join(__dirname, "sig.png");
 
   doc
@@ -863,33 +865,7 @@ const renderStudentHeader = (
     });
   }
 
-  const noteRowY = infoRowY + infoRowHeight * 2;
-  const noteLeftWidth = infoColumnWidths[0] + infoColumnWidths[1];
-  doc
-    .rect(headerX, noteRowY, noteLeftWidth, noteRowHeight)
-    .stroke()
-    .rect(rightColumnX, noteRowY, infoColumnWidths[2], noteRowHeight)
-    .stroke();
-
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor(theme.text)
-    .text(noteLabel, headerX, noteRowY + 8, {
-      width: noteLeftWidth,
-      align: "center"
-    })
-    .font("Helvetica-Bold")
-    .fontSize(18)
-    .fillColor("#d10000")
-    .text(noteValue, rightColumnX, noteRowY + 4, {
-      width: infoColumnWidths[2],
-      align: "center"
-    })
-    .fillColor(theme.text)
-    .font("Helvetica");
-
-  return { headerBottomY: noteRowY + noteRowHeight };
+  return { headerBottomY: infoRowY + infoRowHeight * 2 };
 };
 
 const drawStudentInfoTable = (doc, student, infoBoxY) => {
@@ -1115,6 +1091,14 @@ const renderStudentReport = (doc, student) => {
     cursorY += rowHeight;
   });
 
+  if (cursorY + summaryTable.noteRowHeight > 760) {
+    doc.addPage();
+    cursorY = 40;
+    drawSummaryHeaderRow(doc, cursorY);
+    cursorY += summaryTable.headerHeight;
+  }
+  drawSummaryNoteRow(doc, student.note, cursorY, summaryTable.noteRowHeight);
+  cursorY += summaryTable.noteRowHeight;
   cursorY += 16;
   student.competencies?.forEach((section, sectionIndex) => {
     if (cursorY + competencyTable.headerHeight > 740) {
