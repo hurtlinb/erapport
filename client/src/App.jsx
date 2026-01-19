@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import clientPackage from "../package.json";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
   {
@@ -99,12 +100,19 @@ const TASK_EVALUATION_METHODS = [
 const SCHOOL_YEARS = ["2024-2025", "2025-2026"];
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const CLIENT_VERSION = clientPackage.version || "dev";
 const AUTH_STORAGE_KEY = "erapport.auth";
 
 const STATUS_VALUES = {
   OK: "OK",
   NEEDS_IMPROVEMENT: "~",
   NOT_ASSESSED: "NOK"
+};
+const SERVER_STATUS_LABELS = {
+  ok: "En ligne",
+  degraded: "Dégradé",
+  offline: "Hors ligne",
+  unknown: "Inconnu"
 };
 const EVALUATION_COPY_PAIRS = [
   { source: "E1", target: "E2" },
@@ -601,6 +609,10 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [serverStatus, setServerStatus] = useState({
+    status: "unknown",
+    version: ""
+  });
   const isHydratedRef = useRef(false);
   const isAuthenticated = Boolean(authToken && authUser);
   const teacherId = authUser?.id || "";
@@ -630,6 +642,16 @@ function App() {
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
+  const clientVersion = CLIENT_VERSION;
+  const normalizedServerStatus = ["ok", "degraded", "offline"].includes(
+    serverStatus.status
+  )
+    ? serverStatus.status
+    : "unknown";
+  const serverStatusLabel =
+    SERVER_STATUS_LABELS[normalizedServerStatus] || SERVER_STATUS_LABELS.unknown;
+  const serverVersionLabel = serverStatus.version || "—";
+  const statusIndicatorClass = `status-indicator status-indicator--${normalizedServerStatus}`;
   const logClientEvent = async (event, payload) => {
     if (!authToken) return;
     try {
@@ -649,6 +671,35 @@ function App() {
     () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
     [activeSchoolYearId, schoolYears]
   );
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/status`);
+        const data = await response.json().catch(() => ({}));
+        if (!isMounted) return;
+        const status = data.status || (response.ok ? "ok" : "offline");
+        setServerStatus({
+          status,
+          version: data.version || ""
+        });
+      } catch (error) {
+        console.error(error);
+        if (!isMounted) return;
+        setServerStatus((prev) => ({
+          ...prev,
+          status: "offline"
+        }));
+      }
+    };
+
+    fetchServerStatus();
+    const intervalId = setInterval(fetchServerStatus, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
   useEffect(() => {
     if (!activeSchoolYearId) return;
     console.info("Active school year updated", {
@@ -1634,6 +1685,16 @@ function App() {
         .length,
     [copyStudentSelections, copySourceStudents]
   );
+  const footer = (
+    <footer className="app-footer">
+      <div className="footer-item">
+        <span className={statusIndicatorClass} aria-hidden="true" />
+        <span>Serveur : {serverStatusLabel}</span>
+      </div>
+      <div className="footer-item">Client v{clientVersion}</div>
+      <div className="footer-item">Serveur v{serverVersionLabel}</div>
+    </footer>
+  );
 
   if (!isAuthenticated) {
     return (
@@ -1756,6 +1817,7 @@ function App() {
             </ul>
           </section>
         </main>
+        {footer}
       </div>
     );
   }
@@ -1766,6 +1828,7 @@ function App() {
         <main className="layout">
           <p className="helper-text">Chargement des données depuis le serveur...</p>
         </main>
+        {footer}
       </div>
     );
   }
@@ -2824,6 +2887,7 @@ function App() {
           </div>
         </div>
       )}
+      {footer}
     </div>
   );
 }
