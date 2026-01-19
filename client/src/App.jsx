@@ -1689,7 +1689,9 @@ function App() {
     <footer className="app-footer">
       <div className="footer-item">
         <span className={statusIndicatorClass} aria-hidden="true" />
-        <span>Serveur : {serverStatusLabel}</span>
+        <span>
+          Serveur : {serverStatusLabel} ({API_BASE_URL})
+        </span>
       </div>
       <div className="footer-item">Client v{clientVersion}</div>
       <div className="footer-item">Serveur v{serverVersionLabel}</div>
