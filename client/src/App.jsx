@@ -2380,12 +2380,7 @@ function App() {
         </section>
       </main>
 
-      <footer className="app-footer">
-        <p className="helper-text">
-          Serveur backend utilisé :{" "}
-          <span className="backend-url">{API_BASE_URL}</span>
-        </p>
-      </footer>
+      <footer className="app-footer" />
 
       {isImportStudentModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
