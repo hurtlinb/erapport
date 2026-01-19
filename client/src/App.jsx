@@ -2090,8 +2090,14 @@ function App() {
                   })}
                 </select>
               </label>
-              <fieldset className="module-evaluation-selector">
-                <legend>Type de rapport</legend>
+              <div
+                className="module-evaluation-selector"
+                role="group"
+                aria-label="Type de rapport"
+              >
+                <span className="module-evaluation-label">
+                  Type de rapport
+                </span>
                 {EVALUATION_TYPES.map((type) => {
                   const isAvailable = isEvaluationTypeAvailable(
                     activeModule,
@@ -2113,7 +2119,7 @@ function App() {
                     </label>
                   );
                 })}
-              </fieldset>
+              </div>
             </div>
             <div className="module-actions">
               <button
