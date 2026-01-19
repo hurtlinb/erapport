@@ -2014,31 +2014,6 @@ function App() {
             <div>
               <h2>Evaluation</h2>
             </div>
-            <div className="actions">
-              <button
-                className="button ghost"
-                type="button"
-                onClick={handleExportAllReports}
-                disabled={moduleStudents.length === 0 || isExporting}
-                title={
-                  moduleStudents.length === 0
-                    ? "Aucun étudiant à exporter."
-                    : "Exporter tous les rapports pour ce module et ce type de rapport"
-                }
-              >
-                {isExporting ? "Export en cours..." : "Générer les rapports"}
-              </button>
-              <button
-                className="button primary"
-                type="button"
-                onClick={() => setIsTemplateModalOpen(true)}
-              >
-                Modifier le modèle
-              </button>
-              <button className="button primary" onClick={handleAddModule}>
-                Nouveau module
-              </button>
-            </div>
           </div>
 
           <div className="module-selector">
@@ -2123,41 +2098,71 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="module-actions">
-              <button
-                className="button ghost"
-                onClick={() => handleOpenCopyStudentsModal("E1", "E2")}
-                disabled={e1Students.length === 0}
-                title={
-                  e1Students.length === 0
-                    ? "Aucun étudiant en E1 à copier."
-                    : "Copier les rapports E1 vers E2"
-                }
-              >
-                Copier E1 → E2
-              </button>
-              <button
-                className="button ghost"
-                onClick={() => handleOpenCopyStudentsModal("E2", "E3")}
-                disabled={e2Students.length === 0}
-                title={
-                  e2Students.length === 0
-                    ? "Aucun étudiant en E2 à copier."
-                    : "Copier les rapports E2 vers E3"
-                }
-              >
-                Copier E2 → E3
-              </button>
-              <button
-                className="button danger"
-                type="button"
-                onClick={() => handleRemoveReportType(activeEvaluationType)}
-                disabled={
-                  !isEvaluationTypeAvailable(activeModule, activeEvaluationType)
-                }
-              >
-                Supprimer le rapport {activeEvaluationType}
-              </button>
+            <div className="module-actions-row">
+              <div className="module-actions">
+                <button
+                  className="button ghost"
+                  onClick={() => handleOpenCopyStudentsModal("E1", "E2")}
+                  disabled={e1Students.length === 0}
+                  title={
+                    e1Students.length === 0
+                      ? "Aucun étudiant en E1 à copier."
+                      : "Copier les rapports E1 vers E2"
+                  }
+                >
+                  Copier E1 → E2
+                </button>
+                <button
+                  className="button ghost"
+                  onClick={() => handleOpenCopyStudentsModal("E2", "E3")}
+                  disabled={e2Students.length === 0}
+                  title={
+                    e2Students.length === 0
+                      ? "Aucun étudiant en E2 à copier."
+                      : "Copier les rapports E2 vers E3"
+                  }
+                >
+                  Copier E2 → E3
+                </button>
+                <button
+                  className="button danger"
+                  type="button"
+                  onClick={() => handleRemoveReportType(activeEvaluationType)}
+                  disabled={
+                    !isEvaluationTypeAvailable(
+                      activeModule,
+                      activeEvaluationType
+                    )
+                  }
+                >
+                  Supprimer le rapport {activeEvaluationType}
+                </button>
+              </div>
+              <div className="actions module-template-actions">
+                <button
+                  className="button ghost"
+                  type="button"
+                  onClick={handleExportAllReports}
+                  disabled={moduleStudents.length === 0 || isExporting}
+                  title={
+                    moduleStudents.length === 0
+                      ? "Aucun étudiant à exporter."
+                      : "Exporter tous les rapports pour ce module et ce type de rapport"
+                  }
+                >
+                  {isExporting ? "Export en cours..." : "Générer les rapports"}
+                </button>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={() => setIsTemplateModalOpen(true)}
+                >
+                  Modifier le modèle
+                </button>
+                <button className="button primary" onClick={handleAddModule}>
+                  Nouveau module
+                </button>
+              </div>
             </div>
           </div>
         </section>
