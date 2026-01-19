@@ -463,7 +463,7 @@ const getSummaryLabel = (
     return section.category || "";
   }
 
-  return labels.join(", ");
+  return labels.join("\n");
 };
 
 const applyTemplateToStudent = (template, student, teacherId = "") => ({
