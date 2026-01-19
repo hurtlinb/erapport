@@ -529,8 +529,19 @@ const buildReportFilename = (student) => {
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
+const buildCoachingFilename = (student) => {
+  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const evaluationLabel = getEvaluationLabel(student?.evaluationType);
+  const studentName = getStudentNameToken(student);
+  return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
+};
+
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
+const shouldIncludeCoaching = (student) => {
+  const numericNote = Number(student?.note);
+  return [1, 2, 3].includes(numericNote);
+};
 
 const syncGroupEvaluations = (student, groupName, studentsPool) => {
   if (!groupName) {
@@ -1312,6 +1323,42 @@ function App() {
     const link = document.createElement("a");
     link.href = url;
     link.download = buildReportFilename(draft);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleGenerateCoachingPdf = async () => {
+    if (!hasStudentIdentity(draft)) {
+      alert("Veuillez saisir le nom de l'étudiant.");
+      return;
+    }
+    if (!shouldIncludeCoaching(draft)) {
+      alert(
+        "La note de l'étudiant doit être inférieure à 4 pour générer le coaching."
+      );
+      return;
+    }
+    const response = await fetch(`${API_BASE_URL}/api/report/coaching`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`
+      },
+      body: JSON.stringify(draft)
+    });
+
+    if (!response.ok) {
+      alert("Impossible de générer le PDF de coaching.");
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = buildCoachingFilename(draft);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -2134,9 +2181,15 @@ function App() {
               <button className="button primary" onClick={handleGeneratePdf}>
                 Générer le PDF
               </button>
-              <button className="button ghost" type="button">
-                Generate coaching
-              </button>
+              {shouldIncludeCoaching(draft) && (
+                <button
+                  className="button ghost"
+                  type="button"
+                  onClick={handleGenerateCoachingPdf}
+                >
+                  Generate coaching
+                </button>
+              )}
             </div>
           </div>
 

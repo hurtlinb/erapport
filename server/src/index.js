@@ -1327,6 +1327,30 @@ app.post("/api/report", requireAuth, (req, res) => {
   doc.end();
 });
 
+app.post("/api/report/coaching", requireAuth, (req, res) => {
+  const student = req.body;
+
+  if (!shouldIncludeCoaching(student)) {
+    res
+      .status(400)
+      .json({ error: "Aucun coaching à générer pour cette note." });
+    return;
+  }
+
+  const coachingFilename = buildCoachingFilename(student);
+  const doc = new PDFDocument({ margin: 40, size: "A4" });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${coachingFilename}"`
+  );
+  doc.pipe(res);
+
+  renderCoachingReport(doc, student);
+
+  doc.end();
+});
+
 app.post("/api/report/export-all", requireAuth, async (req, res) => {
   const students = Array.isArray(req.body?.students) ? req.body.students : [];
 
