@@ -1,6 +1,6 @@
 # erapport
 
-React/Node.js starter to create evaluation reports for students and export them as PDFs.
+React/Node.js app to create evaluation reports for students and export them as PDFs.
 
 ## Project structure
 
