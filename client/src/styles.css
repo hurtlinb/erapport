@@ -101,6 +101,85 @@ h1 {
   gap: 24px;
 }
 
+.class-summary-panel {
+  width: 100%;
+}
+
+.class-summary-header {
+  align-items: flex-start;
+}
+
+.class-summary-success {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.class-summary-success-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #64748b;
+}
+
+.class-summary-success-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.class-summary-success-meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.class-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.class-summary-table th,
+.class-summary-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.class-summary-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.class-summary-name {
+  font-weight: 600;
+}
+
+.class-summary-group {
+  color: #475569;
+}
+
+.class-summary-note {
+  font-weight: 600;
+  text-align: right;
+}
+
+.class-summary-note.note-ok {
+  color: #15803d;
+}
+
+.class-summary-note.note-nok {
+  color: #c2410c;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
