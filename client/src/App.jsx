@@ -2756,9 +2756,13 @@ function App() {
             <table className="class-summary-table">
               <thead>
                 <tr>
-                  <th scope="col">Étudiant</th>
+                  <th scope="col" className="class-summary-student-header">
+                    Étudiant
+                  </th>
                   {template.groupFeatureEnabled && (
-                    <th scope="col">Groupe</th>
+                    <th scope="col" className="class-summary-group-header">
+                      Groupe
+                    </th>
                   )}
                   <th scope="col" className="class-summary-note-header">
                     Note
