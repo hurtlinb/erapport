@@ -2766,7 +2766,13 @@ function App() {
               <tbody>
                 {classSummary.rows.map((row) => (
                   <tr key={row.id}>
-                    <td className="class-summary-name">{row.name}</td>
+                    <td className="class-summary-name">
+                      <span
+                        className={`class-summary-indicator ${row.noteClass}`}
+                        aria-hidden="true"
+                      />
+                      {row.name}
+                    </td>
                     {template.groupFeatureEnabled && (
                       <td className="class-summary-group">
                         {row.groupName || "—"}

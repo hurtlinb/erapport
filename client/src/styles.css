@@ -162,6 +162,9 @@ h1 {
 
 .class-summary-name {
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .class-summary-group {
@@ -179,6 +182,26 @@ h1 {
 
 .class-summary-note.note-nok {
   color: #c2410c;
+}
+
+.class-summary-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  background: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+  flex-shrink: 0;
+}
+
+.class-summary-indicator.note-ok {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.class-summary-indicator.note-nok {
+  background: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
 }
 
 .panel-header {
