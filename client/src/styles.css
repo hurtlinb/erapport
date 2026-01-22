@@ -761,6 +761,16 @@ textarea {
   font-weight: 600;
 }
 
+.group-task-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .competency-meta-row {
   display: flex;
   flex-wrap: wrap;
