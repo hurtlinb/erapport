@@ -139,7 +139,8 @@ h1 {
 }
 
 .class-summary-table {
-  width: 100%;
+  width: max-content;
+  max-width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -150,6 +151,8 @@ h1 {
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
   vertical-align: middle;
+  width: 1%;
+  white-space: nowrap;
 }
 
 .class-summary-table th {
