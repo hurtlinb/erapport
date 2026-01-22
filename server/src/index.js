@@ -37,6 +37,29 @@ const asyncHandler = (handler) => (req, res, next) => {
   Promise.resolve(handler(req, res, next)).catch(next);
 };
 
+const resolveTeacherName = (student, context = {}) => {
+  const currentTeacher = String(student?.teacher || "").trim();
+  if (currentTeacher) return currentTeacher;
+
+  const teacherId = student?.teacherId || context.user?.id;
+  const matchingUser = context.state?.users?.find(
+    (entry) => entry.id === teacherId
+  );
+  return (
+    matchingUser?.name ||
+    matchingUser?.email ||
+    context.user?.name ||
+    context.user?.email ||
+    ""
+  );
+};
+
+const normalizeStudentForReport = (student, context = {}) => {
+  const teacherName = resolveTeacherName(student, context);
+  if (!teacherName) return student;
+  return { ...student, teacher: teacherName };
+};
+
 app.get("/status", asyncHandler(async (req, res) => {
   const dbStatus = await checkDatabaseStatus();
   const statusCode = dbStatus.ok ? 200 : 503;
@@ -1416,7 +1439,7 @@ const createCoachingBuffer = (student) =>
   });
 
 app.post("/api/report", requireAuth, (req, res) => {
-  const student = req.body;
+  const student = normalizeStudentForReport(req.body, req);
   const reportFilename = buildReportFilename(student);
 
   const doc = new PDFDocument({ margin: 40, size: "A4" });
@@ -1433,7 +1456,7 @@ app.post("/api/report", requireAuth, (req, res) => {
 });
 
 app.post("/api/report/coaching", requireAuth, (req, res) => {
-  const student = req.body;
+  const student = normalizeStudentForReport(req.body, req);
 
   if (!shouldIncludeCoaching(student)) {
     res
@@ -1457,7 +1480,11 @@ app.post("/api/report/coaching", requireAuth, (req, res) => {
 });
 
 app.post("/api/report/export-all", requireAuth, async (req, res) => {
-  const students = Array.isArray(req.body?.students) ? req.body.students : [];
+  const students = Array.isArray(req.body?.students)
+    ? req.body.students.map((student) =>
+        normalizeStudentForReport(student, req)
+      )
+    : [];
   const mailDraftSubject =
     typeof req.body?.mailDraftSubject === "string"
       ? req.body.mailDraftSubject
