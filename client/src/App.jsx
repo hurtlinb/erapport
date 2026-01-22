@@ -1462,7 +1462,11 @@ function App() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`
         },
-        body: JSON.stringify({ students: moduleStudents })
+        body: JSON.stringify({
+          students: moduleStudents,
+          mailDraftSubject,
+          mailDraftBody
+        })
       });
 
       if (!response.ok) {
