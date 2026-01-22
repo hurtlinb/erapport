@@ -93,9 +93,25 @@ const DEFAULT_COMPETENCIES = [
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
 
+const splitModuleLabel = (value) => {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return { moduleNumber: "", moduleTitle: "" };
+  }
+  const match = normalized.match(/^(.+?)\s*-\s*(.+)$/);
+  if (!match) {
+    return { moduleNumber: "", moduleTitle: normalized };
+  }
+  return {
+    moduleNumber: match[1].trim(),
+    moduleTitle: match[2].trim()
+  };
+};
+
 const defaultTemplate = {
   moduleId: "",
-  moduleTitle: "123 - Activer les services d'un serveur",
+  moduleNumber: "123",
+  moduleTitle: "Activer les services d'un serveur",
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
@@ -121,7 +137,8 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
-    moduleTitle: module.title || "",
+    moduleNumber: module.moduleNumber || "",
+    moduleTitle: module.moduleTitle || "",
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
@@ -169,9 +186,16 @@ const buildDefaultModule = (
   templateOverrides = {},
   schoolYearLabel = defaultTemplate.schoolYear
 ) => {
+  const legacyTitle = overrides.title ?? "";
+  const splitLegacyTitle = splitModuleLabel(legacyTitle);
   const module = {
     id: overrides.id ?? crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle,
+    moduleNumber:
+      overrides.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+    moduleTitle:
+      overrides.moduleTitle ??
+      splitLegacyTitle.moduleTitle ??
+      defaultTemplate.moduleTitle,
     schoolYear: overrides.schoolYear ?? schoolYearLabel
   };
 
@@ -195,10 +219,20 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   }
 
   return modules.map((module) => {
+    const legacyTitle = module.title ?? "";
+    const splitLegacyTitle = splitModuleLabel(legacyTitle);
     const normalizedModule = {
       id: module.id || crypto.randomUUID(),
-      title: module.title || "",
+      moduleNumber:
+        module.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+      moduleTitle:
+        module.moduleTitle ?? splitLegacyTitle.moduleTitle ?? legacyTitle ?? "",
       schoolYear: module.schoolYear || schoolYearLabel
+    };
+    const moduleWithDefaults = {
+      ...module,
+      moduleNumber: normalizedModule.moduleNumber,
+      moduleTitle: normalizedModule.moduleTitle
     };
 
     return {
@@ -206,7 +240,7 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
       templates: normalizeModuleTemplates(
         {
           ...normalizedModule,
-          templates: normalizeModuleTemplates(module, schoolYearLabel)
+          templates: normalizeModuleTemplates(moduleWithDefaults, schoolYearLabel)
         },
         schoolYearLabel
       )
@@ -349,9 +383,20 @@ const ensureInitialized = async () => {
         CREATE TABLE IF NOT EXISTS modules (
           id CHAR(36) PRIMARY KEY,
           school_year_id CHAR(36) NOT NULL,
-          title TEXT NOT NULL
+          title TEXT NOT NULL,
+          module_number TEXT NOT NULL DEFAULT ''
         )
       `);
+      await client.query(`
+        ALTER TABLE modules
+        ADD COLUMN module_number TEXT NOT NULL DEFAULT ''
+      `).catch(() => {});
+      await client.query(`
+        UPDATE modules
+        SET module_number = TRIM(SUBSTRING_INDEX(title, '-', 1)),
+            title = TRIM(SUBSTRING(title, LOCATE('-', title) + 1))
+        WHERE module_number = '' AND title LIKE '%-%'
+      `).catch(() => {});
       await client.query(`
         CREATE TABLE IF NOT EXISTS module_templates (
           id CHAR(36) PRIMARY KEY,
@@ -484,7 +529,7 @@ export const loadState = async () => {
   const [yearResult, moduleResult, templateResult, studentResult, userResult] =
     await Promise.all([
       pool.query("SELECT id, label FROM school_years ORDER BY label"),
-      pool.query("SELECT id, school_year_id, title FROM modules"),
+      pool.query("SELECT id, school_year_id, title, module_number FROM modules"),
       pool.query(
         "SELECT module_id, evaluation_type, template FROM module_templates"
       ),
@@ -505,9 +550,11 @@ export const loadState = async () => {
   moduleRows.forEach((module) => {
     const year = schoolYearMap.get(module.school_year_id);
     if (!year) return;
+    const legacySplit = splitModuleLabel(module.title);
     const modulePayload = {
       id: module.id,
-      title: module.title,
+      moduleNumber: module.module_number || legacySplit.moduleNumber || "",
+      moduleTitle: legacySplit.moduleTitle || module.title || "",
       schoolYear: year.label,
       templates: templatesByModule[module.id] || {}
     };
@@ -518,8 +565,10 @@ export const loadState = async () => {
 
   const moduleLookup = moduleRows.reduce((acc, module) => {
     const schoolYear = schoolYearMap.get(module.school_year_id);
+    const legacySplit = splitModuleLabel(module.title);
     acc[module.id] = {
-      title: module.title,
+      moduleNumber: module.module_number || legacySplit.moduleNumber || "",
+      moduleTitle: legacySplit.moduleTitle || module.title || "",
       schoolYear: schoolYear?.label || "",
       templates: templatesByModule[module.id] || {}
     };
@@ -528,7 +577,8 @@ export const loadState = async () => {
 
   const students = studentRows.map((student) => {
     const moduleInfo = moduleLookup[student.module_id] || {
-      title: "",
+      moduleNumber: "",
+      moduleTitle: "",
       schoolYear: "",
       templates: {}
     };
@@ -537,7 +587,8 @@ export const loadState = async () => {
     return normalizeStudent({
       id: student.id,
       moduleId: student.module_id,
-      moduleTitle: moduleInfo.title || "",
+      moduleNumber: moduleInfo.moduleNumber || "",
+      moduleTitle: moduleInfo.moduleTitle || "",
       schoolYear: moduleInfo.schoolYear || "",
       evaluationType: student.evaluation_type || EVALUATION_TYPES[0],
       firstname: student.firstname || "",
@@ -645,13 +696,19 @@ export const saveState = async (nextState) => {
     for (const module of modules) {
       await client.query(
         `
-          INSERT INTO modules (id, school_year_id, title)
-          VALUES (?, ?, ?)
+          INSERT INTO modules (id, school_year_id, title, module_number)
+          VALUES (?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
             school_year_id = VALUES(school_year_id),
-            title = VALUES(title)
+            title = VALUES(title),
+            module_number = VALUES(module_number)
         `,
-        [module.id, module.schoolYearId, module.title]
+        [
+          module.id,
+          module.schoolYearId,
+          module.moduleTitle || "",
+          module.moduleNumber || ""
+        ]
       );
     }
 

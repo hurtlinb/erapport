@@ -313,11 +313,23 @@ const sanitizeReportToken = (value) =>
     .trim()
     .replace(/[^\p{L}\p{N}]/gu, "");
 
-const getModuleNumberToken = (moduleTitle) => {
-  const firstWord = String(moduleTitle || "")
-    .trim()
-    .split(/\s+/)[0];
-  return sanitizeReportToken(firstWord) || "module";
+const buildModuleLabel = (moduleNumber, moduleTitle) => {
+  const numberValue = String(moduleNumber || "").trim();
+  const titleValue = String(moduleTitle || "").trim();
+  if (numberValue && titleValue) {
+    return `${numberValue} - ${titleValue}`;
+  }
+  return numberValue || titleValue || "Module";
+};
+
+const getModuleNumberToken = (student) => {
+  const numberValue = String(student?.moduleNumber || "").trim();
+  if (numberValue) {
+    return sanitizeReportToken(numberValue) || "module";
+  }
+  const titleValue = String(student?.moduleTitle || "").trim();
+  const fallbackWord = titleValue.split(/\s+/)[0];
+  return sanitizeReportToken(fallbackWord) || "module";
 };
 
 const getEvaluationLabel = (evaluationType) => {
@@ -332,14 +344,14 @@ const getStudentNameToken = (student) => {
 };
 
 const buildReportFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(student);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const buildCoachingFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(student);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
@@ -842,10 +854,15 @@ const renderStudentHeader = (
     .fillColor(theme.text)
     .font("Helvetica-Bold")
     .fontSize(12)
-    .text(student.moduleTitle || "Module", headerX, headerY + 8, {
+    .text(
+      buildModuleLabel(student.moduleNumber, student.moduleTitle),
+      headerX,
+      headerY + 8,
+      {
       width: headerWidth,
       align: "center"
-    });
+    }
+    );
 
   const infoRowY = headerY + moduleBarHeight + 8;
   const middleColumnX = headerX + infoColumnWidths[0];
@@ -1240,10 +1257,15 @@ const renderCoachingReport = (doc, student) => {
     .fillColor(theme.text)
     .fontSize(11)
     .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
-      width: 515,
-      align: "center"
-    });
+    .text(
+      buildModuleLabel(student.moduleNumber, student.moduleTitle),
+      40,
+      moduleBarY + 8,
+      {
+        width: 515,
+        align: "center"
+      }
+    );
 
   const infoBoxY = moduleBarY + moduleBarHeight + 8;
   const { infoBoxHeight } = drawCoachingInfoTable(doc, student, infoBoxY);

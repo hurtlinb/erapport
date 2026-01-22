@@ -118,6 +118,30 @@ const EVALUATION_COPY_PAIRS = [
   { source: "E2", target: "E3" }
 ];
 
+const splitModuleLabel = (value) => {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return { moduleNumber: "", moduleTitle: "" };
+  }
+  const match = normalized.match(/^(.+?)\s*-\s*(.+)$/);
+  if (!match) {
+    return { moduleNumber: "", moduleTitle: normalized };
+  }
+  return {
+    moduleNumber: match[1].trim(),
+    moduleTitle: match[2].trim()
+  };
+};
+
+const buildModuleLabel = (moduleNumber, moduleTitle) => {
+  const numberValue = String(moduleNumber || "").trim();
+  const titleValue = String(moduleTitle || "").trim();
+  if (numberValue && titleValue) {
+    return `${numberValue} - ${titleValue}`;
+  }
+  return numberValue || titleValue || "Module";
+};
+
 const loadStoredAuth = () => {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -163,7 +187,8 @@ const getStudentNoteClass = (note) => {
 
 const defaultTemplate = {
   moduleId: "",
-  moduleTitle: "123 - Activer les services d'un serveur",
+  moduleNumber: "123",
+  moduleTitle: "Activer les services d'un serveur",
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
@@ -189,7 +214,8 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
-    moduleTitle: module.title || "",
+    moduleNumber: module.moduleNumber || "",
+    moduleTitle: module.moduleTitle || "",
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
@@ -268,9 +294,16 @@ const buildDefaultModule = (
   templateOverrides = {},
   schoolYearLabel = defaultTemplate.schoolYear
 ) => {
+  const legacyTitle = overrides.title ?? "";
+  const splitLegacyTitle = splitModuleLabel(legacyTitle);
   const module = {
     id: crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle,
+    moduleNumber:
+      overrides.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+    moduleTitle:
+      overrides.moduleTitle ??
+      splitLegacyTitle.moduleTitle ??
+      defaultTemplate.moduleTitle,
     schoolYear: overrides.schoolYear ?? schoolYearLabel
   };
 
@@ -302,10 +335,20 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   }
 
   return modules.map((module) => {
+    const legacyTitle = module.title ?? "";
+    const splitLegacyTitle = splitModuleLabel(legacyTitle);
     const normalizedModule = {
       id: String(module.id ?? crypto.randomUUID()),
-      title: module.title || "",
+      moduleNumber:
+        module.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+      moduleTitle:
+        module.moduleTitle ?? splitLegacyTitle.moduleTitle ?? legacyTitle ?? "",
       schoolYear: schoolYearLabel
+    };
+    const moduleWithDefaults = {
+      ...module,
+      moduleNumber: normalizedModule.moduleNumber,
+      moduleTitle: normalizedModule.moduleTitle
     };
 
     return {
@@ -313,7 +356,7 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
       templates: normalizeModuleTemplates(
         {
           ...normalizedModule,
-          templates: normalizeModuleTemplates(module, schoolYearLabel)
+          templates: normalizeModuleTemplates(moduleWithDefaults, schoolYearLabel)
         },
         schoolYearLabel
       )
@@ -510,6 +553,7 @@ const getCompetencySummaryRows = (
 const applyTemplateToStudent = (template, student, teacherId = "") => ({
   ...student,
   moduleId: template.moduleId || "",
+  moduleNumber: template.moduleNumber || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
   note: student.note ?? template.note ?? "",
@@ -550,9 +594,7 @@ const sanitizeReportToken = (value) =>
     .replace(/[^\p{L}\p{N}]/gu, "");
 
 const getModuleNumberToken = (moduleTitle) => {
-  const firstWord = String(moduleTitle || "")
-    .trim()
-    .split(/\s+/)[0];
+  const firstWord = String(moduleTitle || "").trim().split(/\s+/)[0];
   return sanitizeReportToken(firstWord) || "module";
 };
 
@@ -568,14 +610,18 @@ const getStudentNameToken = (student) => {
 };
 
 const buildReportFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber =
+    sanitizeReportToken(student?.moduleNumber) ||
+    getModuleNumberToken(student?.moduleTitle);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const buildCoachingFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber =
+    sanitizeReportToken(student?.moduleNumber) ||
+    getModuleNumberToken(student?.moduleTitle);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
@@ -643,6 +689,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   firstname: "",
   email: "",
   moduleId: template.moduleId || "",
+  moduleNumber: template.moduleNumber || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
   note: template.note || "",
@@ -1121,10 +1168,19 @@ ${teacherDisplayName}
     () =>
       buildMailDraftSubject({
         className: template.className || draft.className,
-        moduleName: activeModule?.title || template.moduleTitle,
+        moduleName: buildModuleLabel(
+          activeModule?.moduleNumber || template.moduleNumber,
+          activeModule?.moduleTitle || template.moduleTitle
+        ),
         evaluationType: activeEvaluationType
       }),
-    [activeEvaluationType, activeModule?.title, draft.className, template]
+    [
+      activeEvaluationType,
+      activeModule?.moduleNumber,
+      activeModule?.moduleTitle,
+      draft.className,
+      template
+    ]
   );
 
   useEffect(() => {
@@ -1580,7 +1636,9 @@ ${teacherDisplayName}
         return;
       }
 
-      const moduleLabel = sanitizeFilename(activeModule?.title || "module");
+      const moduleLabel = sanitizeFilename(
+        buildModuleLabel(activeModule?.moduleNumber, activeModule?.moduleTitle)
+      );
       const evaluationLabel = sanitizeFilename(activeEvaluationType || "rapport");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -1891,7 +1949,7 @@ ${teacherDisplayName}
     }
     const newModule = buildDefaultModule(
       {
-        title: "Nouveau module"
+        moduleTitle: "Nouveau module"
       },
       EMPTY_TEMPLATE,
       activeSchoolYear.label
@@ -2253,7 +2311,10 @@ ${teacherDisplayName}
                   onChange={(event) => setActiveModuleId(event.target.value)}
                 >
                   {activeModules.map((module) => {
-                    const title = module.title || "Module";
+                    const title = buildModuleLabel(
+                      module.moduleNumber,
+                      module.moduleTitle
+                    );
                     return (
                       <option key={module.id} value={module.id}>
                         {title}
@@ -2623,10 +2684,10 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Titre du module
+                Module
                 <input
                   type="text"
-                  value={draft.moduleTitle}
+                  value={buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}
                   readOnly
                   disabled
                 />
@@ -3139,18 +3200,33 @@ ${teacherDisplayName}
                   <>
                     <div className="form-grid">
                       <label>
-                        Titre du module
+                        Numéro du module
                         <input
                           type="text"
-                          value={activeModule.title}
+                          value={activeModule.moduleNumber}
                           onChange={(event) =>
                             handleModuleFieldChange(
                               activeModule.id,
-                              "title",
+                              "moduleNumber",
                               event.target.value
                             )
                           }
-                          placeholder="123 - Activer les services d'un serveur"
+                          placeholder="123"
+                        />
+                      </label>
+                      <label>
+                        Titre du module
+                        <input
+                          type="text"
+                          value={activeModule.moduleTitle}
+                          onChange={(event) =>
+                            handleModuleFieldChange(
+                              activeModule.id,
+                              "moduleTitle",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Activer les services d'un serveur"
                         />
                       </label>
                       <label>
