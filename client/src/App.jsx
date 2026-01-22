@@ -2760,7 +2760,9 @@ function App() {
                   {template.groupFeatureEnabled && (
                     <th scope="col">Groupe</th>
                   )}
-                  <th scope="col">Note</th>
+                  <th scope="col" className="class-summary-note-header">
+                    Note
+                  </th>
                 </tr>
               </thead>
               <tbody>
