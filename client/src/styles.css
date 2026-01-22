@@ -639,6 +639,13 @@ textarea {
   background: rgba(255, 255, 255, 0.7);
 }
 
+.summary-status-select {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: #ffffff;
+}
+
 .summary-note-spacer {
   border-right: none;
 }

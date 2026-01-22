@@ -473,6 +473,7 @@ const getCompetencySummaryRows = (
     if (!option?.code || !summaryMap.has(option.code)) return;
     optionCodes.add(option.code);
     rows.push({
+      competencyId: option.code,
       label: `${option.code} - ${option.description}`,
       result: aggregateCompetencyStatus(summaryMap.get(option.code))
     });
@@ -481,6 +482,7 @@ const getCompetencySummaryRows = (
   order.forEach((competencyId) => {
     if (optionCodes.has(competencyId)) return;
     rows.push({
+      competencyId,
       label: competencyId,
       result: aggregateCompetencyStatus(summaryMap.get(competencyId))
     });
@@ -504,6 +506,7 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
+  competencySummaryOverrides: student.competencySummaryOverrides || {},
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template, student.competencies)
 });
@@ -634,6 +637,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   coachingDate: template.coachingDate || "",
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
+  competencySummaryOverrides: {},
   competencyOptions: template.competencyOptions || [],
   competencies: mapTemplateCompetencies(template)
 });
@@ -705,6 +709,27 @@ function App() {
       ),
     [activeEvaluationType, activeModuleId, students]
   );
+  const summaryRows = useMemo(() => {
+    if (!draft.summaryByCompetencies) {
+      return (draft.competencies || []).map((section) => ({
+        label: getSummaryLabel(
+          section,
+          draft.competencyOptions,
+          draft.summaryByCompetencies
+        ),
+        result: section.result
+      }));
+    }
+
+    return getCompetencySummaryRows(
+      draft.competencies,
+      draft.competencyOptions
+    );
+  }, [
+    draft.competencies,
+    draft.competencyOptions,
+    draft.summaryByCompetencies
+  ]);
   const groupOptions = useMemo(() => {
     const groupSet = new Set();
     moduleStudents.forEach((student) => {
@@ -1127,6 +1152,22 @@ function App() {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleCompetencySummaryOverride = (competencyId, value) => {
+    if (!competencyId) return;
+    persistDraftChanges((prev) => {
+      const overrides = { ...(prev.competencySummaryOverrides || {}) };
+      if (!value) {
+        delete overrides[competencyId];
+      } else {
+        overrides[competencyId] = value;
+      }
+      return {
+        ...prev,
+        competencySummaryOverrides: overrides
+      };
+    });
   };
 
   const syncGroupTask = (sectionIndex, itemIndex, updater) => {
@@ -2450,21 +2491,12 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(draft.summaryByCompetencies
-                    ? getCompetencySummaryRows(
-                        draft.competencies,
-                        draft.competencyOptions
-                      )
-                    : (draft.competencies || []).map((section) => ({
-                        label: getSummaryLabel(
-                          section,
-                          draft.competencyOptions,
-                          draft.summaryByCompetencies
-                        ),
-                        result: section.result
-                      }))
-                  ).map((row, rowIndex) => {
-                    const statusClass = getStatusClass(row.result);
+                  {summaryRows.map((row, rowIndex) => {
+                    const override = draft.summaryByCompetencies
+                      ? draft.competencySummaryOverrides?.[row.competencyId] || ""
+                      : "";
+                    const effectiveResult = override || row.result || "";
+                    const statusClass = getStatusClass(effectiveResult);
                     return (
                       <tr
                         key={`${row.label}-${rowIndex}`}
@@ -2474,9 +2506,34 @@ function App() {
                           {row.label || "—"}
                         </td>
                         <td className="summary-result">
-                          <span className="summary-result-value">
-                            {row.result || "—"}
-                          </span>
+                          {draft.summaryByCompetencies ? (
+                            <select
+                              className={`status-select summary-status-select ${statusClass}`}
+                              value={override}
+                              onChange={(event) =>
+                                handleCompetencySummaryOverride(
+                                  row.competencyId,
+                                  event.target.value
+                                )
+                              }
+                              aria-label={`Résultat de ${row.label}`}
+                            >
+                              <option value="">
+                                {`Auto (calculé : ${row.result || "—"})`}
+                              </option>
+                              <option value={STATUS_VALUES.OK}>OK</option>
+                              <option value={STATUS_VALUES.NEEDS_IMPROVEMENT}>
+                                ~
+                              </option>
+                              <option value={STATUS_VALUES.NOT_ASSESSED}>
+                                NOK
+                              </option>
+                            </select>
+                          ) : (
+                            <span className="summary-result-value">
+                              {row.result || "—"}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
