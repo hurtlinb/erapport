@@ -2426,7 +2426,7 @@ function App() {
                 Enseignant
                 <input
                   type="text"
-                  value={draft.teacher}
+                  value={draft.teacher || teacherName}
                   readOnly
                   disabled
                   placeholder="Enseignant défini dans le modèle"
