@@ -1,7 +1,7 @@
 {
   "name": "erapport-server",
   "private": true,
-  "version": "1.4.3",
+  "version": "1.4.4",
   "type": "module",
   "scripts": {
     "dev": "node src/index.js"
