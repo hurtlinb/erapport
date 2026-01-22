@@ -176,6 +176,12 @@ h1 {
   text-align: right;
 }
 
+.class-summary-note,
+.class-summary-note-header {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .class-summary-note.note-ok {
   color: #15803d;
 }
