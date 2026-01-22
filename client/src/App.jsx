@@ -2430,13 +2430,16 @@ ${teacherDisplayName}
                     )}
                   </div>
                   <button
-                    className="button text"
+                    className="student-delete-button"
+                    type="button"
+                    aria-label="Supprimer"
+                    title="Supprimer"
                     onClick={(event) => {
                       event.stopPropagation();
                       handleDeleteStudent(student.id);
                     }}
                   >
-                    Supprimer
+                    ×
                   </button>
                 </li>
               );
