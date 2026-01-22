@@ -487,6 +487,7 @@ const getCompetencySummaryRows = (student) => {
   );
   const summaryMap = new Map();
   const order = [];
+  const overrides = student.competencySummaryOverrides || {};
 
   items.forEach((item) => {
     const competencyId = item.competencyId || "";
@@ -503,17 +504,21 @@ const getCompetencySummaryRows = (student) => {
   (student.competencyOptions || []).forEach((option) => {
     if (!option?.code || !summaryMap.has(option.code)) return;
     optionCodes.add(option.code);
+    const computedResult = aggregateCompetencyStatus(summaryMap.get(option.code));
+    const override = overrides[option.code] || "";
     rows.push({
       label: `${option.code} - ${option.description}`,
-      result: aggregateCompetencyStatus(summaryMap.get(option.code))
+      result: override || computedResult
     });
   });
 
   order.forEach((competencyId) => {
     if (optionCodes.has(competencyId)) return;
+    const computedResult = aggregateCompetencyStatus(summaryMap.get(competencyId));
+    const override = overrides[competencyId] || "";
     rows.push({
       label: competencyId,
-      result: aggregateCompetencyStatus(summaryMap.get(competencyId))
+      result: override || computedResult
     });
   });
 

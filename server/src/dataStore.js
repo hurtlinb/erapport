@@ -267,6 +267,10 @@ const normalizeStudent = (student) => {
     evaluationType: baseStudent?.evaluationType || EVALUATION_TYPES[0],
     teacherId: baseStudent?.teacherId || "",
     summaryByCompetencies: Boolean(baseStudent?.summaryByCompetencies),
+    competencySummaryOverrides: normalizeJsonValue(
+      baseStudent.competencySummaryOverrides,
+      {}
+    ),
     competencyOptions: normalizeJsonValue(baseStudent.competencyOptions, []),
     competencies: normalizeJsonValue(baseStudent.competencies, [])
   };
@@ -372,6 +376,7 @@ const ensureInitialized = async () => {
           coaching_date TEXT,
           operational_competence TEXT,
           summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0,
+          competency_summary_overrides JSON,
           competency_options JSON,
           competencies JSON,
           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -404,6 +409,10 @@ const ensureInitialized = async () => {
       await client.query(`
         ALTER TABLE students
         ADD COLUMN summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD COLUMN competency_summary_overrides JSON
       `).catch(() => {});
       await client.commit();
     } catch (error) {
@@ -536,6 +545,7 @@ export const loadState = async () => {
       coachingDate: student.coaching_date || "",
       operationalCompetence: student.operational_competence || "",
       summaryByCompetencies: Boolean(student.summary_by_competencies),
+      competencySummaryOverrides: student.competency_summary_overrides || {},
       competencyOptions:
         student.competency_options || template.competencyOptions || [],
       competencies: student.competencies || template.competencies || []
@@ -689,6 +699,10 @@ export const saveState = async (nextState) => {
         student.competencyOptions,
         []
       );
+      const competencySummaryOverrides = serializeJsonValue(
+        student.competencySummaryOverrides,
+        {}
+      );
       const competencies = serializeJsonValue(student.competencies, []);
       await client.query(
         `
@@ -707,10 +721,12 @@ export const saveState = async (nextState) => {
             coaching_date,
             operational_competence,
             summary_by_competencies,
+            competency_summary_overrides,
             competency_options,
             competencies
           )
           VALUES (
+            ?,
             ?,
             ?,
             ?,
@@ -742,6 +758,7 @@ export const saveState = async (nextState) => {
             coaching_date = VALUES(coaching_date),
             operational_competence = VALUES(operational_competence),
             summary_by_competencies = VALUES(summary_by_competencies),
+            competency_summary_overrides = VALUES(competency_summary_overrides),
             competency_options = VALUES(competency_options),
             competencies = VALUES(competencies)
         `,
@@ -760,6 +777,7 @@ export const saveState = async (nextState) => {
           student.coachingDate || "",
           student.operationalCompetence || "",
           student.summaryByCompetencies ? 1 : 0,
+          competencySummaryOverrides,
           competencyOptions,
           competencies
         ]
