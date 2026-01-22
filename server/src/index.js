@@ -298,14 +298,12 @@ const getStudentDisplayName = (student) => {
 };
 
 const normalizeFilenameValue = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+  String(value || "").normalize("NFC");
 
 const sanitizeFilename = (value) => {
   const normalized = normalizeFilenameValue(value)
     .trim()
-    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "");
   return normalized ? normalized.slice(0, 60) : "rapport";
 };
@@ -313,7 +311,7 @@ const sanitizeFilename = (value) => {
 const sanitizeReportToken = (value) =>
   normalizeFilenameValue(value)
     .trim()
-    .replace(/[^a-z0-9]/gi, "");
+    .replace(/[^\p{L}\p{N}]/gu, "");
 
 const getModuleNumberToken = (moduleTitle) => {
   const firstWord = String(moduleTitle || "")
