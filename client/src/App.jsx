@@ -236,6 +236,22 @@ const normalizeModuleTemplates = (module, schoolYearLabel) => {
   return normalizedTemplates;
 };
 
+const getMailSubjectEvaluationNumber = (evaluationType) => {
+  const match = String(evaluationType || "").match(/\d+/);
+  if (match) return match[0];
+  return "";
+};
+
+const buildMailDraftSubject = ({ className, moduleName, evaluationType }) => {
+  const trimmedClass = String(className || "").trim();
+  const trimmedModule = String(moduleName || "").trim();
+  const evaluationNumber = getMailSubjectEvaluationNumber(evaluationType);
+  const classLabel = trimmedClass || "Classe";
+  const moduleLabel = trimmedModule || "Module";
+  const evaluationLabel = evaluationNumber || "1";
+  return `${classLabel} - ${moduleLabel} - Rapport d’évaluation sommative ${evaluationLabel}`;
+};
+
 const getAvailableEvaluationTypes = (module) => {
   if (!module?.templates) return [EVALUATION_TYPES[0]];
   const availableTypes = EVALUATION_TYPES.filter((type) =>
@@ -1072,6 +1088,16 @@ function App() {
     [activeModuleId, activeModules]
   );
 
+  const mailDraftDefaultSubject = useMemo(
+    () =>
+      buildMailDraftSubject({
+        className: template.className || draft.className,
+        moduleName: activeModule?.title || template.moduleTitle,
+        evaluationType: activeEvaluationType
+      }),
+    [activeEvaluationType, activeModule?.title, draft.className, template]
+  );
+
   useEffect(() => {
     if (!activeModule) return;
     const availableTypes = getAvailableEvaluationTypes(activeModule);
@@ -1487,6 +1513,11 @@ function App() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const handleOpenMailDraftModal = () => {
+    setMailDraftSubject(mailDraftDefaultSubject);
+    setIsMailDraftModalOpen(true);
   };
 
   const handleSubmitMailDraft = async (event) => {
@@ -2263,7 +2294,7 @@ function App() {
                 <button
                   className="button ghost"
                   type="button"
-                  onClick={() => setIsMailDraftModalOpen(true)}
+                  onClick={handleOpenMailDraftModal}
                   disabled={moduleStudents.length === 0 || isExporting}
                   title={
                     moduleStudents.length === 0
