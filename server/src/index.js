@@ -297,8 +297,13 @@ const getStudentDisplayName = (student) => {
   return [firstName, lastName].filter(Boolean).join(" ");
 };
 
+const normalizeFilenameValue = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
 const sanitizeFilename = (value) => {
-  const normalized = String(value || "")
+  const normalized = normalizeFilenameValue(value)
     .trim()
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-+|-+$/g, "");
@@ -306,7 +311,7 @@ const sanitizeFilename = (value) => {
 };
 
 const sanitizeReportToken = (value) =>
-  String(value || "")
+  normalizeFilenameValue(value)
     .trim()
     .replace(/[^a-z0-9]/gi, "");
 
