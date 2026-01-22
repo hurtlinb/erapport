@@ -335,7 +335,7 @@ if (-not (Test-Path $csvPath)) {
 }
 
 $outlook = New-Object -ComObject Outlook.Application
-$students = Import-Csv $csvPath
+$students = Import-Csv -Path $csvPath -Encoding UTF8
 
 foreach ($student in $students) {
   if (-not $student.EmailEtudiant) {
@@ -1488,11 +1488,11 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
       ]);
     }
 
-    const csvContent = csvRows
+    const csvContent = `\uFEFF${csvRows
       .map((row) => row.map(csvEscape).join(","))
-      .join("\n");
+      .join("\n")}`;
     archive.append(csvContent, { name: "etudiants.csv" });
-    archive.append(buildOutlookDraftScript(), {
+    archive.append(`\uFEFF${buildOutlookDraftScript()}`, {
       name: "creer-brouillons-outlook.ps1"
     });
 
