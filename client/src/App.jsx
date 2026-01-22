@@ -2617,7 +2617,18 @@ function App() {
                         className={`competency-row ${statusClass}`}
                       >
                         <div>
-                          <p className="competency-label">{taskLabel}</p>
+                          <p className="competency-label">
+                            {taskLabel}
+                            {item.groupEvaluation && (
+                              <span
+                                className="group-task-indicator"
+                                title="Évaluation de groupe"
+                                aria-label="Évaluation de groupe"
+                              >
+                                👥
+                              </span>
+                            )}
+                          </p>
                           <div className="competency-meta-row">
                             <p className="competency-tag">
                               {competencyLabel || "Aucune compétence liée"}
