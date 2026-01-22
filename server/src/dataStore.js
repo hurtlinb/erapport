@@ -92,12 +92,10 @@ const DEFAULT_COMPETENCIES = [
 ];
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
-const MODULE_TITLE_SEPARATOR = " - ";
 
 const defaultTemplate = {
   moduleId: "",
-  moduleNumber: "123",
-  moduleTitle: "Activer les services d'un serveur",
+  moduleTitle: "123 - Activer les services d'un serveur",
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
@@ -117,48 +115,13 @@ const EMPTY_TEMPLATE = {
   competencies: []
 };
 
-const splitModuleTitle = (value) => {
-  const trimmed = String(value || "").trim();
-  const separatorIndex = trimmed.indexOf(MODULE_TITLE_SEPARATOR);
-  if (separatorIndex === -1) {
-    return { moduleNumber: "", title: trimmed };
-  }
-  const moduleNumber = trimmed.slice(0, separatorIndex).trim();
-  const title = trimmed
-    .slice(separatorIndex + MODULE_TITLE_SEPARATOR.length)
-    .trim();
-  return { moduleNumber, title };
-};
-
-const buildModuleLabel = (moduleNumber, title) => {
-  const trimmedNumber = String(moduleNumber || "").trim();
-  const trimmedTitle = String(title || "").trim();
-  if (trimmedNumber && trimmedTitle) {
-    return `${trimmedNumber}${MODULE_TITLE_SEPARATOR}${trimmedTitle}`;
-  }
-  return trimmedNumber || trimmedTitle;
-};
-
-const resolveModuleFields = (module = {}) => {
-  const rawTitle = module.title ?? "";
-  const rawModuleNumber = module.moduleNumber ?? module.number ?? "";
-  if (rawModuleNumber) {
-    return {
-      moduleNumber: String(rawModuleNumber).trim(),
-      title: String(rawTitle || "").trim()
-    };
-  }
-  return splitModuleTitle(rawTitle);
-};
-
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
   return {
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
-    moduleNumber: module.moduleNumber || "",
-    moduleTitle: buildModuleLabel(module.moduleNumber, module.title),
+    moduleTitle: module.title || "",
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
@@ -206,14 +169,9 @@ const buildDefaultModule = (
   templateOverrides = {},
   schoolYearLabel = defaultTemplate.schoolYear
 ) => {
-  const resolvedFields = resolveModuleFields({
-    title: overrides.title ?? defaultTemplate.moduleTitle,
-    moduleNumber: overrides.moduleNumber ?? defaultTemplate.moduleNumber
-  });
   const module = {
     id: overrides.id ?? crypto.randomUUID(),
-    title: resolvedFields.title,
-    moduleNumber: resolvedFields.moduleNumber,
+    title: overrides.title ?? defaultTemplate.moduleTitle,
     schoolYear: overrides.schoolYear ?? schoolYearLabel
   };
 
@@ -237,11 +195,9 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   }
 
   return modules.map((module) => {
-    const resolvedFields = resolveModuleFields(module);
     const normalizedModule = {
       id: module.id || crypto.randomUUID(),
-      title: resolvedFields.title,
-      moduleNumber: resolvedFields.moduleNumber,
+      title: module.title || "",
       schoolYear: module.schoolYear || schoolYearLabel
     };
 
@@ -393,8 +349,7 @@ const ensureInitialized = async () => {
         CREATE TABLE IF NOT EXISTS modules (
           id CHAR(36) PRIMARY KEY,
           school_year_id CHAR(36) NOT NULL,
-          title TEXT NOT NULL,
-          module_number TEXT NOT NULL DEFAULT ''
+          title TEXT NOT NULL
         )
       `);
       await client.query(`
@@ -434,16 +389,6 @@ const ensureInitialized = async () => {
         ADD CONSTRAINT modules_school_year_fk
           FOREIGN KEY (school_year_id) REFERENCES school_years(id)
           ON DELETE CASCADE
-      `).catch(() => {});
-      await client.query(`
-        ALTER TABLE modules
-        ADD COLUMN module_number TEXT NOT NULL DEFAULT ''
-      `).catch(() => {});
-      await client.query(`
-        UPDATE modules
-        SET module_number = TRIM(SUBSTRING_INDEX(title, ' - ', 1)),
-            title = TRIM(SUBSTRING(title, INSTR(title, ' - ') + 3))
-        WHERE module_number = '' AND title LIKE '% - %'
       `).catch(() => {});
       await client.query(`
         ALTER TABLE module_templates
@@ -539,7 +484,7 @@ export const loadState = async () => {
   const [yearResult, moduleResult, templateResult, studentResult, userResult] =
     await Promise.all([
       pool.query("SELECT id, label FROM school_years ORDER BY label"),
-      pool.query("SELECT id, school_year_id, title, module_number FROM modules"),
+      pool.query("SELECT id, school_year_id, title FROM modules"),
       pool.query(
         "SELECT module_id, evaluation_type, template FROM module_templates"
       ),
@@ -563,7 +508,6 @@ export const loadState = async () => {
     const modulePayload = {
       id: module.id,
       title: module.title,
-      moduleNumber: module.module_number || "",
       schoolYear: year.label,
       templates: templatesByModule[module.id] || {}
     };
@@ -576,7 +520,6 @@ export const loadState = async () => {
     const schoolYear = schoolYearMap.get(module.school_year_id);
     acc[module.id] = {
       title: module.title,
-      moduleNumber: module.module_number || "",
       schoolYear: schoolYear?.label || "",
       templates: templatesByModule[module.id] || {}
     };
@@ -586,7 +529,6 @@ export const loadState = async () => {
   const students = studentRows.map((student) => {
     const moduleInfo = moduleLookup[student.module_id] || {
       title: "",
-      moduleNumber: "",
       schoolYear: "",
       templates: {}
     };
@@ -595,8 +537,7 @@ export const loadState = async () => {
     return normalizeStudent({
       id: student.id,
       moduleId: student.module_id,
-      moduleNumber: moduleInfo.moduleNumber || "",
-      moduleTitle: buildModuleLabel(moduleInfo.moduleNumber, moduleInfo.title),
+      moduleTitle: moduleInfo.title || "",
       schoolYear: moduleInfo.schoolYear || "",
       evaluationType: student.evaluation_type || EVALUATION_TYPES[0],
       firstname: student.firstname || "",
@@ -704,14 +645,13 @@ export const saveState = async (nextState) => {
     for (const module of modules) {
       await client.query(
         `
-          INSERT INTO modules (id, school_year_id, title, module_number)
-          VALUES (?, ?, ?, ?)
+          INSERT INTO modules (id, school_year_id, title)
+          VALUES (?, ?, ?)
           ON DUPLICATE KEY UPDATE
             school_year_id = VALUES(school_year_id),
-            title = VALUES(title),
-            module_number = VALUES(module_number)
+            title = VALUES(title)
         `,
-        [module.id, module.schoolYearId, module.title, module.moduleNumber || ""]
+        [module.id, module.schoolYearId, module.title]
       );
     }
 
