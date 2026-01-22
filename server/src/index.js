@@ -652,10 +652,11 @@ const drawSummaryNoteRow = (doc, note, y, rowHeight) => {
   doc.font("Helvetica");
 };
 
-const getCompetencyRowHeight = (doc, task, comment) => {
+const getCompetencyRowHeight = (doc, task, comment, hasGroupIcon) => {
   const textPadding = 4;
+  const iconPadding = hasGroupIcon ? 14 : 0;
   const taskHeight = doc.heightOfString(task || "", {
-    width: competencyTable.columnWidths.task - textPadding * 2
+    width: competencyTable.columnWidths.task - textPadding * 2 - iconPadding
   });
   const commentHeight = doc.heightOfString(comment || "", {
     width: competencyTable.columnWidths.comment - textPadding * 2
@@ -664,6 +665,30 @@ const getCompetencyRowHeight = (doc, task, comment) => {
     competencyTable.baseRowHeight,
     Math.ceil(Math.max(taskHeight, commentHeight) + textPadding * 2)
   );
+};
+
+const drawGroupIcon = (doc, x, y) => {
+  const headRadius = 2;
+  const headGap = 2;
+  const iconHeight = 10;
+  const headY = y + 1;
+  const bodyY = y + iconHeight - 2;
+  const leftHeadX = x + headRadius;
+  const rightHeadX = x + headRadius * 3 + headGap;
+
+  doc
+    .lineWidth(0.6)
+    .strokeColor(theme.text)
+    .circle(leftHeadX, headY + headRadius, headRadius)
+    .stroke()
+    .circle(rightHeadX, headY + headRadius, headRadius)
+    .stroke()
+    .moveTo(leftHeadX - headRadius, bodyY)
+    .lineTo(leftHeadX + headRadius, bodyY)
+    .stroke()
+    .moveTo(rightHeadX - headRadius, bodyY)
+    .lineTo(rightHeadX + headRadius, bodyY)
+    .stroke();
 };
 
 const drawCompetencyHeaderRow = (doc, title, index, y) => {
@@ -679,7 +704,16 @@ const drawCompetencyHeaderRow = (doc, title, index, y) => {
   doc.font("Helvetica");
 };
 
-const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
+const drawCompetencyRow = (
+  doc,
+  task,
+  code,
+  status,
+  comment,
+  y,
+  rowHeight,
+  hasGroupIcon
+) => {
   const statusStyle = getStatusStyle(status);
   const columns = competencyTable.columnWidths;
   const columnPositions = {
@@ -708,6 +742,9 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
     .rect(columnPositions.status, y, columns.status, rowHeight)
     .fillAndStroke(statusStyle.fill, theme.text);
 
+  const iconWidth = 12;
+  const taskTextX = columnPositions.task + 4 + (hasGroupIcon ? iconWidth + 2 : 0);
+
   doc
     .fontSize(8)
     .fillColor(theme.text)
@@ -715,9 +752,15 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
       width: columns.code,
       align: "center"
     })
-    .text(task || "-", columnPositions.task + 4, y + 4, {
-      width: columns.task - 8
+    .text(task || "-", taskTextX, y + 4, {
+      width: columns.task - 8 - (hasGroupIcon ? iconWidth + 2 : 0)
     });
+
+  if (hasGroupIcon) {
+    const iconHeight = 10;
+    const iconY = y + (rowHeight - iconHeight) / 2;
+    drawGroupIcon(doc, columnPositions.task + 4, iconY);
+  }
 
   doc
     .fillColor(theme.text)
@@ -1136,10 +1179,12 @@ const renderStudentReport = (doc, student) => {
 
     section.items?.forEach((item) => {
       const taskLabel = item.task || item.label || "-";
+      const hasGroupIcon = Boolean(item.groupEvaluation ?? section.groupEvaluation);
       const rowHeight = getCompetencyRowHeight(
         doc,
         taskLabel,
-        item.comment
+        item.comment,
+        hasGroupIcon
       );
 
       if (cursorY + rowHeight > 760) {
@@ -1154,7 +1199,8 @@ const renderStudentReport = (doc, student) => {
         item.status,
         item.comment,
         cursorY,
-        rowHeight
+        rowHeight,
+        hasGroupIcon
       );
       cursorY += rowHeight;
     });
