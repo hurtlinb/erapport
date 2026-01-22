@@ -697,7 +697,22 @@ function App() {
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
   const [mailDraftSubject, setMailDraftSubject] = useState("");
-  const [mailDraftBody, setMailDraftBody] = useState("");
+  const [mailDraftBody, setMailDraftBody] = useState(
+    `Bonjour,
+
+Vous trouverez en pièce jointe le résultat de votre évaluation du module précité au format PDF ainsi que la feuille de coaching pour les personnes concernées uniquement. 
+
+Veuillez placer cette nouvelle évaluation dans votre dossier de formation.
+
+Si vous êtes concernés, veuillez remplir la feuille de coaching , la faire signer par un représentant légal, la scanner et la rendre  dans le devoir Teams dédié au plus tard à la date indiquée.
+
+À disposition en cas de questions.
+
+Meilleures saluations, 
+
+<teacher name>
+`
+  );
   const [importStudentText, setImportStudentText] = useState("");
   const [importStudentError, setImportStudentError] = useState("");
   const [copyStudentSelections, setCopyStudentSelections] = useState({});
