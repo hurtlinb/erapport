@@ -758,7 +758,7 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   doc.font("Helvetica");
 };
 
-const renderReportHeader = (doc, reportTitle) => {
+const renderReportHeader = (doc, reportTitle, evaluationDate) => {
   const headerX = 40;
   const headerY = 40;
   const headerWidth = 515;
@@ -767,6 +767,7 @@ const renderReportHeader = (doc, reportTitle) => {
   const dateWidth = 90;
   const titleWidth = headerWidth - logoWidth - dateWidth;
   const logoPath = path.join(__dirname, "emf.png");
+  const formattedDate = formatDate(evaluationDate) || "-";
 
   doc.lineWidth(0.6).strokeColor(theme.text);
   doc.rect(headerX, headerY, logoWidth, headerHeight).stroke();
@@ -807,7 +808,7 @@ const renderReportHeader = (doc, reportTitle) => {
   doc
     .font("Helvetica")
     .fontSize(10)
-    .text(formatDate(new Date()), headerX + logoWidth + titleWidth, headerY + 12, {
+    .text(formattedDate, headerX + logoWidth + titleWidth, headerY + 12, {
       width: dateWidth,
       align: "center"
     });
@@ -1079,7 +1080,11 @@ const renderStudentReport = (doc, student) => {
   const reportTitle = `Rapport d’évaluation sommative${
     evaluationNumber ? ` ${evaluationNumber}` : ""
   }`;
-  const { headerY, headerHeight } = renderReportHeader(doc, reportTitle);
+  const { headerY, headerHeight } = renderReportHeader(
+    doc,
+    reportTitle,
+    student.evaluationDate
+  );
   const { headerBottomY } = renderStudentHeader(
     doc,
     student,
@@ -1220,7 +1225,8 @@ const renderStudentReport = (doc, student) => {
 const renderCoachingReport = (doc, student) => {
   const { headerY, headerHeight } = renderReportHeader(
     doc,
-    "Demande de coaching"
+    "Demande de coaching",
+    student.evaluationDate
   );
   const moduleBarY = headerY + headerHeight + 8;
   const moduleBarHeight = 28;
