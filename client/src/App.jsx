@@ -703,15 +703,24 @@ function App() {
     () => authUser?.name || authUser?.email || "",
     [authUser]
   );
-  const moduleStudents = useMemo(
-    () =>
-      students.filter(
-        (student) =>
-          student.moduleId === activeModuleId &&
-          getStudentEvaluationType(student) === activeEvaluationType
-      ),
-    [activeEvaluationType, activeModuleId, students]
-  );
+  const moduleStudents = useMemo(() => {
+    const filteredStudents = students.filter(
+      (student) =>
+        student.moduleId === activeModuleId &&
+        getStudentEvaluationType(student) === activeEvaluationType
+    );
+    return [...filteredStudents].sort((studentA, studentB) => {
+      const firstNameA = studentA.firstname?.trim() || "";
+      const firstNameB = studentB.firstname?.trim() || "";
+      const firstNameComparison = firstNameA.localeCompare(firstNameB, "fr", {
+        sensitivity: "base"
+      });
+      if (firstNameComparison !== 0) return firstNameComparison;
+      const lastNameA = studentA.name?.trim() || "";
+      const lastNameB = studentB.name?.trim() || "";
+      return lastNameA.localeCompare(lastNameB, "fr", { sensitivity: "base" });
+    });
+  }, [activeEvaluationType, activeModuleId, students]);
   const summaryRows = useMemo(() => {
     if (!draft.summaryByCompetencies) {
       return (draft.competencies || []).map((section) => ({
