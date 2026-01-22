@@ -752,6 +752,29 @@ function App() {
     });
     return Array.from(groupSet);
   }, [moduleStudents]);
+  const classSummary = useMemo(() => {
+    const rows = moduleStudents.map((student) => {
+      const noteValue = student.note;
+      const numericNote = Number(noteValue);
+      return {
+        id: student.id,
+        name: getStudentDisplayName(student) || "Étudiant sans nom",
+        groupName: getStudentGroupName(student),
+        noteLabel: noteValue === "" ? "Aucune note" : noteValue,
+        noteClass: getStudentNoteClass(noteValue),
+        isSuccess: [4, 5, 6].includes(numericNote)
+      };
+    });
+    const successCount = rows.filter((row) => row.isSuccess).length;
+    const total = rows.length;
+    const successRate = total ? Math.round((successCount / total) * 100) : 0;
+    return {
+      rows,
+      successCount,
+      total,
+      successRate
+    };
+  }, [moduleStudents]);
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
@@ -2691,6 +2714,60 @@ function App() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="panel class-summary-panel">
+          <div className="panel-header class-summary-header">
+            <div>
+              <h2>Résumé global</h2>
+              <p className="helper-text">
+                Synthèse des notes {template.groupFeatureEnabled ? "et groupes" : ""} pour la classe.
+              </p>
+            </div>
+            <div className="class-summary-success">
+              <span className="class-summary-success-label">Réussite</span>
+              <span className="class-summary-success-value">
+                {classSummary.successRate}%
+              </span>
+              <span className="class-summary-success-meta">
+                {classSummary.successCount} / {classSummary.total} étudiants
+              </span>
+            </div>
+          </div>
+          {classSummary.rows.length === 0 ? (
+            <p className="helper-text">
+              Aucun étudiant pour cette évaluation. Importez une liste pour commencer.
+            </p>
+          ) : (
+            <table className="class-summary-table">
+              <thead>
+                <tr>
+                  <th scope="col">Étudiant</th>
+                  {template.groupFeatureEnabled && (
+                    <th scope="col">Groupe</th>
+                  )}
+                  <th scope="col">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {classSummary.rows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="class-summary-name">{row.name}</td>
+                    {template.groupFeatureEnabled && (
+                      <td className="class-summary-group">
+                        {row.groupName || "—"}
+                      </td>
+                    )}
+                    <td
+                      className={`class-summary-note ${row.noteClass}`}
+                    >
+                      {row.noteLabel}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
       </main>
 
