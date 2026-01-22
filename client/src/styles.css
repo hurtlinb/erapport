@@ -307,6 +307,7 @@ h1 {
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  position: relative;
 }
 
 .student-card-content {
@@ -322,6 +323,29 @@ h1 {
 .student-card.note-nok {
   border-color: #f97316;
   box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.18);
+}
+
+.student-delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.student-delete-button:hover {
+  color: #ef4444;
+}
+
+.student-delete-button:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+  border-radius: 999px;
 }
 
 .app-footer {
