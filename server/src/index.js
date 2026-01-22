@@ -328,9 +328,77 @@ const csvEscape = (value) => {
 };
 
 const buildOutlookDraftScript = () => `# Crée des brouillons Outlook à partir de etudiants.csv
+Add-Type -AssemblyName System.Windows.Forms
+
+function Show-InputDialog {
+  param(
+    [string]$Title,
+    [string]$Label,
+    [bool]$Multiline = $false
+  )
+
+  $form = New-Object System.Windows.Forms.Form
+  $form.Text = $Title
+  $form.StartPosition = "CenterScreen"
+  $form.Size = New-Object System.Drawing.Size(520, 320)
+  $form.Topmost = $true
+
+  $labelControl = New-Object System.Windows.Forms.Label
+  $labelControl.Text = $Label
+  $labelControl.AutoSize = $true
+  $labelControl.Location = New-Object System.Drawing.Point(12, 12)
+
+  $textBox = New-Object System.Windows.Forms.TextBox
+  $textBox.Location = New-Object System.Drawing.Point(12, 40)
+  $textBox.Size = New-Object System.Drawing.Size(480, 24)
+
+  if ($Multiline) {
+    $textBox.Multiline = $true
+    $textBox.ScrollBars = "Vertical"
+    $textBox.Height = 170
+  }
+
+  $okButton = New-Object System.Windows.Forms.Button
+  $okButton.Text = "OK"
+  $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+  $okButton.Location = New-Object System.Drawing.Point(300, 230)
+
+  $cancelButton = New-Object System.Windows.Forms.Button
+  $cancelButton.Text = "Annuler"
+  $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+  $cancelButton.Location = New-Object System.Drawing.Point(392, 230)
+
+  $form.AcceptButton = $okButton
+  $form.CancelButton = $cancelButton
+
+  $form.Controls.Add($labelControl)
+  $form.Controls.Add($textBox)
+  $form.Controls.Add($okButton)
+  $form.Controls.Add($cancelButton)
+
+  $result = $form.ShowDialog()
+  if ($result -ne [System.Windows.Forms.DialogResult]::OK) {
+    return $null
+  }
+
+  return $textBox.Text
+}
+
 $csvPath = Join-Path $PSScriptRoot "etudiants.csv"
 if (-not (Test-Path $csvPath)) {
   Write-Error "etudiants.csv introuvable dans le même dossier que ce script."
+  exit 1
+}
+
+$subject = Show-InputDialog -Title "Sujet du mail" -Label "Saisissez le sujet du mail :"
+if ($null -eq $subject) {
+  Write-Error "Création des brouillons annulée."
+  exit 1
+}
+
+$body = Show-InputDialog -Title "Corps du mail" -Label "Saisissez le corps du mail :" -Multiline $true
+if ($null -eq $body) {
+  Write-Error "Création des brouillons annulée."
   exit 1
 }
 
@@ -344,7 +412,8 @@ foreach ($student in $students) {
 
   $mail = $outlook.CreateItem(0)
   $mail.To = $student.EmailEtudiant
-  $mail.Subject = "Rapport d'évaluation - $($student.NomEtudiant)"
+  $mail.Subject = $subject
+  $mail.Body = $body
   $attachmentPath = Join-Path $PSScriptRoot $student.FichierRapport
   $coachingPath = $null
 
