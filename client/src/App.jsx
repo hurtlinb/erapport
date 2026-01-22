@@ -500,7 +500,7 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
   groupName: student.groupName || "",
   evaluationType: template.evaluationType || "",
   className: template.className || "",
-  teacher: template.teacher || "",
+  teacher: student.teacher || template.teacher || "",
   teacherId: student.teacherId || teacherId || "",
   evaluationDate: template.evaluationDate || "",
   coachingDate: template.coachingDate || "",
