@@ -727,6 +727,8 @@ ${teacherDisplayName}
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [groupEditId, setGroupEditId] = useState("");
+  const [groupDraftValue, setGroupDraftValue] = useState("");
   const [draggedTask, setDraggedTask] = useState(null);
   const [dragOverTask, setDragOverTask] = useState(null);
   const [serverStatus, setServerStatus] = useState({
@@ -1848,6 +1850,22 @@ ${teacherDisplayName}
     });
   };
 
+  const startGroupEdit = (student) => {
+    setGroupEditId(student.id);
+    setGroupDraftValue(student.groupName || "");
+  };
+
+  const cancelGroupEdit = () => {
+    setGroupEditId("");
+    setGroupDraftValue("");
+  };
+
+  const commitGroupEdit = (studentId, value) => {
+    const nextValue = value.trim();
+    handleStudentGroupChange(studentId, nextValue);
+    cancelGroupEdit();
+  };
+
   const handleRemoveTask = (sectionIndex, itemIndex) => {
     updateTemplate((prev) => ({
       ...prev,
@@ -2377,6 +2395,8 @@ ${teacherDisplayName}
             {moduleStudents.map((student) => {
               const displayName =
                 getStudentDisplayName(student) || "Étudiant sans nom";
+              const groupName = getStudentGroupName(student);
+              const isGroupEditing = groupEditId === student.id;
               const hasNote =
                 student.note !== "" &&
                 student.note !== null &&
@@ -2400,32 +2420,67 @@ ${teacherDisplayName}
                       {noteSuffix}
                     </p>
                     {template.groupFeatureEnabled && (
-                      <p className="student-meta">
-                        {getStudentGroupName(student)
-                          ? `Groupe : ${getStudentGroupName(student)}`
-                          : "Aucun groupe attribué"}
-                      </p>
-                    )}
-                    {template.groupFeatureEnabled && (
                       <div
-                        className="student-group-field"
+                        className="student-group-controls"
                         onClick={(event) => event.stopPropagation()}
                       >
-                        <label>
-                          Groupe
+                        {groupName ? (
+                          <span className="group-tag">
+                            <span>{groupName}</span>
+                            <button
+                              type="button"
+                              className="group-remove-button"
+                              aria-label="Retirer le groupe"
+                              title="Retirer le groupe"
+                              onClick={() => {
+                                handleStudentGroupChange(student.id, "");
+                                cancelGroupEdit();
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="group-empty">
+                            Aucun groupe attribué
+                          </span>
+                        )}
+                        {isGroupEditing ? (
                           <input
                             type="text"
+                            className="group-input"
                             list="group-options"
-                            value={student.groupName || ""}
+                            value={groupDraftValue}
                             onChange={(event) =>
-                              handleStudentGroupChange(
-                                student.id,
-                                event.target.value
-                              )
+                              setGroupDraftValue(event.target.value)
                             }
+                            onBlur={() =>
+                              commitGroupEdit(student.id, groupDraftValue)
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                commitGroupEdit(student.id, groupDraftValue);
+                              }
+                              if (event.key === "Escape") {
+                                event.preventDefault();
+                                cancelGroupEdit();
+                              }
+                            }}
                             placeholder="Groupe A"
+                            autoFocus
                           />
-                        </label>
+                        ) : (
+                          <button
+                            type="button"
+                            className="group-add-button"
+                            aria-label="Ajouter un groupe"
+                            title="Ajouter un groupe"
+                            onClick={() => startGroupEdit(student)}
+                          >
+                            +
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
