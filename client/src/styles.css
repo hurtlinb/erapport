@@ -190,7 +190,7 @@ h1 {
 }
 
 .class-summary-note.note-nok {
-  color: #c2410c;
+  color: #e11d48;
 }
 
 .class-summary-indicator {
@@ -209,8 +209,8 @@ h1 {
 }
 
 .class-summary-indicator.note-nok {
-  background: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+  background: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.18);
 }
 
 .panel-header {
@@ -321,8 +321,8 @@ h1 {
 }
 
 .student-card.note-nok {
-  border-color: #f97316;
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.18);
+  border-color: #e11d48;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.18);
 }
 
 .student-delete-button {
