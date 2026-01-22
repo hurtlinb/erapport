@@ -2279,63 +2279,73 @@ function App() {
                 Aucun étudiant pour ce module. Importez une liste pour démarrer.
               </li>
             )}
-            {moduleStudents.map((student) => (
-              <li
-                key={student.id}
-                className={[
-                  "student-card",
-                  getStudentNoteClass(student.note),
-                  selectedId === student.id ? "active" : ""
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => setSelectedId(student.id)}
-              >
-                <div className="student-card-content">
-                  <p className="student-name">
-                    {getStudentDisplayName(student) || "Étudiant sans nom"}
-                  </p>
-                  {template.groupFeatureEnabled && (
-                    <p className="student-meta">
-                      {getStudentGroupName(student)
-                        ? `Groupe : ${getStudentGroupName(student)}`
-                        : "Aucun groupe attribué"}
-                    </p>
-                  )}
-                  {template.groupFeatureEnabled && (
-                    <div
-                      className="student-group-field"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <label>
-                        Groupe
-                        <input
-                          type="text"
-                          list="group-options"
-                          value={student.groupName || ""}
-                          onChange={(event) =>
-                            handleStudentGroupChange(
-                              student.id,
-                              event.target.value
-                            )
-                          }
-                          placeholder="Groupe A"
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-                <button
-                  className="button text"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleDeleteStudent(student.id);
-                  }}
+            {moduleStudents.map((student) => {
+              const displayName =
+                getStudentDisplayName(student) || "Étudiant sans nom";
+              const hasNote =
+                student.note !== "" &&
+                student.note !== null &&
+                student.note !== undefined;
+              const noteSuffix = hasNote ? ` (${student.note})` : "";
+              return (
+                <li
+                  key={student.id}
+                  className={[
+                    "student-card",
+                    getStudentNoteClass(student.note),
+                    selectedId === student.id ? "active" : ""
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => setSelectedId(student.id)}
                 >
-                  Supprimer
-                </button>
-              </li>
-            ))}
+                  <div className="student-card-content">
+                    <p className="student-name">
+                      {displayName}
+                      {noteSuffix}
+                    </p>
+                    {template.groupFeatureEnabled && (
+                      <p className="student-meta">
+                        {getStudentGroupName(student)
+                          ? `Groupe : ${getStudentGroupName(student)}`
+                          : "Aucun groupe attribué"}
+                      </p>
+                    )}
+                    {template.groupFeatureEnabled && (
+                      <div
+                        className="student-group-field"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <label>
+                          Groupe
+                          <input
+                            type="text"
+                            list="group-options"
+                            value={student.groupName || ""}
+                            onChange={(event) =>
+                              handleStudentGroupChange(
+                                student.id,
+                                event.target.value
+                              )
+                            }
+                            placeholder="Groupe A"
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    className="button text"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDeleteStudent(student.id);
+                    }}
+                  >
+                    Supprimer
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
 
