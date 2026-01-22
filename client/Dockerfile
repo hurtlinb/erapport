@@ -1,4 +1,4 @@
-ARG APP_VERSION=1.4.4
+ARG APP_VERSION=1.4.8
 
 FROM node:20-alpine AS build
 
@@ -11,7 +11,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine
-ARG APP_VERSION=1.4.4
+ARG APP_VERSION=1.4.8
 LABEL org.opencontainers.image.version=$APP_VERSION
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
