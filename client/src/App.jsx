@@ -675,6 +675,9 @@ function App() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
+  const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
+  const [mailDraftSubject, setMailDraftSubject] = useState("");
+  const [mailDraftBody, setMailDraftBody] = useState("");
   const [importStudentText, setImportStudentText] = useState("");
   const [importStudentError, setImportStudentError] = useState("");
   const [copyStudentSelections, setCopyStudentSelections] = useState({});
@@ -1397,6 +1400,12 @@ function App() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const handleSubmitMailDraft = async (event) => {
+    event.preventDefault();
+    setIsMailDraftModalOpen(false);
+    await handleExportAllReports();
   };
 
   const handleExportAllReports = async () => {
@@ -2163,7 +2172,7 @@ function App() {
                 <button
                   className="button ghost"
                   type="button"
-                  onClick={handleExportAllReports}
+                  onClick={() => setIsMailDraftModalOpen(true)}
                   disabled={moduleStudents.length === 0 || isExporting}
                   title={
                     moduleStudents.length === 0
@@ -2728,6 +2737,66 @@ function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isMailDraftModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2>Préparer le brouillon de mail</h2>
+                <p className="helper-text">
+                  Indiquez l'objet et le corps du message pour le partager aux étudiants.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsMailDraftModalOpen(false)}
+              >
+                Fermer
+              </button>
+            </div>
+            <form onSubmit={handleSubmitMailDraft}>
+              <label>
+                Objet
+                <input
+                  type="text"
+                  value={mailDraftSubject}
+                  onChange={(event) => setMailDraftSubject(event.target.value)}
+                  placeholder="Vos rapports d'évaluation"
+                  autoFocus
+                />
+              </label>
+              <label>
+                Corps du message
+                <textarea
+                  rows="6"
+                  value={mailDraftBody}
+                  onChange={(event) => setMailDraftBody(event.target.value)}
+                  placeholder="Bonjour, vous trouverez en pièce jointe vos rapports d'évaluation."
+                />
+              </label>
+              <div className="actions align-start modal-actions">
+                <div className="action-row">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setIsMailDraftModalOpen(false)}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="button primary"
+                    disabled={isExporting}
+                  >
+                    {isExporting ? "Export en cours..." : "Générer les rapports"}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}
