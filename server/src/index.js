@@ -334,6 +334,19 @@ if (-not (Test-Path $csvPath)) {
   exit 1
 }
 
+$subjectPath = Join-Path $PSScriptRoot "mail-subject.txt"
+$bodyPath = Join-Path $PSScriptRoot "mail-body.txt"
+$mailSubjectTemplate = ""
+$mailBody = ""
+
+if (Test-Path $subjectPath) {
+  $mailSubjectTemplate = (Get-Content -Path $subjectPath -Raw -Encoding UTF8).TrimEnd()
+}
+
+if (Test-Path $bodyPath) {
+  $mailBody = (Get-Content -Path $bodyPath -Raw -Encoding UTF8).TrimEnd()
+}
+
 $outlook = New-Object -ComObject Outlook.Application
 $students = Import-Csv -Path $csvPath -Encoding UTF8
 
@@ -344,9 +357,17 @@ foreach ($student in $students) {
 
   $mail = $outlook.CreateItem(0)
   $mail.To = $student.EmailEtudiant
-  $mail.Subject = "Rapport d'évaluation - $($student.NomEtudiant)"
+  if ($mailSubjectTemplate) {
+    $mail.Subject = $mailSubjectTemplate
+  } else {
+    $mail.Subject = "Rapport d'évaluation - $($student.NomEtudiant)"
+  }
   $attachmentPath = Join-Path $PSScriptRoot $student.FichierRapport
   $coachingPath = $null
+
+  if ($mailBody) {
+    $mail.Body = $mailBody
+  }
 
   if ($student.FichierCoaching) {
     $coachingPath = Join-Path $PSScriptRoot $student.FichierCoaching
@@ -1437,6 +1458,12 @@ app.post("/api/report/coaching", requireAuth, (req, res) => {
 
 app.post("/api/report/export-all", requireAuth, async (req, res) => {
   const students = Array.isArray(req.body?.students) ? req.body.students : [];
+  const mailDraftSubject =
+    typeof req.body?.mailDraftSubject === "string"
+      ? req.body.mailDraftSubject
+      : "";
+  const mailDraftBody =
+    typeof req.body?.mailDraftBody === "string" ? req.body.mailDraftBody : "";
 
   if (students.length === 0) {
     res.status(400).json({ error: "Aucun étudiant fourni pour l'export." });
@@ -1492,6 +1519,12 @@ app.post("/api/report/export-all", requireAuth, async (req, res) => {
       .map((row) => row.map(csvEscape).join(","))
       .join("\n")}`;
     archive.append(csvContent, { name: "etudiants.csv" });
+    archive.append(`\uFEFF${mailDraftSubject}`, {
+      name: "mail-subject.txt"
+    });
+    archive.append(`\uFEFF${mailDraftBody}`, {
+      name: "mail-body.txt"
+    });
     archive.append(`\uFEFF${buildOutlookDraftScript()}`, {
       name: "creer-brouillons-outlook.ps1"
     });
