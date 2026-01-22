@@ -697,8 +697,7 @@ function App() {
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
   const [mailDraftSubject, setMailDraftSubject] = useState("");
-  const [mailDraftBody, setMailDraftBody] = useState(
-    `Bonjour,
+  const buildDefaultMailBody = (teacherDisplayName) => `Bonjour,
 
 Vous trouverez en pièce jointe le résultat de votre évaluation du module précité au format PDF ainsi que la feuille de coaching pour les personnes concernées uniquement. 
 
@@ -710,8 +709,12 @@ Si vous êtes concernés, veuillez remplir la feuille de coaching , la faire sig
 
 Meilleures saluations, 
 
-<teacher name>
-`
+${teacherDisplayName}
+`;
+  const initialTeacherName =
+    authUser?.name || authUser?.email || "Nom de l'enseignant";
+  const [mailDraftBody, setMailDraftBody] = useState(() =>
+    buildDefaultMailBody(initialTeacherName)
   );
   const [importStudentText, setImportStudentText] = useState("");
   const [importStudentError, setImportStudentError] = useState("");
@@ -734,6 +737,12 @@ Meilleures saluations,
     () => authUser?.name || authUser?.email || "",
     [authUser]
   );
+  useEffect(() => {
+    const fallbackMailBody = buildDefaultMailBody("Nom de l'enseignant");
+    if (!mailDraftBody || mailDraftBody === fallbackMailBody) {
+      setMailDraftBody(buildDefaultMailBody(initialTeacherName));
+    }
+  }, [initialTeacherName, mailDraftBody]);
   const moduleStudents = useMemo(() => {
     const filteredStudents = students.filter(
       (student) =>
