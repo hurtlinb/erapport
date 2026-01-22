@@ -165,7 +165,6 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  text-align: left;
 }
 
 .class-summary-group {
@@ -174,23 +173,7 @@ h1 {
 
 .class-summary-note {
   font-weight: 600;
-  text-align: left;
-}
-
-.class-summary-note,
-.class-summary-note-header {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.class-summary-group,
-.class-summary-group-header {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.class-summary-student-header {
-  text-align: left;
+  text-align: right;
 }
 
 .class-summary-note,
