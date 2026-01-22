@@ -264,6 +264,7 @@ const normalizeStudent = (student) => {
     ...baseStudent,
     firstname: normalizeTextValue(baseStudent.firstname),
     name: normalizeTextValue(baseStudent.name),
+    email: normalizeTextValue(baseStudent.email),
     evaluationType: baseStudent?.evaluationType || EVALUATION_TYPES[0],
     teacherId: baseStudent?.teacherId || "",
     summaryByCompetencies: Boolean(baseStudent?.summaryByCompetencies),
@@ -368,6 +369,7 @@ const ensureInitialized = async () => {
           evaluation_type TEXT NOT NULL,
           firstname TEXT,
           name TEXT,
+          email TEXT,
           note TEXT,
           group_name TEXT,
           class_name TEXT,
@@ -409,6 +411,10 @@ const ensureInitialized = async () => {
       await client.query(`
         ALTER TABLE students
         ADD COLUMN summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD COLUMN email TEXT
       `).catch(() => {});
       await client.query(`
         ALTER TABLE students
@@ -536,6 +542,7 @@ export const loadState = async () => {
       evaluationType: student.evaluation_type || EVALUATION_TYPES[0],
       firstname: student.firstname || "",
       name: student.name || "",
+      email: student.email || "",
       note: student.note ?? "",
       groupName: student.group_name || "",
       className: student.class_name || "",
@@ -713,6 +720,7 @@ export const saveState = async (nextState) => {
             evaluation_type,
             firstname,
             name,
+            email,
             note,
             group_name,
             class_name,
@@ -742,6 +750,7 @@ export const saveState = async (nextState) => {
             ?,
             ?,
             ?,
+            ?,
             ?
           )
           ON DUPLICATE KEY UPDATE
@@ -750,6 +759,7 @@ export const saveState = async (nextState) => {
             evaluation_type = VALUES(evaluation_type),
             firstname = VALUES(firstname),
             name = VALUES(name),
+            email = VALUES(email),
             note = VALUES(note),
             group_name = VALUES(group_name),
             class_name = VALUES(class_name),
@@ -769,6 +779,7 @@ export const saveState = async (nextState) => {
           student.evaluationType || EVALUATION_TYPES[0],
           student.firstname || "",
           student.name || "",
+          student.email || "",
           student.note ?? "",
           student.groupName || "",
           student.className || "",
