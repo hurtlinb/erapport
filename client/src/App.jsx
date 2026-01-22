@@ -330,14 +330,25 @@ const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
   modules: normalizeModules([], label)
 });
 
-const normalizeTemplateItem = (item) => {
+const normalizeTemplateItem = (item, defaultGroupEvaluation = false) => {
+  const hasGroupEvaluation =
+    item && typeof item === "object" && "groupEvaluation" in item;
+  const groupEvaluation = hasGroupEvaluation
+    ? Boolean(item.groupEvaluation)
+    : defaultGroupEvaluation;
   if (typeof item === "string") {
-    return { task: item, competencyId: "", evaluationMethod: "" };
+    return {
+      task: item,
+      competencyId: "",
+      evaluationMethod: "",
+      groupEvaluation
+    };
   }
   return {
     task: item?.task || "",
     competencyId: item?.competencyId || "",
-    evaluationMethod: item?.evaluationMethod || ""
+    evaluationMethod: item?.evaluationMethod || "",
+    groupEvaluation
   };
 };
 
@@ -350,13 +361,14 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
     );
 
     const items = section.items || [];
+    const sectionGroupEvaluation = section.groupEvaluation ?? false;
 
     return {
       category: section.category,
-      groupEvaluation: section.groupEvaluation ?? false,
+      groupEvaluation: sectionGroupEvaluation,
       result: existingSection?.result ?? "",
       items: items.map((item) => {
-        const normalizedItem = normalizeTemplateItem(item);
+        const normalizedItem = normalizeTemplateItem(item, sectionGroupEvaluation);
         const existingItem = existingSection?.items?.find((candidate) => {
           return (
             candidate.task === normalizedItem.task ||
@@ -368,6 +380,7 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
           task: normalizedItem.task,
           competencyId: normalizedItem.competencyId || existingItem?.competencyId || "",
           evaluationMethod: normalizedItem.evaluationMethod || "",
+          groupEvaluation: normalizedItem.groupEvaluation,
           status: existingItem?.status ?? "",
           comment: existingItem?.comment || ""
         };
@@ -573,15 +586,18 @@ const syncGroupEvaluations = (student, groupName, studentsPool) => {
   const peerCompetencies = peerStudent.competencies || [];
   const updatedCompetencies = (student.competencies || []).map(
     (section, sectionIndex) => {
-      if (!section.groupEvaluation) return section;
       const peerSection = peerCompetencies[sectionIndex];
       if (!peerSection) return section;
       return {
         ...section,
-        result: peerSection.result ?? "",
         items: (section.items || []).map((item, itemIndex) => {
           const peerItem = peerSection.items?.[itemIndex];
           if (!peerItem) return item;
+          const isGroupEvaluation =
+            typeof item.groupEvaluation === "boolean"
+              ? item.groupEvaluation
+              : Boolean(section.groupEvaluation);
+          if (!isGroupEvaluation) return item;
           return {
             ...item,
             status: peerItem.status ?? "",
@@ -1113,14 +1129,20 @@ function App() {
     }));
   };
 
-  const syncGroupCategory = (sectionIndex, updater) => {
+  const syncGroupTask = (sectionIndex, itemIndex, updater) => {
     setDraft((prevDraft) => {
       const nextDraft = updater(prevDraft);
       const groupName = getStudentGroupName(nextDraft);
+      const targetSection = nextDraft.competencies?.[sectionIndex] || null;
+      const targetItem = targetSection?.items?.[itemIndex] || null;
+      const isGroupEvaluation =
+        typeof targetItem?.groupEvaluation === "boolean"
+          ? targetItem.groupEvaluation
+          : Boolean(targetSection?.groupEvaluation);
       const shouldSync =
         template.groupFeatureEnabled &&
         groupName &&
-        nextDraft.competencies?.[sectionIndex]?.groupEvaluation;
+        isGroupEvaluation;
 
       setStudents((prevStudents) =>
         prevStudents.map((student) => {
@@ -1142,7 +1164,7 @@ function App() {
   };
 
   const updateCompetency = (sectionIndex, itemIndex, field, value) => {
-    syncGroupCategory(sectionIndex, (student) => ({
+    syncGroupTask(sectionIndex, itemIndex, (student) => ({
       ...student,
       competencies: (student.competencies || []).map((section, sIndex) => {
         if (sIndex !== sectionIndex) return section;
@@ -1157,7 +1179,7 @@ function App() {
   };
 
   const updateCategoryResult = (sectionIndex, value) => {
-    syncGroupCategory(sectionIndex, (student) => ({
+    persistDraftChanges((student) => ({
       ...student,
       competencies: (student.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex ? { ...section, result: value } : section
@@ -1466,15 +1488,6 @@ function App() {
     }));
   };
 
-  const handleTemplateCategoryGroupChange = (sectionIndex, value) => {
-    updateTemplate((prev) => ({
-      ...prev,
-      competencies: (prev.competencies || []).map((section, sIndex) =>
-        sIndex === sectionIndex ? { ...section, groupEvaluation: value } : section
-      )
-    }));
-  };
-
   const handleTemplateTaskFieldChange = (
     sectionIndex,
     itemIndex,
@@ -1489,7 +1502,10 @@ function App() {
           ...section,
           items: (section.items || []).map((item, iIndex) => {
             if (iIndex !== itemIndex) return item;
-            const normalizedItem = normalizeTemplateItem(item);
+            const normalizedItem = normalizeTemplateItem(
+              item,
+              section.groupEvaluation ?? false
+            );
             return { ...normalizedItem, [field]: value };
           })
         };
@@ -1509,7 +1525,8 @@ function App() {
             {
               task: "Nouvelle tâche",
               competencyId: prev.competencyOptions?.[0]?.code || "",
-              evaluationMethod: ""
+              evaluationMethod: "",
+              groupEvaluation: false
             }
           ]
         }
@@ -1562,7 +1579,10 @@ function App() {
         competencies: (prev.competencies || []).map((section) => ({
           ...section,
           items: (section.items || []).map((item) => {
-            const normalizedItem = normalizeTemplateItem(item);
+            const normalizedItem = normalizeTemplateItem(
+              item,
+              section.groupEvaluation ?? false
+            );
             if (normalizedItem.competencyId === removedCode) {
               return { ...normalizedItem, competencyId: "" };
             }
@@ -1585,7 +1605,8 @@ function App() {
                 {
                   task: "Nouvelle tâche",
                   competencyId: prev.competencyOptions?.[0]?.code || "",
-                  evaluationMethod: ""
+                  evaluationMethod: "",
+                  groupEvaluation: false
                 }
               ]
             }
@@ -2973,20 +2994,6 @@ function App() {
                         }
                       />
                     </div>
-                    <label className="category-group-toggle">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(section.groupEvaluation)}
-                        onChange={(event) =>
-                          handleTemplateCategoryGroupChange(
-                            sectionIndex,
-                            event.target.checked
-                          )
-                        }
-                        disabled={!template.groupFeatureEnabled}
-                      />
-                      Évaluation de groupe
-                    </label>
                     <button
                       className="button text"
                       onClick={() => handleRemoveCategory(sectionIndex)}
@@ -2997,7 +3004,10 @@ function App() {
                   </div>
                   <div className="template-tasks">
                     {section.items.map((item, itemIndex) => {
-                      const normalizedItem = normalizeTemplateItem(item);
+                      const normalizedItem = normalizeTemplateItem(
+                        item,
+                        section.groupEvaluation ?? false
+                      );
                       return (
                         <div
                           key={itemIndex}
@@ -3058,6 +3068,22 @@ function App() {
                               </option>
                             ))}
                           </select>
+                          <label className="task-group-toggle">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(normalizedItem.groupEvaluation)}
+                              onChange={(event) =>
+                                handleTemplateTaskFieldChange(
+                                  sectionIndex,
+                                  itemIndex,
+                                  "groupEvaluation",
+                                  event.target.checked
+                                )
+                              }
+                              disabled={!template.groupFeatureEnabled}
+                            />
+                            Groupe
+                          </label>
                           <button
                             className="button text"
                             onClick={() =>
