@@ -313,7 +313,11 @@ const sanitizeReportToken = (value) =>
     .trim()
     .replace(/[^\p{L}\p{N}]/gu, "");
 
-const getModuleNumberToken = (moduleTitle) => {
+const getModuleNumberToken = (moduleNumber, moduleTitle) => {
+  const normalizedModuleNumber = String(moduleNumber || "").trim();
+  if (normalizedModuleNumber) {
+    return sanitizeReportToken(normalizedModuleNumber) || "module";
+  }
   const firstWord = String(moduleTitle || "")
     .trim()
     .split(/\s+/)[0];
@@ -332,14 +336,20 @@ const getStudentNameToken = (student) => {
 };
 
 const buildReportFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(
+    student?.moduleNumber,
+    student?.moduleTitle
+  );
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const buildCoachingFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(
+    student?.moduleNumber,
+    student?.moduleTitle
+  );
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
