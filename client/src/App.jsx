@@ -3505,7 +3505,6 @@ ${teacherDisplayName}
             <div className="template-meta-grid">
               <div className="form-grid">
                 <label className="toggle-field">
-                  <span>Activer les évaluations de groupe</span>
                   <span className="toggle-switch">
                     <input
                       type="checkbox"
@@ -3519,9 +3518,11 @@ ${teacherDisplayName}
                     />
                     <span className="toggle-slider" aria-hidden="true" />
                   </span>
+                  <span className="toggle-label">
+                    Activer les évaluations de groupe
+                  </span>
                 </label>
                 <label className="toggle-field">
-                  <span>Résumé par compétences</span>
                   <span className="toggle-switch">
                     <input
                       type="checkbox"
@@ -3535,6 +3536,7 @@ ${teacherDisplayName}
                     />
                     <span className="toggle-slider" aria-hidden="true" />
                   </span>
+                  <span className="toggle-label">Résumé par compétences</span>
                 </label>
               </div>
               <div className="form-grid">

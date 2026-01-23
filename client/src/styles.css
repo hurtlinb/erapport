@@ -591,11 +591,11 @@ label {
 .toggle-field {
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
-.toggle-field > span:first-child {
+.toggle-field .toggle-label {
   flex: 1;
 }
 
