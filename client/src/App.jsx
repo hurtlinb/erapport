@@ -210,6 +210,12 @@ const EMPTY_TEMPLATE = {
 
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
+  const competencyOptions = normalizeCompetencyOptions(
+    baseTemplate.competencyOptions || defaultTemplate.competencyOptions
+  );
+  const competencies = normalizeCompetencies(
+    baseTemplate.competencies || defaultTemplate.competencies
+  );
   return {
     ...defaultTemplate,
     ...baseTemplate,
@@ -221,9 +227,8 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
-    competencyOptions:
-      baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
-    competencies: baseTemplate.competencies || defaultTemplate.competencies
+    competencyOptions,
+    competencies
   };
 };
 
@@ -389,25 +394,72 @@ const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
   modules: normalizeModules([], label)
 });
 
+const normalizeCompetencyOption = (option) => ({
+  id: String(option?.id ?? crypto.randomUUID()),
+  code: option?.code || "",
+  description: option?.description || ""
+});
+
 const normalizeTemplateItem = (item, defaultGroupEvaluation = false) => {
-  const hasGroupEvaluation =
-    item && typeof item === "object" && "groupEvaluation" in item;
+  const baseItem = item && typeof item === "object" ? item : {};
+  const hasGroupEvaluation = "groupEvaluation" in baseItem;
   const groupEvaluation = hasGroupEvaluation
-    ? Boolean(item.groupEvaluation)
+    ? Boolean(baseItem.groupEvaluation)
     : defaultGroupEvaluation;
   if (typeof item === "string") {
     return {
+      id: crypto.randomUUID(),
       task: item,
       competencyId: "",
       evaluationMethod: "",
-      groupEvaluation
+      groupEvaluation,
+      status: "",
+      comment: ""
     };
   }
   return {
-    task: item?.task || "",
-    competencyId: item?.competencyId || "",
-    evaluationMethod: item?.evaluationMethod || "",
-    groupEvaluation
+    id: String(baseItem.id ?? crypto.randomUUID()),
+    task: baseItem?.task || "",
+    competencyId: baseItem?.competencyId || "",
+    evaluationMethod: baseItem?.evaluationMethod || "",
+    groupEvaluation,
+    status: baseItem?.status ?? "",
+    comment: baseItem?.comment ?? ""
+  };
+};
+
+const normalizeCompetencySection = (section) => {
+  const baseSection = section && typeof section === "object" ? section : {};
+  const groupEvaluation = Boolean(baseSection.groupEvaluation);
+  return {
+    id: String(baseSection.id ?? crypto.randomUUID()),
+    category: baseSection.category || "",
+    groupEvaluation,
+    result: baseSection?.result ?? "",
+    items: (baseSection.items || []).map((item) =>
+      normalizeTemplateItem(item, groupEvaluation)
+    )
+  };
+};
+
+const normalizeCompetencyOptions = (options = []) =>
+  Array.isArray(options) ? options.map(normalizeCompetencyOption) : [];
+
+const normalizeCompetencies = (competencies = []) =>
+  Array.isArray(competencies)
+    ? competencies.map(normalizeCompetencySection)
+    : [];
+
+const normalizeStudentCompetencies = (competencies = []) =>
+  normalizeCompetencies(competencies);
+
+const normalizeStudentRecord = (student) => {
+  const baseStudent = student && typeof student === "object" ? student : {};
+  return {
+    ...baseStudent,
+    id: String(baseStudent.id ?? crypto.randomUUID()),
+    competencyOptions: normalizeCompetencyOptions(baseStudent.competencyOptions),
+    competencies: normalizeStudentCompetencies(baseStudent.competencies)
   };
 };
 
@@ -415,14 +467,19 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
   const competencies = template?.competencies ?? [];
 
   return competencies.map((section) => {
-    const existingSection = existingCompetencies.find(
-      (candidate) => candidate.category === section.category
-    );
+    const existingSection =
+      existingCompetencies.find(
+        (candidate) => candidate?.id && candidate.id === section.id
+      ) ||
+      existingCompetencies.find(
+        (candidate) => candidate.category === section.category
+      );
 
     const items = section.items || [];
     const sectionGroupEvaluation = section.groupEvaluation ?? false;
 
     return {
+      id: section.id || crypto.randomUUID(),
       category: section.category,
       groupEvaluation: sectionGroupEvaluation,
       result: existingSection?.result ?? "",
@@ -430,12 +487,14 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
         const normalizedItem = normalizeTemplateItem(item, sectionGroupEvaluation);
         const existingItem = existingSection?.items?.find((candidate) => {
           return (
+            (candidate?.id && normalizedItem.id && candidate.id === normalizedItem.id) ||
             candidate.task === normalizedItem.task ||
             candidate.label === normalizedItem.task
           );
         });
 
         return {
+          id: normalizedItem.id || crypto.randomUUID(),
           task: normalizedItem.task,
           competencyId: normalizedItem.competencyId || existingItem?.competencyId || "",
           evaluationMethod: normalizedItem.evaluationMethod || "",
@@ -1036,7 +1095,11 @@ ${teacherDisplayName}
         }
         const data = await response.json();
         setSchoolYears(normalizeSchoolYears(data.schoolYears));
-        setStudents(data.students || []);
+        setStudents(
+          Array.isArray(data.students)
+            ? data.students.map(normalizeStudentRecord)
+            : []
+        );
         logClientEvent("state-loaded", {
           schoolYears: Array.isArray(data.schoolYears)
             ? data.schoolYears.length
@@ -1737,10 +1800,12 @@ ${teacherDisplayName}
       competencies: [
         ...(prev.competencies || []),
         {
+          id: crypto.randomUUID(),
           category: "Nouveau thème",
           groupEvaluation: false,
           items: [
             {
+              id: crypto.randomUUID(),
               task: "Nouvelle tâche",
               competencyId: prev.competencyOptions?.[0]?.code || "",
               evaluationMethod: "",
@@ -1767,6 +1832,7 @@ ${teacherDisplayName}
       competencyOptions: [
         ...(prev.competencyOptions || []),
         {
+          id: crypto.randomUUID(),
           code: `OO${(prev.competencyOptions?.length || 0) + 1}`,
           description: "Nouvelle compétence"
         }
@@ -1821,6 +1887,7 @@ ${teacherDisplayName}
               items: [
                 ...(section.items || []),
                 {
+                  id: crypto.randomUUID(),
                   task: "Nouvelle tâche",
                   competencyId: prev.competencyOptions?.[0]?.code || "",
                   evaluationMethod: "",
@@ -2816,7 +2883,10 @@ ${teacherDisplayName}
 
           <div className="competency-grid">
             {(draft.competencies || []).map((section, sectionIndex) => (
-              <div key={section.category} className="competency-section">
+              <div
+                key={section.id || section.category || sectionIndex}
+                className="competency-section"
+              >
                 <div className="competency-section-header">
                   <label className="category-result">
                     <select
@@ -2846,7 +2916,7 @@ ${teacherDisplayName}
 
                     return (
                       <div
-                        key={`${item.task}-${itemIndex}`}
+                        key={item.id || `${item.task}-${itemIndex}`}
                         className={`competency-row ${statusClass}`}
                       >
                         <div>
@@ -3389,7 +3459,10 @@ ${teacherDisplayName}
                 </div>
                 <div className="template-tasks">
                   {template.competencyOptions?.map((option, index) => (
-                    <div key={option.code} className="template-task-row">
+                    <div
+                      key={option.id || option.code || index}
+                      className="template-task-row"
+                    >
                       <input
                         type="text"
                         value={option.code}
@@ -3429,7 +3502,10 @@ ${teacherDisplayName}
 
             <div className="template-competency-grid">
               {(template.competencies || []).map((section, sectionIndex) => (
-                <div key={sectionIndex} className="template-competency">
+                <div
+                  key={section.id || sectionIndex}
+                  className="template-competency"
+                >
                   <div className="template-competency-header">
                     <div className="category-name">
                       <span className="badge">Thème</span>
@@ -3461,7 +3537,7 @@ ${teacherDisplayName}
                       );
                       return (
                         <div
-                          key={itemIndex}
+                          key={normalizedItem.id || itemIndex}
                           className={`template-task-row template-task-row--task${
                             dragOverTask?.sectionIndex === sectionIndex &&
                             dragOverTask?.itemIndex === itemIndex

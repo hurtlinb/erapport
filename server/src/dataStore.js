@@ -133,6 +133,12 @@ const EMPTY_TEMPLATE = {
 
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
+  const competencyOptions = normalizeCompetencyOptions(
+    baseTemplate.competencyOptions || defaultTemplate.competencyOptions
+  );
+  const competencies = normalizeCompetencies(
+    baseTemplate.competencies || defaultTemplate.competencies
+  );
   return {
     ...defaultTemplate,
     ...baseTemplate,
@@ -144,9 +150,8 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
-    competencyOptions:
-      baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
-    competencies: baseTemplate.competencies || defaultTemplate.competencies
+    competencyOptions,
+    competencies
   };
 };
 
@@ -275,6 +280,70 @@ const normalizeTextValue = (value) => {
   return String(value).normalize("NFC");
 };
 
+const ensureId = (value) => {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  return normalized ? normalized : crypto.randomUUID();
+};
+
+const normalizeCompetencyOption = (option) => {
+  const baseOption = option && typeof option === "object" ? option : {};
+  return {
+    id: ensureId(baseOption.id),
+    code: normalizeTextValue(baseOption.code),
+    description: normalizeTextValue(baseOption.description)
+  };
+};
+
+const normalizeCompetencyItem = (item, defaultGroupEvaluation = false) => {
+  const baseItem = item && typeof item === "object" ? item : {};
+  const hasGroupEvaluation = "groupEvaluation" in baseItem;
+  const groupEvaluation = hasGroupEvaluation
+    ? Boolean(baseItem.groupEvaluation)
+    : defaultGroupEvaluation;
+  if (typeof item === "string") {
+    return {
+      id: ensureId(),
+      task: normalizeTextValue(item),
+      competencyId: "",
+      evaluationMethod: "",
+      groupEvaluation,
+      status: "",
+      comment: ""
+    };
+  }
+  return {
+    id: ensureId(baseItem.id),
+    task: normalizeTextValue(baseItem.task),
+    competencyId: normalizeTextValue(baseItem.competencyId),
+    evaluationMethod: normalizeTextValue(baseItem.evaluationMethod),
+    groupEvaluation,
+    status: normalizeTextValue(baseItem.status),
+    comment: normalizeTextValue(baseItem.comment)
+  };
+};
+
+const normalizeCompetencySection = (section) => {
+  const baseSection = section && typeof section === "object" ? section : {};
+  const groupEvaluation = Boolean(baseSection.groupEvaluation);
+  return {
+    id: ensureId(baseSection.id),
+    category: normalizeTextValue(baseSection.category),
+    groupEvaluation,
+    result: normalizeTextValue(baseSection.result),
+    items: (baseSection.items || []).map((item) =>
+      normalizeCompetencyItem(item, groupEvaluation)
+    )
+  };
+};
+
+const normalizeCompetencyOptions = (options = []) =>
+  Array.isArray(options) ? options.map(normalizeCompetencyOption) : [];
+
+const normalizeCompetencies = (competencies = []) =>
+  Array.isArray(competencies)
+    ? competencies.map(normalizeCompetencySection)
+    : [];
+
 const normalizeJsonValue = (value, fallback) => {
   if (value && typeof value === "object") {
     return value;
@@ -306,8 +375,12 @@ const normalizeStudent = (student) => {
       baseStudent.competencySummaryOverrides,
       {}
     ),
-    competencyOptions: normalizeJsonValue(baseStudent.competencyOptions, []),
-    competencies: normalizeJsonValue(baseStudent.competencies, [])
+    competencyOptions: normalizeCompetencyOptions(
+      normalizeJsonValue(baseStudent.competencyOptions, [])
+    ),
+    competencies: normalizeCompetencies(
+      normalizeJsonValue(baseStudent.competencies, [])
+    )
   };
 };
 
