@@ -909,28 +909,14 @@ ${teacherDisplayName}
     const rows = moduleStudents.map((student) => {
       const noteValue = student.note;
       const numericNote = Number(noteValue);
-      const firstName = student.firstname?.trim() || "";
-      const lastName = student.name?.trim() || "";
       return {
         id: student.id,
-        firstName: firstName || lastName,
         name: getStudentDisplayName(student) || "Étudiant sans nom",
         groupName: getStudentGroupName(student),
         noteLabel: noteValue === "" ? "Aucune note" : noteValue,
         noteClass: getStudentNoteClass(noteValue),
         isSuccess: [4, 5, 6].includes(numericNote)
       };
-    });
-    rows.sort((rowA, rowB) => {
-      if (template.groupFeatureEnabled) {
-        const groupCompare = rowA.groupName.localeCompare(rowB.groupName, "fr", {
-          sensitivity: "base"
-        });
-        if (groupCompare !== 0) return groupCompare;
-      }
-      return rowA.firstName.localeCompare(rowB.firstName, "fr", {
-        sensitivity: "base"
-      });
     });
     const successCount = rows.filter((row) => row.isSuccess).length;
     const total = rows.length;
