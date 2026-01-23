@@ -3547,16 +3547,6 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Enseignant
-                <input
-                  type="text"
-                  value={teacherName}
-                  readOnly
-                  disabled
-                  placeholder="Enseignant connecté"
-                />
-              </label>
-              <label>
                 Date d'évaluation
                 <input
                   type="date"
