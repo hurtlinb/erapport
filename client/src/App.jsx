@@ -685,6 +685,30 @@ const buildCoachingFilename = (student) => {
 
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
+const getStudentLastName = (student) => student.name?.trim() || "";
+const getStudentFirstName = (student) => student.firstname?.trim() || "";
+const compareStudentsByName = (studentA, studentB) => {
+  const lastNameComparison = getStudentLastName(studentA).localeCompare(
+    getStudentLastName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+  if (lastNameComparison !== 0) return lastNameComparison;
+  return getStudentFirstName(studentA).localeCompare(
+    getStudentFirstName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+};
+const compareStudentsByGroupAndName = (studentA, studentB) => {
+  const groupComparison = getStudentGroupName(studentA).localeCompare(
+    getStudentGroupName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+  if (groupComparison !== 0) return groupComparison;
+  return compareStudentsByName(studentA, studentB);
+};
 const shouldIncludeCoaching = (student) => {
   const numericNote = Number(student?.note);
   return [1, 2, 3].includes(numericNote);
@@ -862,18 +886,11 @@ ${teacherDisplayName}
         student.moduleId === activeModuleId &&
         getStudentEvaluationType(student) === activeEvaluationType
     );
-    return [...filteredStudents].sort((studentA, studentB) => {
-      const firstNameA = studentA.firstname?.trim() || "";
-      const firstNameB = studentB.firstname?.trim() || "";
-      const firstNameComparison = firstNameA.localeCompare(firstNameB, "fr", {
-        sensitivity: "base"
-      });
-      if (firstNameComparison !== 0) return firstNameComparison;
-      const lastNameA = studentA.name?.trim() || "";
-      const lastNameB = studentB.name?.trim() || "";
-      return lastNameA.localeCompare(lastNameB, "fr", { sensitivity: "base" });
-    });
-  }, [activeEvaluationType, activeModuleId, students]);
+    const comparator = template.groupFeatureEnabled
+      ? compareStudentsByGroupAndName
+      : compareStudentsByName;
+    return [...filteredStudents].sort(comparator);
+  }, [activeEvaluationType, activeModuleId, students, template.groupFeatureEnabled]);
   const summaryRows = useMemo(() => {
     if (!draft.summaryByCompetencies) {
       return (draft.competencies || []).map((section) => ({
@@ -906,31 +923,17 @@ ${teacherDisplayName}
     return Array.from(groupSet);
   }, [moduleStudents]);
   const classSummary = useMemo(() => {
-    const rows = moduleStudents.map((student) => {
+    const rows = [...moduleStudents].sort(compareStudentsByName).map((student) => {
       const noteValue = student.note;
       const numericNote = Number(noteValue);
-      const firstName = student.firstname?.trim() || "";
-      const lastName = student.name?.trim() || "";
       return {
         id: student.id,
-        firstName: firstName || lastName,
         name: getStudentDisplayName(student) || "Étudiant sans nom",
         groupName: getStudentGroupName(student),
         noteLabel: noteValue === "" ? "Aucune note" : noteValue,
         noteClass: getStudentNoteClass(noteValue),
         isSuccess: [4, 5, 6].includes(numericNote)
       };
-    });
-    rows.sort((rowA, rowB) => {
-      if (template.groupFeatureEnabled) {
-        const groupCompare = rowA.groupName.localeCompare(rowB.groupName, "fr", {
-          sensitivity: "base"
-        });
-        if (groupCompare !== 0) return groupCompare;
-      }
-      return rowA.firstName.localeCompare(rowB.firstName, "fr", {
-        sensitivity: "base"
-      });
     });
     const successCount = rows.filter((row) => row.isSuccess).length;
     const total = rows.length;
@@ -2666,11 +2669,7 @@ ${teacherDisplayName}
                               ×
                             </button>
                           </span>
-                        ) : (
-                          <span className="group-empty">
-                            Aucun groupe attribué
-                          </span>
-                        )}
+                        ) : null}
                         {isGroupEditing ? (
                           <input
                             type="text"
@@ -2696,7 +2695,7 @@ ${teacherDisplayName}
                             placeholder="Groupe A"
                             autoFocus
                           />
-                        ) : (
+                        ) : !groupName ? (
                           <button
                             type="button"
                             className="group-add-button"
@@ -2704,9 +2703,24 @@ ${teacherDisplayName}
                             title="Ajouter un groupe"
                             onClick={() => startGroupEdit(student)}
                           >
-                            +
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="9" cy="8" r="3.5" />
+                              <circle cx="16.5" cy="9.5" r="2.5" />
+                              <path d="M3.5 19c.9-3.3 3.6-5 6.5-5s5.6 1.7 6.5 5" />
+                              <path d="M13 16.5c.6-1.7 2.2-2.8 4-2.8 1.8 0 3.5 1.1 4 2.8" />
+                              <path d="M18.5 3.5v4" />
+                              <path d="M16.5 5.5h4" />
+                            </svg>
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -3077,20 +3091,17 @@ ${teacherDisplayName}
 
         <section className="panel class-summary-panel">
           <div className="panel-header class-summary-header">
-            <div>
+            <div className="class-summary-title">
               <h2>Résumé global</h2>
-              <p className="helper-text">
-                Synthèse des notes {template.groupFeatureEnabled ? "et groupes" : ""} pour la classe.
-              </p>
-            </div>
-            <div className="class-summary-success">
-              <span className="class-summary-success-label">Réussite</span>
-              <span className="class-summary-success-value">
-                {classSummary.successRate}%
-              </span>
-              <span className="class-summary-success-meta">
-                {classSummary.successCount} / {classSummary.total} étudiants
-              </span>
+              <div className="class-summary-success">
+                <span className="class-summary-success-label">Réussite</span>
+                <span className="class-summary-success-value">
+                  {classSummary.successRate}%
+                </span>
+                <span className="class-summary-success-meta">
+                  {classSummary.successCount} / {classSummary.total} étudiants
+                </span>
+              </div>
             </div>
           </div>
           {classSummary.rows.length === 0 ? (
@@ -3491,107 +3502,91 @@ ${teacherDisplayName}
                 )}
               </div>
             </div>
-            <div className="form-grid">
-              <label>
-                Type d'évaluation
-                <select
-                  value={activeEvaluationType}
-                  onChange={(event) =>
-                    handleEvaluationTypeChange(event.target.value)
-                  }
-                >
-                  {EVALUATION_TYPES.map((type) => (
-                    <option
-                      key={type}
-                      value={type}
-                      disabled={!isEvaluationTypeAvailable(activeModule, type)}
-                    >
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="checkbox-field">
-                <span>Activer les évaluations de groupe</span>
-                <input
-                  type="checkbox"
-                  checked={template.groupFeatureEnabled}
-                  onChange={(event) =>
-                    handleTemplateField("groupFeatureEnabled", event.target.checked)
-                  }
-                />
-                <span className="helper-text">
-                  Autoriser les thèmes à être partagés entre les étudiants du même groupe.
-                </span>
-              </label>
-              <label className="checkbox-field">
-                <span>Résumé par compétences</span>
-                <input
-                  type="checkbox"
-                  checked={template.summaryByCompetencies}
-                  onChange={(event) =>
-                    handleTemplateField(
-                      "summaryByCompetencies",
-                      event.target.checked
-                    )
-                  }
-                />
-                <span className="helper-text">
-                  Afficher les compétences plutôt que les thèmes dans le résumé.
-                </span>
-              </label>
-              <label>
-                Classe
-                <input
-                  type="text"
-                  value={template.className}
-                  onChange={(event) =>
-                    handleTemplateField("className", event.target.value)
-                  }
-                  placeholder="INFO-F12, LOG-B21..."
-                />
-              </label>
-              <label>
-                Enseignant
-                <input
-                  type="text"
-                  value={teacherName}
-                  readOnly
-                  disabled
-                  placeholder="Enseignant connecté"
-                />
-              </label>
-              <label>
-                Date d'évaluation
-                <input
-                  type="date"
-                  value={template.evaluationDate}
-                  onChange={(event) =>
-                    handleTemplateField("evaluationDate", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Date de coaching
-                <input
-                  type="date"
-                  value={template.coachingDate}
-                  onChange={(event) =>
-                    handleTemplateField("coachingDate", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Compétence opérationnelle
-                <input
-                  type="text"
-                  value={template.operationalCompetence}
-                  onChange={(event) =>
-                    handleTemplateField("operationalCompetence", event.target.value)
-                  }
-                  placeholder="OP1, OP2, etc."
-                />
-              </label>
+            <div className="template-meta-grid">
+              <div className="form-grid">
+                <label className="toggle-field">
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={template.groupFeatureEnabled}
+                      onChange={(event) =>
+                        handleTemplateField(
+                          "groupFeatureEnabled",
+                          event.target.checked
+                        )
+                      }
+                    />
+                    <span className="toggle-slider" aria-hidden="true" />
+                  </span>
+                  <span className="toggle-label">
+                    Activer les évaluations de groupe
+                  </span>
+                </label>
+                <label className="toggle-field">
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={template.summaryByCompetencies}
+                      onChange={(event) =>
+                        handleTemplateField(
+                          "summaryByCompetencies",
+                          event.target.checked
+                        )
+                      }
+                    />
+                    <span className="toggle-slider" aria-hidden="true" />
+                  </span>
+                  <span className="toggle-label">Résumé par compétences</span>
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  Classe
+                  <input
+                    type="text"
+                    value={template.className}
+                    onChange={(event) =>
+                      handleTemplateField("className", event.target.value)
+                    }
+                    placeholder="INFO-F12, LOG-B21..."
+                  />
+                </label>
+                <label>
+                  Date d'évaluation
+                  <input
+                    type="date"
+                    value={template.evaluationDate}
+                    onChange={(event) =>
+                      handleTemplateField("evaluationDate", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Date de coaching
+                  <input
+                    type="date"
+                    value={template.coachingDate}
+                    onChange={(event) =>
+                      handleTemplateField("coachingDate", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  Compétence opérationnelle
+                  <input
+                    type="text"
+                    value={template.operationalCompetence}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "operationalCompetence",
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="template-competency-grid">

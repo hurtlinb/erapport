@@ -143,12 +143,22 @@ h1 {
 
 .class-summary-header {
   align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.class-summary-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .class-summary-success {
   display: grid;
   gap: 2px;
-  text-align: right;
+  align-self: flex-start;
+  text-align: left;
   background: #f8fafc;
   border-radius: 14px;
   padding: 10px 14px;
@@ -256,6 +266,11 @@ h1 {
   flex-wrap: wrap;
 }
 
+.panel-header.class-summary-header {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .panel-header h2 {
   margin: 0;
 }
@@ -358,6 +373,10 @@ h1 {
 .student-card.note-nok {
   border-color: #e11d48;
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.18);
+}
+
+.student-card.active {
+  background: #f1f5f9;
 }
 
 .student-delete-button {
@@ -489,9 +508,13 @@ h1 {
   border: 1px dashed #cbd5f5;
   background: #f8fafc;
   color: #0f172a;
-  font-size: 18px;
   cursor: pointer;
   padding: 0;
+}
+
+.group-add-button svg {
+  width: 18px;
+  height: 18px;
 }
 
 .group-add-button:hover {
@@ -520,6 +543,11 @@ h1 {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.template-meta-grid {
+  display: grid;
   gap: 16px;
 }
 
@@ -558,6 +586,60 @@ label {
 .checkbox-field .helper-text {
   margin: 4px 0 0;
   font-weight: 500;
+}
+
+.toggle-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.toggle-field .toggle-label {
+  flex: 1;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: #cbd5f5;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #2563eb;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
 }
 
 input,
