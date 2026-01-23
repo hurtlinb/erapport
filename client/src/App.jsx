@@ -685,6 +685,30 @@ const buildCoachingFilename = (student) => {
 
 const hasStudentIdentity = (student) => getStudentDisplayName(student).length > 0;
 const getStudentGroupName = (student) => student.groupName?.trim() || "";
+const getStudentLastName = (student) => student.name?.trim() || "";
+const getStudentFirstName = (student) => student.firstname?.trim() || "";
+const compareStudentsByName = (studentA, studentB) => {
+  const lastNameComparison = getStudentLastName(studentA).localeCompare(
+    getStudentLastName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+  if (lastNameComparison !== 0) return lastNameComparison;
+  return getStudentFirstName(studentA).localeCompare(
+    getStudentFirstName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+};
+const compareStudentsByGroupAndName = (studentA, studentB) => {
+  const groupComparison = getStudentGroupName(studentA).localeCompare(
+    getStudentGroupName(studentB),
+    "fr",
+    { sensitivity: "base" }
+  );
+  if (groupComparison !== 0) return groupComparison;
+  return compareStudentsByName(studentA, studentB);
+};
 const shouldIncludeCoaching = (student) => {
   const numericNote = Number(student?.note);
   return [1, 2, 3].includes(numericNote);
@@ -862,18 +886,11 @@ ${teacherDisplayName}
         student.moduleId === activeModuleId &&
         getStudentEvaluationType(student) === activeEvaluationType
     );
-    return [...filteredStudents].sort((studentA, studentB) => {
-      const firstNameA = studentA.firstname?.trim() || "";
-      const firstNameB = studentB.firstname?.trim() || "";
-      const firstNameComparison = firstNameA.localeCompare(firstNameB, "fr", {
-        sensitivity: "base"
-      });
-      if (firstNameComparison !== 0) return firstNameComparison;
-      const lastNameA = studentA.name?.trim() || "";
-      const lastNameB = studentB.name?.trim() || "";
-      return lastNameA.localeCompare(lastNameB, "fr", { sensitivity: "base" });
-    });
-  }, [activeEvaluationType, activeModuleId, students]);
+    const comparator = template.groupFeatureEnabled
+      ? compareStudentsByGroupAndName
+      : compareStudentsByName;
+    return [...filteredStudents].sort(comparator);
+  }, [activeEvaluationType, activeModuleId, students, template.groupFeatureEnabled]);
   const summaryRows = useMemo(() => {
     if (!draft.summaryByCompetencies) {
       return (draft.competencies || []).map((section) => ({
@@ -906,7 +923,7 @@ ${teacherDisplayName}
     return Array.from(groupSet);
   }, [moduleStudents]);
   const classSummary = useMemo(() => {
-    const rows = moduleStudents.map((student) => {
+    const rows = [...moduleStudents].sort(compareStudentsByName).map((student) => {
       const noteValue = student.note;
       const numericNote = Number(noteValue);
       return {
