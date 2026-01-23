@@ -56,8 +56,27 @@ const resolveTeacherName = (student, context = {}) => {
 
 const normalizeStudentForReport = (student, context = {}) => {
   const teacherName = resolveTeacherName(student, context);
-  if (!teacherName) return student;
-  return { ...student, teacher: teacherName };
+  const signatureData = context.user?.signatureData || "";
+  if (!teacherName) return { ...student, signatureData };
+  return { ...student, teacher: teacherName, signatureData };
+};
+
+const MAX_SIGNATURE_LENGTH = 1000000;
+
+const getSignatureBuffer = (signatureData) => {
+  if (!signatureData || typeof signatureData !== "string") return null;
+  const trimmed = signatureData.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/^data:image\/(?:png|jpeg|jpg);base64,(.+)$/i);
+  let base64Payload = match ? match[1] : trimmed;
+  base64Payload = base64Payload.replace(/\s+/g, "");
+  if (!base64Payload) return null;
+  try {
+    return Buffer.from(base64Payload, "base64");
+  } catch (error) {
+    console.warn("Invalid signature payload", error);
+    return null;
+  }
 };
 
 app.get("/status", asyncHandler(async (req, res) => {
@@ -230,6 +249,45 @@ app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
   res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
 }));
 
+app.get("/api/settings", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
+  res.json({ signatureData: req.user?.signatureData || "" });
+}));
+
+app.put("/api/settings", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
+  const { state, user } = req;
+  const rawSignature =
+    typeof req.body?.signatureData === "string" ? req.body.signatureData : "";
+  const signatureData = rawSignature.trim();
+
+  if (signatureData.length > MAX_SIGNATURE_LENGTH) {
+    res.status(413).json({
+      error: "Signature trop volumineuse. Veuillez importer un fichier plus léger."
+    });
+    return;
+  }
+
+  if (
+    signatureData &&
+    !/^data:image\/png;base64,[a-z0-9+/=]+$/i.test(signatureData)
+  ) {
+    res.status(400).json({
+      error: "La signature doit être un fichier PNG."
+    });
+    return;
+  }
+
+  const updatedUsers = (state.users || []).map((entry) =>
+    entry.id === user.id ? { ...entry, signatureData } : entry
+  );
+  const updatedState = await saveState({ ...state, users: updatedUsers });
+  const updatedUser = updatedState.users.find((entry) => entry.id === user.id);
+  logServerEvent("settings-update", {
+    userId: user.id,
+    hasSignature: Boolean(signatureData)
+  });
+  res.json({ signatureData: updatedUser?.signatureData || "" });
+}));
+
 app.post("/api/logs", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
   const { user } = req;
   const { event, payload } = req.body || {};
@@ -313,11 +371,23 @@ const sanitizeReportToken = (value) =>
     .trim()
     .replace(/[^\p{L}\p{N}]/gu, "");
 
-const getModuleNumberToken = (moduleTitle) => {
-  const firstWord = String(moduleTitle || "")
-    .trim()
-    .split(/\s+/)[0];
-  return sanitizeReportToken(firstWord) || "module";
+const buildModuleLabel = (moduleNumber, moduleTitle) => {
+  const numberValue = String(moduleNumber || "").trim();
+  const titleValue = String(moduleTitle || "").trim();
+  if (numberValue && titleValue) {
+    return `${numberValue} - ${titleValue}`;
+  }
+  return numberValue || titleValue || "Module";
+};
+
+const getModuleNumberToken = (student) => {
+  const numberValue = String(student?.moduleNumber || "").trim();
+  if (numberValue) {
+    return sanitizeReportToken(numberValue) || "module";
+  }
+  const titleValue = String(student?.moduleTitle || "").trim();
+  const fallbackWord = titleValue.split(/\s+/)[0];
+  return sanitizeReportToken(fallbackWord) || "module";
 };
 
 const getEvaluationLabel = (evaluationType) => {
@@ -332,14 +402,14 @@ const getStudentNameToken = (student) => {
 };
 
 const buildReportFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(student);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const buildCoachingFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber = getModuleNumberToken(student);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
@@ -823,7 +893,8 @@ const renderStudentHeader = (
   doc,
   student,
   evaluationNumber,
-  startY = 40
+  startY = 40,
+  signatureBuffer
 ) => {
   const headerX = 40;
   const headerY = startY;
@@ -832,7 +903,6 @@ const renderStudentHeader = (
   const infoRowHeight = 26;
   const infoColumnWidths = [170, 255, 90];
   const studentDisplayName = getStudentDisplayName(student);
-  const sigPath = path.join(__dirname, "sig.png");
 
   doc
     .lineWidth(0.6)
@@ -842,10 +912,15 @@ const renderStudentHeader = (
     .fillColor(theme.text)
     .font("Helvetica-Bold")
     .fontSize(12)
-    .text(student.moduleTitle || "Module", headerX, headerY + 8, {
+    .text(
+      buildModuleLabel(student.moduleNumber, student.moduleTitle),
+      headerX,
+      headerY + 8,
+      {
       width: headerWidth,
       align: "center"
-    });
+    }
+    );
 
   const infoRowY = headerY + moduleBarHeight + 8;
   const middleColumnX = headerX + infoColumnWidths[0];
@@ -910,8 +985,8 @@ const renderStudentHeader = (
       align: "center"
     });
 
-  if (fs.existsSync(sigPath)) {
-    doc.image(sigPath, rightColumnX + 6, teacherRowY + 4, {
+  if (signatureBuffer) {
+    doc.image(signatureBuffer, rightColumnX + 6, teacherRowY + 4, {
       fit: [infoColumnWidths[2] - 12, infoRowHeight - 8],
       align: "center",
       valign: "center"
@@ -921,14 +996,13 @@ const renderStudentHeader = (
   return { headerBottomY: infoRowY + infoRowHeight * 2 };
 };
 
-const drawStudentInfoTable = (doc, student, infoBoxY) => {
+const drawStudentInfoTable = (doc, student, infoBoxY, signatureBuffer) => {
   const studentDisplayName = getStudentDisplayName(student);
   const infoRowHeight = 26;
   const infoRows = 2;
   const infoBoxHeight = infoRowHeight * infoRows;
   const infoTableX = 40;
   const infoColumnWidths = [260, 190, 65];
-  const sigPath = path.join(__dirname, "sig.png");
 
   doc.lineWidth(0.6).strokeColor(theme.text).font("Helvetica").fontSize(9);
 
@@ -989,8 +1063,8 @@ const drawStudentInfoTable = (doc, student, infoBoxY) => {
       align: "center"
     });
 
-  if (fs.existsSync(sigPath)) {
-    doc.image(sigPath, rightColumnX + 6, secondRowY + 4, {
+  if (signatureBuffer) {
+    doc.image(signatureBuffer, rightColumnX + 6, secondRowY + 4, {
       fit: [infoColumnWidths[2] - 12, infoRowHeight - 8],
       align: "center",
       valign: "center"
@@ -1083,6 +1157,7 @@ const renderStudentReport = (doc, student) => {
   const reportTitle = `Rapport d’évaluation sommative${
     evaluationNumber ? ` ${evaluationNumber}` : ""
   }`;
+  const signatureBuffer = getSignatureBuffer(student.signatureData);
   const { headerY, headerHeight } = renderReportHeader(
     doc,
     reportTitle,
@@ -1092,7 +1167,8 @@ const renderStudentReport = (doc, student) => {
     doc,
     student,
     evaluationNumber,
-    headerY + headerHeight + 8
+    headerY + headerHeight + 8,
+    signatureBuffer
   );
 
   const operationalTitleY = headerBottomY + 12;
@@ -1240,10 +1316,15 @@ const renderCoachingReport = (doc, student) => {
     .fillColor(theme.text)
     .fontSize(11)
     .font("Helvetica-Bold")
-    .text(student.moduleTitle || "Module", 40, moduleBarY + 8, {
-      width: 515,
-      align: "center"
-    });
+    .text(
+      buildModuleLabel(student.moduleNumber, student.moduleTitle),
+      40,
+      moduleBarY + 8,
+      {
+        width: 515,
+        align: "center"
+      }
+    );
 
   const infoBoxY = moduleBarY + moduleBarHeight + 8;
   const { infoBoxHeight } = drawCoachingInfoTable(doc, student, infoBoxY);
@@ -1339,9 +1420,10 @@ const renderCoachingReport = (doc, student) => {
   const footerHeight = 16;
   const footerY = coachingBoxY + coachingBoxHeight - footerHeight;
   const sectionStartY = cursorY + 8;
+  const footerPadding = 6;
   const remediationHeight = 32;
   const objectivesHeaderHeight = 20;
-  const availableHeight = footerY - sectionStartY;
+  const availableHeight = footerY - sectionStartY - footerPadding;
   const objectivesBodyHeight = Math.max(
     0,
     availableHeight - remediationHeight - objectivesHeaderHeight

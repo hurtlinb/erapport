@@ -118,6 +118,30 @@ const EVALUATION_COPY_PAIRS = [
   { source: "E2", target: "E3" }
 ];
 
+const splitModuleLabel = (value) => {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return { moduleNumber: "", moduleTitle: "" };
+  }
+  const match = normalized.match(/^(.+?)\s*-\s*(.+)$/);
+  if (!match) {
+    return { moduleNumber: "", moduleTitle: normalized };
+  }
+  return {
+    moduleNumber: match[1].trim(),
+    moduleTitle: match[2].trim()
+  };
+};
+
+const buildModuleLabel = (moduleNumber, moduleTitle) => {
+  const numberValue = String(moduleNumber || "").trim();
+  const titleValue = String(moduleTitle || "").trim();
+  if (numberValue && titleValue) {
+    return `${numberValue} - ${titleValue}`;
+  }
+  return numberValue || titleValue || "Module";
+};
+
 const loadStoredAuth = () => {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -163,7 +187,8 @@ const getStudentNoteClass = (note) => {
 
 const defaultTemplate = {
   moduleId: "",
-  moduleTitle: "123 - Activer les services d'un serveur",
+  moduleNumber: "123",
+  moduleTitle: "Activer les services d'un serveur",
   schoolYear: "2024-2025",
   note: "",
   evaluationType: EVALUATION_TYPES[0],
@@ -185,19 +210,25 @@ const EMPTY_TEMPLATE = {
 
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
   const baseTemplate = template || {};
+  const competencyOptions = normalizeCompetencyOptions(
+    baseTemplate.competencyOptions || defaultTemplate.competencyOptions
+  );
+  const competencies = normalizeCompetencies(
+    baseTemplate.competencies || defaultTemplate.competencies
+  );
   return {
     ...defaultTemplate,
     ...baseTemplate,
     moduleId: module.id,
-    moduleTitle: module.title || "",
+    moduleNumber: module.moduleNumber || "",
+    moduleTitle: module.moduleTitle || "",
     schoolYear: schoolYearLabel || "",
     evaluationType:
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
-    competencyOptions:
-      baseTemplate.competencyOptions || defaultTemplate.competencyOptions,
-    competencies: baseTemplate.competencies || defaultTemplate.competencies
+    competencyOptions,
+    competencies
   };
 };
 
@@ -242,12 +273,12 @@ const getMailSubjectEvaluationNumber = (evaluationType) => {
   return "";
 };
 
-const buildMailDraftSubject = ({ className, moduleName, evaluationType }) => {
+const buildMailDraftSubject = ({ className, moduleNumber, evaluationType }) => {
   const trimmedClass = String(className || "").trim();
-  const trimmedModule = String(moduleName || "").trim();
+  const trimmedModuleNumber = String(moduleNumber || "").trim();
   const evaluationNumber = getMailSubjectEvaluationNumber(evaluationType);
   const classLabel = trimmedClass || "Classe";
-  const moduleLabel = trimmedModule || "Module";
+  const moduleLabel = trimmedModuleNumber || "Module";
   const evaluationLabel = evaluationNumber || "1";
   return `${classLabel} - ${moduleLabel} - Rapport d’évaluation sommative ${evaluationLabel}`;
 };
@@ -268,9 +299,16 @@ const buildDefaultModule = (
   templateOverrides = {},
   schoolYearLabel = defaultTemplate.schoolYear
 ) => {
+  const legacyTitle = overrides.title ?? "";
+  const splitLegacyTitle = splitModuleLabel(legacyTitle);
   const module = {
     id: crypto.randomUUID(),
-    title: overrides.title ?? defaultTemplate.moduleTitle,
+    moduleNumber:
+      overrides.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+    moduleTitle:
+      overrides.moduleTitle ??
+      splitLegacyTitle.moduleTitle ??
+      defaultTemplate.moduleTitle,
     schoolYear: overrides.schoolYear ?? schoolYearLabel
   };
 
@@ -302,10 +340,20 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
   }
 
   return modules.map((module) => {
+    const legacyTitle = module.title ?? "";
+    const splitLegacyTitle = splitModuleLabel(legacyTitle);
     const normalizedModule = {
       id: String(module.id ?? crypto.randomUUID()),
-      title: module.title || "",
+      moduleNumber:
+        module.moduleNumber ?? splitLegacyTitle.moduleNumber ?? "",
+      moduleTitle:
+        module.moduleTitle ?? splitLegacyTitle.moduleTitle ?? legacyTitle ?? "",
       schoolYear: schoolYearLabel
+    };
+    const moduleWithDefaults = {
+      ...module,
+      moduleNumber: normalizedModule.moduleNumber,
+      moduleTitle: normalizedModule.moduleTitle
     };
 
     return {
@@ -313,7 +361,7 @@ const normalizeModules = (modules = [], schoolYearLabel) => {
       templates: normalizeModuleTemplates(
         {
           ...normalizedModule,
-          templates: normalizeModuleTemplates(module, schoolYearLabel)
+          templates: normalizeModuleTemplates(moduleWithDefaults, schoolYearLabel)
         },
         schoolYearLabel
       )
@@ -346,25 +394,72 @@ const buildDefaultSchoolYear = (label = defaultTemplate.schoolYear) => ({
   modules: normalizeModules([], label)
 });
 
+const normalizeCompetencyOption = (option) => ({
+  id: String(option?.id ?? crypto.randomUUID()),
+  code: option?.code || "",
+  description: option?.description || ""
+});
+
 const normalizeTemplateItem = (item, defaultGroupEvaluation = false) => {
-  const hasGroupEvaluation =
-    item && typeof item === "object" && "groupEvaluation" in item;
+  const baseItem = item && typeof item === "object" ? item : {};
+  const hasGroupEvaluation = "groupEvaluation" in baseItem;
   const groupEvaluation = hasGroupEvaluation
-    ? Boolean(item.groupEvaluation)
+    ? Boolean(baseItem.groupEvaluation)
     : defaultGroupEvaluation;
   if (typeof item === "string") {
     return {
+      id: crypto.randomUUID(),
       task: item,
       competencyId: "",
       evaluationMethod: "",
-      groupEvaluation
+      groupEvaluation,
+      status: "",
+      comment: ""
     };
   }
   return {
-    task: item?.task || "",
-    competencyId: item?.competencyId || "",
-    evaluationMethod: item?.evaluationMethod || "",
-    groupEvaluation
+    id: String(baseItem.id ?? crypto.randomUUID()),
+    task: baseItem?.task || "",
+    competencyId: baseItem?.competencyId || "",
+    evaluationMethod: baseItem?.evaluationMethod || "",
+    groupEvaluation,
+    status: baseItem?.status ?? "",
+    comment: baseItem?.comment ?? ""
+  };
+};
+
+const normalizeCompetencySection = (section) => {
+  const baseSection = section && typeof section === "object" ? section : {};
+  const groupEvaluation = Boolean(baseSection.groupEvaluation);
+  return {
+    id: String(baseSection.id ?? crypto.randomUUID()),
+    category: baseSection.category || "",
+    groupEvaluation,
+    result: baseSection?.result ?? "",
+    items: (baseSection.items || []).map((item) =>
+      normalizeTemplateItem(item, groupEvaluation)
+    )
+  };
+};
+
+const normalizeCompetencyOptions = (options = []) =>
+  Array.isArray(options) ? options.map(normalizeCompetencyOption) : [];
+
+const normalizeCompetencies = (competencies = []) =>
+  Array.isArray(competencies)
+    ? competencies.map(normalizeCompetencySection)
+    : [];
+
+const normalizeStudentCompetencies = (competencies = []) =>
+  normalizeCompetencies(competencies);
+
+const normalizeStudentRecord = (student) => {
+  const baseStudent = student && typeof student === "object" ? student : {};
+  return {
+    ...baseStudent,
+    id: String(baseStudent.id ?? crypto.randomUUID()),
+    competencyOptions: normalizeCompetencyOptions(baseStudent.competencyOptions),
+    competencies: normalizeStudentCompetencies(baseStudent.competencies)
   };
 };
 
@@ -372,27 +467,31 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
   const competencies = template?.competencies ?? [];
 
   return competencies.map((section) => {
-    const existingSection = existingCompetencies.find(
-      (candidate) => candidate.category === section.category
-    );
+    const existingSection =
+      existingCompetencies.find(
+        (candidate) => candidate?.id && candidate.id === section.id
+      ) ||
+      existingCompetencies.find(
+        (candidate) => candidate.category === section.category
+      );
 
     const items = section.items || [];
     const sectionGroupEvaluation = section.groupEvaluation ?? false;
 
     return {
+      id: section.id || crypto.randomUUID(),
       category: section.category,
       groupEvaluation: sectionGroupEvaluation,
       result: existingSection?.result ?? "",
       items: items.map((item) => {
         const normalizedItem = normalizeTemplateItem(item, sectionGroupEvaluation);
-        const existingItem = existingSection?.items?.find((candidate) => {
-          return (
-            candidate.task === normalizedItem.task ||
-            candidate.label === normalizedItem.task
-          );
-        });
+        const existingItem = existingSection?.items?.find(
+          (candidate) =>
+            candidate?.id && normalizedItem.id && candidate.id === normalizedItem.id
+        );
 
         return {
+          id: normalizedItem.id || crypto.randomUUID(),
           task: normalizedItem.task,
           competencyId: normalizedItem.competencyId || existingItem?.competencyId || "",
           evaluationMethod: normalizedItem.evaluationMethod || "",
@@ -510,6 +609,7 @@ const getCompetencySummaryRows = (
 const applyTemplateToStudent = (template, student, teacherId = "") => ({
   ...student,
   moduleId: template.moduleId || "",
+  moduleNumber: template.moduleNumber || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
   note: student.note ?? template.note ?? "",
@@ -550,9 +650,7 @@ const sanitizeReportToken = (value) =>
     .replace(/[^\p{L}\p{N}]/gu, "");
 
 const getModuleNumberToken = (moduleTitle) => {
-  const firstWord = String(moduleTitle || "")
-    .trim()
-    .split(/\s+/)[0];
+  const firstWord = String(moduleTitle || "").trim().split(/\s+/)[0];
   return sanitizeReportToken(firstWord) || "module";
 };
 
@@ -568,14 +666,18 @@ const getStudentNameToken = (student) => {
 };
 
 const buildReportFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber =
+    sanitizeReportToken(student?.moduleNumber) ||
+    getModuleNumberToken(student?.moduleTitle);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}.pdf`;
 };
 
 const buildCoachingFilename = (student) => {
-  const moduleNumber = getModuleNumberToken(student?.moduleTitle);
+  const moduleNumber =
+    sanitizeReportToken(student?.moduleNumber) ||
+    getModuleNumberToken(student?.moduleTitle);
   const evaluationLabel = getEvaluationLabel(student?.evaluationType);
   const studentName = getStudentNameToken(student);
   return `${moduleNumber}-${evaluationLabel}-${studentName}-coaching.pdf`;
@@ -643,6 +745,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   firstname: "",
   email: "",
   moduleId: template.moduleId || "",
+  moduleNumber: template.moduleNumber || "",
   moduleTitle: template.moduleTitle || "",
   schoolYear: template.schoolYear || "",
   note: template.note || "",
@@ -699,6 +802,11 @@ function App() {
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [signatureData, setSignatureData] = useState("");
+  const [signatureError, setSignatureError] = useState("");
+  const [signatureStatus, setSignatureStatus] = useState("");
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
   const [mailDraftSubject, setMailDraftSubject] = useState("");
   const buildDefaultMailBody = (teacherDisplayName) => `Bonjour,
 
@@ -989,7 +1097,11 @@ ${teacherDisplayName}
         }
         const data = await response.json();
         setSchoolYears(normalizeSchoolYears(data.schoolYears));
-        setStudents(data.students || []);
+        setStudents(
+          Array.isArray(data.students)
+            ? data.students.map(normalizeStudentRecord)
+            : []
+        );
         logClientEvent("state-loaded", {
           schoolYears: Array.isArray(data.schoolYears)
             ? data.schoolYears.length
@@ -1013,6 +1125,46 @@ ${teacherDisplayName}
     };
 
     loadState();
+  }, [authToken]);
+
+  useEffect(() => {
+    if (!authToken) {
+      setSignatureData("");
+      setSignatureError("");
+      setSignatureStatus("");
+      setIsSettingsModalOpen(false);
+      return;
+    }
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+        if (response.status === 401) {
+          clearStoredAuth();
+          setAuthUser(null);
+          setAuthToken("");
+          setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
+          resetAppState("");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Impossible de récupérer les paramètres.");
+        }
+        const data = await response.json();
+        setSignatureData(data.signatureData || "");
+        setSignatureError("");
+        setSignatureStatus("");
+      } catch (error) {
+        console.error(error);
+        setSignatureError(
+          "Impossible de récupérer la signature. Veuillez réessayer."
+        );
+      }
+    };
+
+    loadSettings();
   }, [authToken]);
 
   useEffect(() => {
@@ -1121,10 +1273,15 @@ ${teacherDisplayName}
     () =>
       buildMailDraftSubject({
         className: template.className || draft.className,
-        moduleName: activeModule?.title || template.moduleTitle,
+        moduleNumber: activeModule?.moduleNumber || template.moduleNumber,
         evaluationType: activeEvaluationType
       }),
-    [activeEvaluationType, activeModule?.title, draft.className, template]
+    [
+      activeEvaluationType,
+      activeModule?.moduleNumber,
+      draft.className,
+      template
+    ]
   );
 
   useEffect(() => {
@@ -1249,6 +1406,67 @@ ${teacherDisplayName}
     setAuthToken("");
     setAuthMode("login");
     resetAppState("");
+    setSignatureData("");
+    setSignatureError("");
+    setSignatureStatus("");
+    setIsSettingsModalOpen(false);
+  };
+
+  const handleSignatureFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "image/png") {
+      setSignatureError("Le fichier doit être un PNG.");
+      return;
+    }
+    setSignatureError("");
+    setSignatureStatus("");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSignatureData(String(reader.result || ""));
+      setSignatureStatus("Signature prête à être enregistrée.");
+    };
+    reader.onerror = () => {
+      setSignatureError("Impossible de lire le fichier sélectionné.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearSignature = () => {
+    setSignatureData("");
+    setSignatureStatus("Signature supprimée. Enregistrez pour confirmer.");
+  };
+
+  const handleSaveSignature = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    if (!authToken) return;
+    setIsSavingSignature(true);
+    setSignatureError("");
+    setSignatureStatus("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ signatureData })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setSignatureError(data?.error || "Impossible d'enregistrer la signature.");
+        return;
+      }
+      setSignatureData(data.signatureData || "");
+      setSignatureStatus("Signature enregistrée.");
+    } catch (error) {
+      console.error(error);
+      setSignatureError("Impossible d'enregistrer la signature.");
+    } finally {
+      setIsSavingSignature(false);
+    }
   };
 
   const handleStudentField = (field, value) => {
@@ -1580,7 +1798,9 @@ ${teacherDisplayName}
         return;
       }
 
-      const moduleLabel = sanitizeFilename(activeModule?.title || "module");
+      const moduleLabel = sanitizeFilename(
+        buildModuleLabel(activeModule?.moduleNumber, activeModule?.moduleTitle)
+      );
       const evaluationLabel = sanitizeFilename(activeEvaluationType || "rapport");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -1679,10 +1899,12 @@ ${teacherDisplayName}
       competencies: [
         ...(prev.competencies || []),
         {
+          id: crypto.randomUUID(),
           category: "Nouveau thème",
           groupEvaluation: false,
           items: [
             {
+              id: crypto.randomUUID(),
               task: "Nouvelle tâche",
               competencyId: prev.competencyOptions?.[0]?.code || "",
               evaluationMethod: "",
@@ -1709,6 +1931,7 @@ ${teacherDisplayName}
       competencyOptions: [
         ...(prev.competencyOptions || []),
         {
+          id: crypto.randomUUID(),
           code: `OO${(prev.competencyOptions?.length || 0) + 1}`,
           description: "Nouvelle compétence"
         }
@@ -1763,6 +1986,7 @@ ${teacherDisplayName}
               items: [
                 ...(section.items || []),
                 {
+                  id: crypto.randomUUID(),
                   task: "Nouvelle tâche",
                   competencyId: prev.competencyOptions?.[0]?.code || "",
                   evaluationMethod: "",
@@ -1891,7 +2115,7 @@ ${teacherDisplayName}
     }
     const newModule = buildDefaultModule(
       {
-        title: "Nouveau module"
+        moduleTitle: "Nouveau module"
       },
       EMPTY_TEMPLATE,
       activeSchoolYear.label
@@ -2007,24 +2231,6 @@ ${teacherDisplayName}
       );
       setActiveEvaluationType(remainingTypes[0] || EVALUATION_TYPES[0]);
     }
-  };
-
-  const handleApplyTemplate = () => {
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.moduleId === template.moduleId &&
-        getStudentEvaluationType(student) === activeEvaluationType
-          ? applyTemplateToStudent(template, student, teacherId)
-          : student
-      )
-    );
-    setDraft((prev) =>
-      prev.moduleId === template.moduleId &&
-      getStudentEvaluationType(prev) === activeEvaluationType
-        ? applyTemplateToStudent(template, prev, teacherId)
-        : prev
-    );
-    setIsTemplateModalOpen(false);
   };
 
   const selectedCopyStudentsCount = useMemo(
@@ -2190,9 +2396,26 @@ ${teacherDisplayName}
           <h1>Générateur de rapports d'évaluation</h1>
         </div>
         <div className="hero-card">
-          <div>
-            <p className="label">Connecté en tant que</p>
-            <p className="value">{authUser?.name || authUser?.email}</p>
+          <div className="hero-card-header">
+            <div>
+              <p className="label">Connecté en tant que</p>
+              <p className="value">{authUser?.name || authUser?.email}</p>
+            </div>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setIsSettingsModalOpen(true)}
+              aria-label="Ouvrir les paramètres"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
           <button className="button ghost" onClick={handleLogout}>
             Se déconnecter
@@ -2253,7 +2476,10 @@ ${teacherDisplayName}
                   onChange={(event) => setActiveModuleId(event.target.value)}
                 >
                   {activeModules.map((module) => {
-                    const title = module.title || "Module";
+                    const title = buildModuleLabel(
+                      module.moduleNumber,
+                      module.moduleTitle
+                    );
                     return (
                       <option key={module.id} value={module.id}>
                         {title}
@@ -2623,10 +2849,10 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Titre du module
+                Module
                 <input
                   type="text"
-                  value={draft.moduleTitle}
+                  value={buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}
                   readOnly
                   disabled
                 />
@@ -2755,7 +2981,10 @@ ${teacherDisplayName}
 
           <div className="competency-grid">
             {(draft.competencies || []).map((section, sectionIndex) => (
-              <div key={section.category} className="competency-section">
+              <div
+                key={section.id || section.category || sectionIndex}
+                className="competency-section"
+              >
                 <div className="competency-section-header">
                   <label className="category-result">
                     <select
@@ -2785,7 +3014,7 @@ ${teacherDisplayName}
 
                     return (
                       <div
-                        key={`${item.task}-${itemIndex}`}
+                        key={item.id || `${item.task}-${itemIndex}`}
                         className={`competency-row ${statusClass}`}
                       >
                         <div>
@@ -3107,6 +3336,82 @@ ${teacherDisplayName}
         </div>
       )}
 
+      {isSettingsModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2>Paramètres</h2>
+                <p className="helper-text">
+                  Ajoutez votre signature pour l'inclure dans les rapports PDF.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsSettingsModalOpen(false)}
+              >
+                Fermer
+              </button>
+            </div>
+            <form onSubmit={handleSaveSignature}>
+              <label>
+                Signature (PNG)
+                <input
+                  type="file"
+                  accept="image/png"
+                  onChange={handleSignatureFileChange}
+                />
+              </label>
+              {signatureData ? (
+                <div className="signature-preview">
+                  <img src={signatureData} alt="Aperçu de la signature" />
+                </div>
+              ) : (
+                <p className="helper-text">
+                  Aucune signature enregistrée pour le moment.
+                </p>
+              )}
+              {signatureError && (
+                <p className="helper-text error-text">{signatureError}</p>
+              )}
+              {signatureStatus && (
+                <p className="helper-text success-text">{signatureStatus}</p>
+              )}
+              <div className="actions align-start modal-actions">
+                <div className="action-row">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setIsSettingsModalOpen(false)}
+                  >
+                    Annuler
+                  </button>
+                  {signatureData && (
+                    <button
+                      type="button"
+                      className="button ghost"
+                      onClick={handleClearSignature}
+                      disabled={isSavingSignature}
+                    >
+                      Supprimer la signature
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="button primary"
+                    disabled={isSavingSignature}
+                  >
+                    {isSavingSignature
+                      ? "Enregistrement..."
+                      : "Enregistrer les paramètres"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isTemplateModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">
           <div className="modal">
@@ -3139,18 +3444,33 @@ ${teacherDisplayName}
                   <>
                     <div className="form-grid">
                       <label>
-                        Titre du module
+                        Numéro du module
                         <input
                           type="text"
-                          value={activeModule.title}
+                          value={activeModule.moduleNumber}
                           onChange={(event) =>
                             handleModuleFieldChange(
                               activeModule.id,
-                              "title",
+                              "moduleNumber",
                               event.target.value
                             )
                           }
-                          placeholder="123 - Activer les services d'un serveur"
+                          placeholder="123"
+                        />
+                      </label>
+                      <label>
+                        Titre du module
+                        <input
+                          type="text"
+                          value={activeModule.moduleTitle}
+                          onChange={(event) =>
+                            handleModuleFieldChange(
+                              activeModule.id,
+                              "moduleTitle",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Activer les services d'un serveur"
                         />
                       </label>
                       <label>
@@ -3163,13 +3483,6 @@ ${teacherDisplayName}
                         />
                       </label>
                     </div>
-                    <div className="module-evaluations">
-                      {EVALUATION_TYPES.map((type) => (
-                        <span key={type} className="module-chip">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
                   </>
                 ) : (
                   <p className="helper-text">
@@ -3177,20 +3490,6 @@ ${teacherDisplayName}
                   </p>
                 )}
               </div>
-            </div>
-
-            <div className="form-grid">
-              <label>
-                Résumé par défaut
-                <textarea
-                  rows="2"
-                  value={template.note}
-                  onChange={(event) =>
-                    handleTemplateField("note", event.target.value)
-                  }
-                  placeholder="Texte qui apparaîtra dans le résumé des nouveaux rapports."
-                />
-              </label>
             </div>
             <div className="form-grid">
               <label>
@@ -3313,7 +3612,10 @@ ${teacherDisplayName}
                 </div>
                 <div className="template-tasks">
                   {template.competencyOptions?.map((option, index) => (
-                    <div key={option.code} className="template-task-row">
+                    <div
+                      key={option.id || option.code || index}
+                      className="template-task-row"
+                    >
                       <input
                         type="text"
                         value={option.code}
@@ -3353,7 +3655,10 @@ ${teacherDisplayName}
 
             <div className="template-competency-grid">
               {(template.competencies || []).map((section, sectionIndex) => (
-                <div key={sectionIndex} className="template-competency">
+                <div
+                  key={section.id || sectionIndex}
+                  className="template-competency"
+                >
                   <div className="template-competency-header">
                     <div className="category-name">
                       <span className="badge">Thème</span>
@@ -3385,7 +3690,7 @@ ${teacherDisplayName}
                       );
                       return (
                         <div
-                          key={itemIndex}
+                          key={normalizedItem.id || itemIndex}
                           className={`template-task-row template-task-row--task${
                             dragOverTask?.sectionIndex === sectionIndex &&
                             dragOverTask?.itemIndex === itemIndex
@@ -3443,22 +3748,23 @@ ${teacherDisplayName}
                               </option>
                             ))}
                           </select>
-                          <label className="task-group-toggle">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(normalizedItem.groupEvaluation)}
-                              onChange={(event) =>
-                                handleTemplateTaskFieldChange(
-                                  sectionIndex,
-                                  itemIndex,
-                                  "groupEvaluation",
-                                  event.target.checked
-                                )
-                              }
-                              disabled={!template.groupFeatureEnabled}
-                            />
-                            Groupe
-                          </label>
+                          {template.groupFeatureEnabled && (
+                            <label className="task-group-toggle">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(normalizedItem.groupEvaluation)}
+                                onChange={(event) =>
+                                  handleTemplateTaskFieldChange(
+                                    sectionIndex,
+                                    itemIndex,
+                                    "groupEvaluation",
+                                    event.target.checked
+                                  )
+                                }
+                              />
+                              Groupe
+                            </label>
+                          )}
                           <button
                             className="button text"
                             onClick={() =>
@@ -3499,14 +3805,7 @@ ${teacherDisplayName}
                 <button className="button ghost" onClick={handleAddCategory}>
                   + Ajouter un thème
                 </button>
-                <button className="button primary" onClick={handleApplyTemplate}>
-                  Appliquer à tous les rapports
-                </button>
               </div>
-              <p className="helper-text">
-                L'application mettra à jour chaque rapport d'étudiant existant avec
-                les dernières valeurs du modèle.
-              </p>
             </div>
           </div>
         </div>
