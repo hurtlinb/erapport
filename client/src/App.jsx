@@ -3766,22 +3766,23 @@ ${teacherDisplayName}
                               </option>
                             ))}
                           </select>
-                          <label className="task-group-toggle">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(normalizedItem.groupEvaluation)}
-                              onChange={(event) =>
-                                handleTemplateTaskFieldChange(
-                                  sectionIndex,
-                                  itemIndex,
-                                  "groupEvaluation",
-                                  event.target.checked
-                                )
-                              }
-                              disabled={!template.groupFeatureEnabled}
-                            />
-                            Groupe
-                          </label>
+                          {template.groupFeatureEnabled && (
+                            <label className="task-group-toggle">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(normalizedItem.groupEvaluation)}
+                                onChange={(event) =>
+                                  handleTemplateTaskFieldChange(
+                                    sectionIndex,
+                                    itemIndex,
+                                    "groupEvaluation",
+                                    event.target.checked
+                                  )
+                                }
+                              />
+                              Groupe
+                            </label>
+                          )}
                           <button
                             className="button text"
                             onClick={() =>
