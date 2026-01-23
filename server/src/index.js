@@ -1418,9 +1418,10 @@ const renderCoachingReport = (doc, student) => {
   const footerHeight = 16;
   const footerY = coachingBoxY + coachingBoxHeight - footerHeight;
   const sectionStartY = cursorY + 8;
+  const footerPadding = 6;
   const remediationHeight = 32;
   const objectivesHeaderHeight = 20;
-  const availableHeight = footerY - sectionStartY;
+  const availableHeight = footerY - sectionStartY - footerPadding;
   const objectivesBodyHeight = Math.max(
     0,
     availableHeight - remediationHeight - objectivesHeaderHeight
