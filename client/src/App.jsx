@@ -802,6 +802,11 @@ function App() {
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [signatureData, setSignatureData] = useState("");
+  const [signatureError, setSignatureError] = useState("");
+  const [signatureStatus, setSignatureStatus] = useState("");
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
   const [mailDraftSubject, setMailDraftSubject] = useState("");
   const buildDefaultMailBody = (teacherDisplayName) => `Bonjour,
 
@@ -1123,6 +1128,46 @@ ${teacherDisplayName}
   }, [authToken]);
 
   useEffect(() => {
+    if (!authToken) {
+      setSignatureData("");
+      setSignatureError("");
+      setSignatureStatus("");
+      setIsSettingsModalOpen(false);
+      return;
+    }
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/settings`, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+        if (response.status === 401) {
+          clearStoredAuth();
+          setAuthUser(null);
+          setAuthToken("");
+          setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
+          resetAppState("");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Impossible de récupérer les paramètres.");
+        }
+        const data = await response.json();
+        setSignatureData(data.signatureData || "");
+        setSignatureError("");
+        setSignatureStatus("");
+      } catch (error) {
+        console.error(error);
+        setSignatureError(
+          "Impossible de récupérer la signature. Veuillez réessayer."
+        );
+      }
+    };
+
+    loadSettings();
+  }, [authToken]);
+
+  useEffect(() => {
     if (!isHydratedRef.current || !isAuthenticated) return;
     const persistState = async () => {
       try {
@@ -1361,6 +1406,67 @@ ${teacherDisplayName}
     setAuthToken("");
     setAuthMode("login");
     resetAppState("");
+    setSignatureData("");
+    setSignatureError("");
+    setSignatureStatus("");
+    setIsSettingsModalOpen(false);
+  };
+
+  const handleSignatureFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "image/png") {
+      setSignatureError("Le fichier doit être un PNG.");
+      return;
+    }
+    setSignatureError("");
+    setSignatureStatus("");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSignatureData(String(reader.result || ""));
+      setSignatureStatus("Signature prête à être enregistrée.");
+    };
+    reader.onerror = () => {
+      setSignatureError("Impossible de lire le fichier sélectionné.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearSignature = () => {
+    setSignatureData("");
+    setSignatureStatus("Signature supprimée. Enregistrez pour confirmer.");
+  };
+
+  const handleSaveSignature = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    if (!authToken) return;
+    setIsSavingSignature(true);
+    setSignatureError("");
+    setSignatureStatus("");
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ signatureData })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setSignatureError(data?.error || "Impossible d'enregistrer la signature.");
+        return;
+      }
+      setSignatureData(data.signatureData || "");
+      setSignatureStatus("Signature enregistrée.");
+    } catch (error) {
+      console.error(error);
+      setSignatureError("Impossible d'enregistrer la signature.");
+    } finally {
+      setIsSavingSignature(false);
+    }
   };
 
   const handleStudentField = (field, value) => {
@@ -2308,9 +2414,26 @@ ${teacherDisplayName}
           <h1>Générateur de rapports d'évaluation</h1>
         </div>
         <div className="hero-card">
-          <div>
-            <p className="label">Connecté en tant que</p>
-            <p className="value">{authUser?.name || authUser?.email}</p>
+          <div className="hero-card-header">
+            <div>
+              <p className="label">Connecté en tant que</p>
+              <p className="value">{authUser?.name || authUser?.email}</p>
+            </div>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setIsSettingsModalOpen(true)}
+              aria-label="Ouvrir les paramètres"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
           <button className="button ghost" onClick={handleLogout}>
             Se déconnecter
@@ -3223,6 +3346,82 @@ ${teacherDisplayName}
                     disabled={isExporting}
                   >
                     {isExporting ? "Export en cours..." : "Générer les rapports"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isSettingsModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2>Paramètres</h2>
+                <p className="helper-text">
+                  Ajoutez votre signature pour l'inclure dans les rapports PDF.
+                </p>
+              </div>
+              <button
+                className="button ghost"
+                onClick={() => setIsSettingsModalOpen(false)}
+              >
+                Fermer
+              </button>
+            </div>
+            <form onSubmit={handleSaveSignature}>
+              <label>
+                Signature (PNG)
+                <input
+                  type="file"
+                  accept="image/png"
+                  onChange={handleSignatureFileChange}
+                />
+              </label>
+              {signatureData ? (
+                <div className="signature-preview">
+                  <img src={signatureData} alt="Aperçu de la signature" />
+                </div>
+              ) : (
+                <p className="helper-text">
+                  Aucune signature enregistrée pour le moment.
+                </p>
+              )}
+              {signatureError && (
+                <p className="helper-text error-text">{signatureError}</p>
+              )}
+              {signatureStatus && (
+                <p className="helper-text success-text">{signatureStatus}</p>
+              )}
+              <div className="actions align-start modal-actions">
+                <div className="action-row">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setIsSettingsModalOpen(false)}
+                  >
+                    Annuler
+                  </button>
+                  {signatureData && (
+                    <button
+                      type="button"
+                      className="button ghost"
+                      onClick={handleClearSignature}
+                      disabled={isSavingSignature}
+                    >
+                      Supprimer la signature
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="button primary"
+                    disabled={isSavingSignature}
+                  >
+                    {isSavingSignature
+                      ? "Enregistrement..."
+                      : "Enregistrer les paramètres"}
                   </button>
                 </div>
               </div>
