@@ -2666,11 +2666,7 @@ ${teacherDisplayName}
                               ×
                             </button>
                           </span>
-                        ) : (
-                          <span className="group-empty">
-                            Aucun groupe attribué
-                          </span>
-                        )}
+                        ) : null}
                         {isGroupEditing ? (
                           <input
                             type="text"
@@ -2696,7 +2692,7 @@ ${teacherDisplayName}
                             placeholder="Groupe A"
                             autoFocus
                           />
-                        ) : (
+                        ) : !groupName ? (
                           <button
                             type="button"
                             className="group-add-button"
@@ -2721,7 +2717,7 @@ ${teacherDisplayName}
                               <path d="M16.5 5.5h4" />
                             </svg>
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </div>
