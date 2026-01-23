@@ -3074,21 +3074,21 @@ ${teacherDisplayName}
 
         <section className="panel class-summary-panel">
           <div className="panel-header class-summary-header">
-            <div>
+            <div className="class-summary-title">
               <h2>Résumé global</h2>
-              <p className="helper-text">
-                Synthèse des notes {template.groupFeatureEnabled ? "et groupes" : ""} pour la classe.
-              </p>
+              <div className="class-summary-success">
+                <span className="class-summary-success-label">Réussite</span>
+                <span className="class-summary-success-value">
+                  {classSummary.successRate}%
+                </span>
+                <span className="class-summary-success-meta">
+                  {classSummary.successCount} / {classSummary.total} étudiants
+                </span>
+              </div>
             </div>
-            <div className="class-summary-success">
-              <span className="class-summary-success-label">Réussite</span>
-              <span className="class-summary-success-value">
-                {classSummary.successRate}%
-              </span>
-              <span className="class-summary-success-meta">
-                {classSummary.successCount} / {classSummary.total} étudiants
-              </span>
-            </div>
+            <p className="helper-text">
+              Synthèse des notes {template.groupFeatureEnabled ? "et groupes" : ""} pour la classe.
+            </p>
           </div>
           {classSummary.rows.length === 0 ? (
             <p className="helper-text">
