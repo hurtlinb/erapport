@@ -384,6 +384,30 @@ const normalizeStudent = (student) => {
   };
 };
 
+const buildCompetencyOptionsFromRows = (rows) =>
+  rows.map((row) => ({
+    id: row.id,
+    code: normalizeTextValue(row.code),
+    description: normalizeTextValue(row.description)
+  }));
+
+const buildCompetencyCategoriesFromRows = (categories, tasksByCategory) =>
+  categories.map((category) => ({
+    id: category.id,
+    category: normalizeTextValue(category.name),
+    groupEvaluation: Boolean(category.group_evaluation),
+    result: normalizeTextValue(category.result),
+    items: (tasksByCategory.get(category.id) || []).map((task) => ({
+      id: task.id,
+      task: normalizeTextValue(task.task),
+      competencyId: normalizeTextValue(task.competency_id),
+      evaluationMethod: normalizeTextValue(task.evaluation_method),
+      groupEvaluation: Boolean(task.group_evaluation),
+      status: normalizeTextValue(task.status),
+      comment: normalizeTextValue(task.comment)
+    }))
+  }));
+
 const normalizeUsers = (users = []) => {
   if (!Array.isArray(users)) return [];
   return users
@@ -429,6 +453,112 @@ const pool = mysql.createPool({
 });
 
 let initializationPromise;
+
+const migrateCompetencyTables = async (client) => {
+  const [studentRows] = await client.query(
+    "SELECT id, competency_options, competencies FROM students"
+  );
+  if (studentRows.length === 0) return;
+
+  const [existingCompetencyRows] = await client.query(
+    "SELECT DISTINCT student_id FROM competencies"
+  );
+  const [existingCategoryRows] = await client.query(
+    "SELECT DISTINCT student_id FROM categories"
+  );
+  const competencyStudents = new Set(
+    existingCompetencyRows.map((row) => row.student_id)
+  );
+  const categoryStudents = new Set(
+    existingCategoryRows.map((row) => row.student_id)
+  );
+
+  for (const student of studentRows) {
+    const competencyOptions = normalizeCompetencyOptions(
+      normalizeJsonValue(student.competency_options, [])
+    );
+    const competencies = normalizeCompetencies(
+      normalizeJsonValue(student.competencies, [])
+    );
+
+    if (!competencyStudents.has(student.id) && competencyOptions.length > 0) {
+      for (const [index, option] of competencyOptions.entries()) {
+        await client.query(
+          `
+            INSERT INTO competencies (id, student_id, code, description, sort_order)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              code = VALUES(code),
+              description = VALUES(description),
+              sort_order = VALUES(sort_order)
+          `,
+          [option.id, student.id, option.code, option.description, index]
+        );
+      }
+    }
+
+    if (!categoryStudents.has(student.id) && competencies.length > 0) {
+      for (const [categoryIndex, category] of competencies.entries()) {
+        await client.query(
+          `
+            INSERT INTO categories (id, student_id, name, group_evaluation, result, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+              name = VALUES(name),
+              group_evaluation = VALUES(group_evaluation),
+              result = VALUES(result),
+              sort_order = VALUES(sort_order)
+          `,
+          [
+            category.id,
+            student.id,
+            category.category,
+            category.groupEvaluation ? 1 : 0,
+            category.result,
+            categoryIndex
+          ]
+        );
+        for (const [itemIndex, item] of category.items.entries()) {
+          await client.query(
+            `
+              INSERT INTO tasks (
+                id,
+                category_id,
+                task,
+                competency_id,
+                evaluation_method,
+                group_evaluation,
+                status,
+                comment,
+                sort_order
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                task = VALUES(task),
+                competency_id = VALUES(competency_id),
+                evaluation_method = VALUES(evaluation_method),
+                group_evaluation = VALUES(group_evaluation),
+                status = VALUES(status),
+                comment = VALUES(comment),
+                sort_order = VALUES(sort_order)
+            `,
+            [
+              item.id,
+              category.id,
+              item.task,
+              item.competencyId || null,
+              item.evaluationMethod,
+              item.groupEvaluation ? 1 : 0,
+              item.status,
+              item.comment,
+              itemIndex
+            ]
+          );
+        }
+      }
+    }
+  }
+};
 
 const ensureInitialized = async () => {
   if (initializationPromise) return initializationPromise;
@@ -509,6 +639,38 @@ const ensureInitialized = async () => {
         )
       `);
       await client.query(`
+        CREATE TABLE IF NOT EXISTS competencies (
+          id CHAR(36) PRIMARY KEY,
+          student_id CHAR(36) NOT NULL,
+          code TEXT NOT NULL,
+          description TEXT NOT NULL,
+          sort_order INT NOT NULL DEFAULT 0
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS categories (
+          id CHAR(36) PRIMARY KEY,
+          student_id CHAR(36) NOT NULL,
+          name TEXT NOT NULL,
+          group_evaluation TINYINT(1) NOT NULL DEFAULT 0,
+          result TEXT,
+          sort_order INT NOT NULL DEFAULT 0
+        )
+      `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS tasks (
+          id CHAR(36) PRIMARY KEY,
+          category_id CHAR(36) NOT NULL,
+          task TEXT NOT NULL,
+          competency_id CHAR(36) NULL,
+          evaluation_method TEXT,
+          group_evaluation TINYINT(1) NOT NULL DEFAULT 0,
+          status TEXT,
+          comment TEXT,
+          sort_order INT NOT NULL DEFAULT 0
+        )
+      `);
+      await client.query(`
         ALTER TABLE modules
         ADD CONSTRAINT modules_school_year_fk
           FOREIGN KEY (school_year_id) REFERENCES school_years(id)
@@ -533,6 +695,30 @@ const ensureInitialized = async () => {
           ON DELETE SET NULL
       `).catch(() => {});
       await client.query(`
+        ALTER TABLE competencies
+        ADD CONSTRAINT competencies_student_fk
+          FOREIGN KEY (student_id) REFERENCES students(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE categories
+        ADD CONSTRAINT categories_student_fk
+          FOREIGN KEY (student_id) REFERENCES students(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE tasks
+        ADD CONSTRAINT tasks_category_fk
+          FOREIGN KEY (category_id) REFERENCES categories(id)
+          ON DELETE CASCADE
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE tasks
+        ADD CONSTRAINT tasks_competency_fk
+          FOREIGN KEY (competency_id) REFERENCES competencies(id)
+          ON DELETE SET NULL
+      `).catch(() => {});
+      await client.query(`
         ALTER TABLE students
         ADD COLUMN summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0
       `).catch(() => {});
@@ -544,6 +730,7 @@ const ensureInitialized = async () => {
         ALTER TABLE students
         ADD COLUMN competency_summary_overrides JSON
       `).catch(() => {});
+      await migrateCompetencyTables(client);
       await client.commit();
     } catch (error) {
       await client.rollback();
@@ -576,6 +763,98 @@ const buildTemplatePayload = (template) =>
     EMPTY_TEMPLATE
   );
 
+const replaceStudentCompetencies = async (client, student) => {
+  await client.query(
+    `
+      DELETE FROM tasks
+      WHERE category_id IN (SELECT id FROM categories WHERE student_id = ?)
+    `,
+    [student.id]
+  );
+  await client.query("DELETE FROM categories WHERE student_id = ?", [
+    student.id
+  ]);
+  await client.query("DELETE FROM competencies WHERE student_id = ?", [
+    student.id
+  ]);
+
+  const competencyOptions = student.competencyOptions || [];
+  for (const [index, option] of competencyOptions.entries()) {
+    await client.query(
+      `
+        INSERT INTO competencies (id, student_id, code, description, sort_order)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          code = VALUES(code),
+          description = VALUES(description),
+          sort_order = VALUES(sort_order)
+      `,
+      [option.id, student.id, option.code, option.description, index]
+    );
+  }
+
+  const categories = student.competencies || [];
+  for (const [categoryIndex, category] of categories.entries()) {
+    await client.query(
+      `
+        INSERT INTO categories (id, student_id, name, group_evaluation, result, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name),
+          group_evaluation = VALUES(group_evaluation),
+          result = VALUES(result),
+          sort_order = VALUES(sort_order)
+      `,
+      [
+        category.id,
+        student.id,
+        category.category,
+        category.groupEvaluation ? 1 : 0,
+        category.result,
+        categoryIndex
+      ]
+    );
+
+    for (const [itemIndex, item] of category.items.entries()) {
+      await client.query(
+        `
+          INSERT INTO tasks (
+            id,
+            category_id,
+            task,
+            competency_id,
+            evaluation_method,
+            group_evaluation,
+            status,
+            comment,
+            sort_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            task = VALUES(task),
+            competency_id = VALUES(competency_id),
+            evaluation_method = VALUES(evaluation_method),
+            group_evaluation = VALUES(group_evaluation),
+            status = VALUES(status),
+            comment = VALUES(comment),
+            sort_order = VALUES(sort_order)
+        `,
+        [
+          item.id,
+          category.id,
+          item.task,
+          item.competencyId || null,
+          item.evaluationMethod,
+          item.groupEvaluation ? 1 : 0,
+          item.status,
+          item.comment,
+          itemIndex
+        ]
+      );
+    }
+  }
+};
+
 const readTemplatesByModule = (rows) => {
   return rows.reduce((acc, row) => {
     if (!acc[row.module_id]) {
@@ -605,28 +884,77 @@ export const checkDatabaseStatus = async () => {
 
 export const loadState = async () => {
   await ensureInitialized();
-  const [yearResult, moduleResult, templateResult, studentResult, userResult] =
-    await Promise.all([
-      pool.query("SELECT id, label FROM school_years ORDER BY label"),
-      pool.query("SELECT id, school_year_id, title, module_number FROM modules"),
-      pool.query(
-        "SELECT module_id, evaluation_type, template FROM module_templates"
-      ),
-      pool.query("SELECT * FROM students"),
-      pool.query(
-        "SELECT id, name, email, password_hash, salt, token, signature_data FROM users"
-      )
-    ]);
+  const [
+    yearResult,
+    moduleResult,
+    templateResult,
+    studentResult,
+    userResult,
+    competencyResult,
+    categoryResult,
+    taskResult
+  ] = await Promise.all([
+    pool.query("SELECT id, label FROM school_years ORDER BY label"),
+    pool.query("SELECT id, school_year_id, title, module_number FROM modules"),
+    pool.query(
+      "SELECT module_id, evaluation_type, template FROM module_templates"
+    ),
+    pool.query("SELECT * FROM students"),
+    pool.query("SELECT id, name, email, password_hash, salt, token FROM users"),
+    pool.query(
+      "SELECT id, student_id, code, description, sort_order FROM competencies ORDER BY sort_order"
+    ),
+    pool.query(
+      "SELECT id, student_id, name, group_evaluation, result, sort_order FROM categories ORDER BY sort_order"
+    ),
+    pool.query(
+      `SELECT
+        id,
+        category_id,
+        task,
+        competency_id,
+        evaluation_method,
+        group_evaluation,
+        status,
+        comment,
+        sort_order
+      FROM tasks
+      ORDER BY sort_order`
+    )
+  ]);
   const [yearRows] = yearResult;
   const [moduleRows] = moduleResult;
   const [templateRows] = templateResult;
   const [studentRows] = studentResult;
   const [userRows] = userResult;
+  const [competencyRows] = competencyResult;
+  const [categoryRows] = categoryResult;
+  const [taskRows] = taskResult;
 
   const templatesByModule = readTemplatesByModule(templateRows);
   const schoolYearMap = new Map(
     yearRows.map((year) => [year.id, { ...year, modules: [] }])
   );
+
+  const competenciesByStudent = competencyRows.reduce((acc, row) => {
+    if (!acc[row.student_id]) acc[row.student_id] = [];
+    acc[row.student_id].push(row);
+    return acc;
+  }, {});
+
+  const categoriesByStudent = categoryRows.reduce((acc, row) => {
+    if (!acc[row.student_id]) acc[row.student_id] = [];
+    acc[row.student_id].push(row);
+    return acc;
+  }, {});
+
+  const tasksByCategory = taskRows.reduce((acc, row) => {
+    if (!acc.has(row.category_id)) {
+      acc.set(row.category_id, []);
+    }
+    acc.get(row.category_id).push(row);
+    return acc;
+  }, new Map());
 
   moduleRows.forEach((module) => {
     const year = schoolYearMap.get(module.school_year_id);
@@ -665,6 +993,8 @@ export const loadState = async () => {
     };
     const template =
       moduleInfo.templates?.[student.evaluation_type] || defaultTemplate;
+    const competencyOptionRows = competenciesByStudent[student.id];
+    const categoryRowsForStudent = categoriesByStudent[student.id];
     return normalizeStudent({
       id: student.id,
       moduleId: student.module_id,
@@ -686,8 +1016,16 @@ export const loadState = async () => {
       summaryByCompetencies: Boolean(student.summary_by_competencies),
       competencySummaryOverrides: student.competency_summary_overrides || {},
       competencyOptions:
-        student.competency_options || template.competencyOptions || [],
-      competencies: student.competencies || template.competencies || []
+        competencyOptionRows?.length
+          ? buildCompetencyOptionsFromRows(competencyOptionRows)
+          : student.competency_options || template.competencyOptions || [],
+      competencies:
+        categoryRowsForStudent?.length
+          ? buildCompetencyCategoriesFromRows(
+              categoryRowsForStudent,
+              tasksByCategory
+            )
+          : student.competencies || template.competencies || []
     });
   });
 
@@ -934,6 +1272,7 @@ export const saveState = async (nextState) => {
           competencies
         ]
       );
+      await replaceStudentCompetencies(client, student);
     }
 
     await client.commit();
