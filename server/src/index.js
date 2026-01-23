@@ -68,7 +68,9 @@ const getSignatureBuffer = (signatureData) => {
   const trimmed = signatureData.trim();
   if (!trimmed) return null;
   const match = trimmed.match(/^data:image\/(?:png|jpeg|jpg);base64,(.+)$/i);
-  const base64Payload = match ? match[1] : trimmed;
+  let base64Payload = match ? match[1] : trimmed;
+  base64Payload = base64Payload.replace(/\s+/g, "");
+  if (!base64Payload) return null;
   try {
     return Buffer.from(base64Payload, "base64");
   } catch (error) {
