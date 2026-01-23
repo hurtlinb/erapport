@@ -1269,14 +1269,15 @@ const renderStudentReport = (doc, student) => {
     cursorY += 12;
   });
 
-  if (cursorY > 720) {
-    doc.addPage();
-    cursorY = 40;
-  }
-
   const remediationValue = getRemediationValue(student.competencies);
   const remediationHeight = 18;
   const remarksHeight = 22;
+  const remarksBlockHeight = remediationHeight + remarksHeight;
+
+  if (cursorY + remarksBlockHeight > 760) {
+    doc.addPage();
+    cursorY = 40;
+  }
 
   doc
     .rect(40, cursorY, 515, remediationHeight)
