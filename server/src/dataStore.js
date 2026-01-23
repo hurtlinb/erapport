@@ -1002,7 +1002,9 @@ export const loadState = async () => {
       "SELECT module_id, evaluation_type, template FROM module_templates"
     ),
     pool.query("SELECT * FROM students"),
-    pool.query("SELECT id, name, email, password_hash, salt, token FROM users"),
+    pool.query(
+      "SELECT id, name, email, password_hash, salt, token, signature_data FROM users"
+    ),
     pool.query(
       "SELECT id, student_id, code, description, sort_order FROM competencies ORDER BY sort_order"
     ),
