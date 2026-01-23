@@ -148,6 +148,8 @@ h1 {
 .class-summary-success {
   display: grid;
   gap: 2px;
+  align-self: flex-start;
+  margin-left: auto;
   text-align: right;
   background: #f8fafc;
   border-radius: 14px;
