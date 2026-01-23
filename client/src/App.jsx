@@ -3501,13 +3501,6 @@ ${teacherDisplayName}
                         />
                       </label>
                     </div>
-                    <div className="module-evaluations">
-                      {EVALUATION_TYPES.map((type) => (
-                        <span key={type} className="module-chip">
-                          {type}
-                        </span>
-                      ))}
-                    </div>
                   </>
                 ) : (
                   <p className="helper-text">
@@ -3515,20 +3508,6 @@ ${teacherDisplayName}
                   </p>
                 )}
               </div>
-            </div>
-
-            <div className="form-grid">
-              <label>
-                Résumé par défaut
-                <textarea
-                  rows="2"
-                  value={template.note}
-                  onChange={(event) =>
-                    handleTemplateField("note", event.target.value)
-                  }
-                  placeholder="Texte qui apparaîtra dans le résumé des nouveaux rapports."
-                />
-              </label>
             </div>
             <div className="form-grid">
               <label>
