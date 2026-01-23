@@ -3522,33 +3522,36 @@ ${teacherDisplayName}
                   ))}
                 </select>
               </label>
-              <label className="checkbox-field">
+              <label className="toggle-field">
                 <span>Activer les évaluations de groupe</span>
-                <input
-                  type="checkbox"
-                  checked={template.groupFeatureEnabled}
-                  onChange={(event) =>
-                    handleTemplateField("groupFeatureEnabled", event.target.checked)
-                  }
-                />
-                <span className="helper-text">
-                  Autoriser les thèmes à être partagés entre les étudiants du même groupe.
+                <span className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={template.groupFeatureEnabled}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "groupFeatureEnabled",
+                        event.target.checked
+                      )
+                    }
+                  />
+                  <span className="toggle-slider" aria-hidden="true" />
                 </span>
               </label>
-              <label className="checkbox-field">
+              <label className="toggle-field">
                 <span>Résumé par compétences</span>
-                <input
-                  type="checkbox"
-                  checked={template.summaryByCompetencies}
-                  onChange={(event) =>
-                    handleTemplateField(
-                      "summaryByCompetencies",
-                      event.target.checked
-                    )
-                  }
-                />
-                <span className="helper-text">
-                  Afficher les compétences plutôt que les thèmes dans le résumé.
+                <span className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={template.summaryByCompetencies}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "summaryByCompetencies",
+                        event.target.checked
+                      )
+                    }
+                  />
+                  <span className="toggle-slider" aria-hidden="true" />
                 </span>
               </label>
               <label>
