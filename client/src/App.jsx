@@ -3503,25 +3503,6 @@ ${teacherDisplayName}
               </div>
             </div>
             <div className="form-grid">
-              <label>
-                Type d'évaluation
-                <select
-                  value={activeEvaluationType}
-                  onChange={(event) =>
-                    handleEvaluationTypeChange(event.target.value)
-                  }
-                >
-                  {EVALUATION_TYPES.map((type) => (
-                    <option
-                      key={type}
-                      value={type}
-                      disabled={!isEvaluationTypeAvailable(activeModule, type)}
-                    >
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <label className="toggle-field">
                 <span>Activer les évaluations de groupe</span>
                 <span className="toggle-switch">
