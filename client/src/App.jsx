@@ -2835,6 +2835,16 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
+                Enseignant
+                <input
+                  type="text"
+                  value={draft.teacher || teacherName}
+                  readOnly
+                  disabled
+                  placeholder="Enseignant défini dans le modèle"
+                />
+              </label>
+              <label>
                 Date d'évaluation
                 <input
                   type="date"
@@ -2853,6 +2863,15 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
+                Module
+                <input
+                  type="text"
+                  value={buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}
+                  readOnly
+                  disabled
+                />
+              </label>
+              <label>
                 Compétence opérationnelle
                 <input
                   type="text"
@@ -2860,25 +2879,6 @@ ${teacherDisplayName}
                   readOnly
                   disabled
                   placeholder="Définie dans le modèle"
-                />
-              </label>
-              <label>
-                Enseignant
-                <input
-                  type="text"
-                  value={draft.teacher || teacherName}
-                  readOnly
-                  disabled
-                  placeholder="Enseignant défini dans le modèle"
-                />
-              </label>
-              <label>
-                Module
-                <input
-                  type="text"
-                  value={buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}
-                  readOnly
-                  disabled
                 />
               </label>
             </div>
