@@ -3103,9 +3103,6 @@ ${teacherDisplayName}
                 </span>
               </div>
             </div>
-            <p className="helper-text">
-              Synthèse des notes {template.groupFeatureEnabled ? "et groupes" : ""} pour la classe.
-            </p>
           </div>
           {classSummary.rows.length === 0 ? (
             <p className="helper-text">

@@ -266,6 +266,11 @@ h1 {
   flex-wrap: wrap;
 }
 
+.panel-header.class-summary-header {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .panel-header h2 {
   margin: 0;
 }
