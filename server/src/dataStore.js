@@ -391,7 +391,11 @@ const buildCompetencyOptionsFromRows = (rows) =>
     description: normalizeTextValue(row.description)
   }));
 
-const buildCompetencyCategoriesFromRows = (categories, tasksByCategory) =>
+const buildCompetencyCategoriesFromRows = (
+  categories,
+  tasksByCategory,
+  competencyIdToCode = new Map()
+) =>
   categories.map((category) => ({
     id: category.id,
     category: normalizeTextValue(category.name),
@@ -400,7 +404,9 @@ const buildCompetencyCategoriesFromRows = (categories, tasksByCategory) =>
     items: (tasksByCategory.get(category.id) || []).map((task) => ({
       id: task.id,
       task: normalizeTextValue(task.task),
-      competencyId: normalizeTextValue(task.competency_id),
+      competencyId: normalizeTextValue(
+        competencyIdToCode.get(task.competency_id) || task.competency_id
+      ),
       evaluationMethod: normalizeTextValue(task.evaluation_method),
       groupEvaluation: Boolean(task.group_evaluation),
       status: normalizeTextValue(task.status),
@@ -461,13 +467,27 @@ const migrateCompetencyTables = async (client) => {
   if (studentRows.length === 0) return;
 
   const [existingCompetencyRows] = await client.query(
-    "SELECT DISTINCT student_id FROM competencies"
+    "SELECT student_id, id, code, sort_order FROM competencies"
   );
   const [existingCategoryRows] = await client.query(
     "SELECT DISTINCT student_id FROM categories"
   );
-  const competencyStudents = new Set(
-    existingCompetencyRows.map((row) => row.student_id)
+  const competencyLookupByStudent = existingCompetencyRows.reduce(
+    (acc, row) => {
+      if (!acc[row.student_id]) {
+        acc[row.student_id] = {
+          codeToId: new Map(),
+          idSet: new Set(),
+          nextSortOrder: 0
+        };
+      }
+      const entry = acc[row.student_id];
+      entry.codeToId.set(row.code, row.id);
+      entry.idSet.add(row.id);
+      entry.nextSortOrder = Math.max(entry.nextSortOrder, row.sort_order + 1);
+      return acc;
+    },
+    {}
   );
   const categoryStudents = new Set(
     existingCategoryRows.map((row) => row.student_id)
@@ -480,9 +500,28 @@ const migrateCompetencyTables = async (client) => {
     const competencies = normalizeCompetencies(
       normalizeJsonValue(student.competencies, [])
     );
+    const lookup =
+      competencyLookupByStudent[student.id] || {
+        codeToId: new Map(),
+        idSet: new Set(),
+        nextSortOrder: 0
+      };
+    competencyLookupByStudent[student.id] = lookup;
 
-    if (!competencyStudents.has(student.id) && competencyOptions.length > 0) {
+    if (competencyOptions.length > 0) {
       for (const [index, option] of competencyOptions.entries()) {
+        if (lookup.codeToId.has(option.code)) {
+          const existingId = lookup.codeToId.get(option.code);
+          await client.query(
+            `
+              UPDATE competencies
+              SET code = ?, description = ?, sort_order = ?
+              WHERE id = ?
+            `,
+            [option.code, option.description, index, existingId]
+          );
+          continue;
+        }
         await client.query(
           `
             INSERT INTO competencies (id, student_id, code, description, sort_order)
@@ -494,6 +533,9 @@ const migrateCompetencyTables = async (client) => {
           `,
           [option.id, student.id, option.code, option.description, index]
         );
+        lookup.codeToId.set(option.code, option.id);
+        lookup.idSet.add(option.id);
+        lookup.nextSortOrder = Math.max(lookup.nextSortOrder, index + 1);
       }
     }
 
@@ -519,6 +561,37 @@ const migrateCompetencyTables = async (client) => {
           ]
         );
         for (const [itemIndex, item] of category.items.entries()) {
+          let resolvedCompetencyId = null;
+          if (item.competencyId) {
+            if (lookup.idSet.has(item.competencyId)) {
+              resolvedCompetencyId = item.competencyId;
+            } else if (lookup.codeToId.has(item.competencyId)) {
+              resolvedCompetencyId = lookup.codeToId.get(item.competencyId);
+            } else {
+              const newId = crypto.randomUUID();
+              await client.query(
+                `
+                  INSERT INTO competencies (id, student_id, code, description, sort_order)
+                  VALUES (?, ?, ?, ?, ?)
+                  ON DUPLICATE KEY UPDATE
+                    code = VALUES(code),
+                    description = VALUES(description),
+                    sort_order = VALUES(sort_order)
+                `,
+                [
+                  newId,
+                  student.id,
+                  item.competencyId,
+                  "",
+                  lookup.nextSortOrder
+                ]
+              );
+              lookup.codeToId.set(item.competencyId, newId);
+              lookup.idSet.add(newId);
+              lookup.nextSortOrder += 1;
+              resolvedCompetencyId = newId;
+            }
+          }
           await client.query(
             `
               INSERT INTO tasks (
@@ -546,7 +619,7 @@ const migrateCompetencyTables = async (client) => {
               item.id,
               category.id,
               item.task,
-              item.competencyId || null,
+              resolvedCompetencyId,
               item.evaluationMethod,
               item.groupEvaluation ? 1 : 0,
               item.status,
@@ -779,6 +852,8 @@ const replaceStudentCompetencies = async (client, student) => {
   ]);
 
   const competencyOptions = student.competencyOptions || [];
+  const competencyIdByCode = new Map();
+  let nextSortOrder = competencyOptions.length;
   for (const [index, option] of competencyOptions.entries()) {
     await client.query(
       `
@@ -791,6 +866,12 @@ const replaceStudentCompetencies = async (client, student) => {
       `,
       [option.id, student.id, option.code, option.description, index]
     );
+    if (option.code) {
+      competencyIdByCode.set(option.code, option.id);
+    }
+    if (option.id) {
+      competencyIdByCode.set(option.id, option.id);
+    }
   }
 
   const categories = student.competencies || [];
@@ -814,6 +895,27 @@ const replaceStudentCompetencies = async (client, student) => {
         categoryIndex
       ]
     );
+
+    const taskCompetencyIds = category.items
+      .map((item) => item.competencyId)
+      .filter((id) => id);
+    for (const competencyId of taskCompetencyIds) {
+      if (competencyIdByCode.has(competencyId)) continue;
+      const newId = crypto.randomUUID();
+      await client.query(
+        `
+          INSERT INTO competencies (id, student_id, code, description, sort_order)
+          VALUES (?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            code = VALUES(code),
+            description = VALUES(description),
+            sort_order = VALUES(sort_order)
+        `,
+        [newId, student.id, competencyId, "", nextSortOrder]
+      );
+      competencyIdByCode.set(competencyId, newId);
+      nextSortOrder += 1;
+    }
 
     for (const [itemIndex, item] of category.items.entries()) {
       await client.query(
@@ -843,7 +945,7 @@ const replaceStudentCompetencies = async (client, student) => {
           item.id,
           category.id,
           item.task,
-          item.competencyId || null,
+          competencyIdByCode.get(item.competencyId) || null,
           item.evaluationMethod,
           item.groupEvaluation ? 1 : 0,
           item.status,
@@ -941,6 +1043,11 @@ export const loadState = async () => {
     acc[row.student_id].push(row);
     return acc;
   }, {});
+  const competencyIdToCodeByStudent = competencyRows.reduce((acc, row) => {
+    if (!acc[row.student_id]) acc[row.student_id] = new Map();
+    acc[row.student_id].set(row.id, row.code);
+    return acc;
+  }, {});
 
   const categoriesByStudent = categoryRows.reduce((acc, row) => {
     if (!acc[row.student_id]) acc[row.student_id] = [];
@@ -995,6 +1102,7 @@ export const loadState = async () => {
       moduleInfo.templates?.[student.evaluation_type] || defaultTemplate;
     const competencyOptionRows = competenciesByStudent[student.id];
     const categoryRowsForStudent = categoriesByStudent[student.id];
+    const competencyIdToCode = competencyIdToCodeByStudent[student.id];
     return normalizeStudent({
       id: student.id,
       moduleId: student.module_id,
@@ -1023,7 +1131,8 @@ export const loadState = async () => {
         categoryRowsForStudent?.length
           ? buildCompetencyCategoriesFromRows(
               categoryRowsForStudent,
-              tasksByCategory
+              tasksByCategory,
+              competencyIdToCode
             )
           : student.competencies || template.competencies || []
     });
