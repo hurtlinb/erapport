@@ -2233,24 +2233,6 @@ ${teacherDisplayName}
     }
   };
 
-  const handleApplyTemplate = () => {
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.moduleId === template.moduleId &&
-        getStudentEvaluationType(student) === activeEvaluationType
-          ? applyTemplateToStudent(template, student, teacherId)
-          : student
-      )
-    );
-    setDraft((prev) =>
-      prev.moduleId === template.moduleId &&
-      getStudentEvaluationType(prev) === activeEvaluationType
-        ? applyTemplateToStudent(template, prev, teacherId)
-        : prev
-    );
-    setIsTemplateModalOpen(false);
-  };
-
   const selectedCopyStudentsCount = useMemo(
     () =>
       copySourceStudents.filter((student) => copyStudentSelections[student.id])
@@ -3822,14 +3804,7 @@ ${teacherDisplayName}
                 <button className="button ghost" onClick={handleAddCategory}>
                   + Ajouter un thème
                 </button>
-                <button className="button primary" onClick={handleApplyTemplate}>
-                  Appliquer à tous les rapports
-                </button>
               </div>
-              <p className="helper-text">
-                L'application mettra à jour chaque rapport d'étudiant existant avec
-                les dernières valeurs du modèle.
-              </p>
             </div>
           </div>
         </div>
