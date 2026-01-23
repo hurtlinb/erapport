@@ -143,14 +143,22 @@ h1 {
 
 .class-summary-header {
   align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.class-summary-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .class-summary-success {
   display: grid;
   gap: 2px;
   align-self: flex-start;
-  margin-left: auto;
-  text-align: right;
+  text-align: left;
   background: #f8fafc;
   border-radius: 14px;
   padding: 10px 14px;
