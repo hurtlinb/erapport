@@ -418,7 +418,8 @@ const normalizeUsers = (users = []) => {
       email: user.email || "",
       passwordHash: user.passwordHash || "",
       salt: user.salt || "",
-      token: user.token || ""
+      token: user.token || "",
+      signatureData: user.signatureData || ""
     }));
 };
 
@@ -573,9 +574,14 @@ const ensureInitialized = async () => {
           password_hash TEXT NOT NULL,
           salt TEXT NOT NULL,
           token TEXT NOT NULL DEFAULT '',
+          signature_data MEDIUMTEXT,
           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await client.query(`
+        ALTER TABLE users
+        ADD COLUMN signature_data MEDIUMTEXT
+      `).catch(() => {});
       await client.query(`
         CREATE TABLE IF NOT EXISTS school_years (
           id CHAR(36) PRIMARY KEY,
@@ -1029,7 +1035,8 @@ export const loadState = async () => {
     email: user.email,
     passwordHash: user.password_hash,
     salt: user.salt,
-    token: user.token
+    token: user.token,
+    signatureData: user.signature_data || ""
   }));
 
   return normalizeState({
@@ -1064,14 +1071,15 @@ export const saveState = async (nextState) => {
     for (const user of users) {
       await client.query(
         `
-          INSERT INTO users (id, name, email, password_hash, salt, token)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO users (id, name, email, password_hash, salt, token, signature_data)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
             name = VALUES(name),
             email = VALUES(email),
             password_hash = VALUES(password_hash),
             salt = VALUES(salt),
-            token = VALUES(token)
+            token = VALUES(token),
+            signature_data = VALUES(signature_data)
         `,
         [
           user.id,
@@ -1079,7 +1087,8 @@ export const saveState = async (nextState) => {
           user.email,
           user.passwordHash,
           user.salt,
-          user.token
+          user.token,
+          user.signatureData || ""
         ]
       );
     }
