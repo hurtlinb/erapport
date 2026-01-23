@@ -2704,7 +2704,22 @@ ${teacherDisplayName}
                             title="Ajouter un groupe"
                             onClick={() => startGroupEdit(student)}
                           >
-                            +
+                            <svg
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="9" cy="8" r="3.5" />
+                              <circle cx="16.5" cy="9.5" r="2.5" />
+                              <path d="M3.5 19c.9-3.3 3.6-5 6.5-5s5.6 1.7 6.5 5" />
+                              <path d="M13 16.5c.6-1.7 2.2-2.8 4-2.8 1.8 0 3.5 1.1 4 2.8" />
+                              <path d="M18.5 3.5v4" />
+                              <path d="M16.5 5.5h4" />
+                            </svg>
                           </button>
                         )}
                       </div>
