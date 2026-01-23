@@ -268,12 +268,12 @@ const getMailSubjectEvaluationNumber = (evaluationType) => {
   return "";
 };
 
-const buildMailDraftSubject = ({ className, moduleName, evaluationType }) => {
+const buildMailDraftSubject = ({ className, moduleNumber, evaluationType }) => {
   const trimmedClass = String(className || "").trim();
-  const trimmedModule = String(moduleName || "").trim();
+  const trimmedModuleNumber = String(moduleNumber || "").trim();
   const evaluationNumber = getMailSubjectEvaluationNumber(evaluationType);
   const classLabel = trimmedClass || "Classe";
-  const moduleLabel = trimmedModule || "Module";
+  const moduleLabel = trimmedModuleNumber || "Module";
   const evaluationLabel = evaluationNumber || "1";
   return `${classLabel} - ${moduleLabel} - Rapport d’évaluation sommative ${evaluationLabel}`;
 };
@@ -1168,16 +1168,12 @@ ${teacherDisplayName}
     () =>
       buildMailDraftSubject({
         className: template.className || draft.className,
-        moduleName: buildModuleLabel(
-          activeModule?.moduleNumber || template.moduleNumber,
-          activeModule?.moduleTitle || template.moduleTitle
-        ),
+        moduleNumber: activeModule?.moduleNumber || template.moduleNumber,
         evaluationType: activeEvaluationType
       }),
     [
       activeEvaluationType,
       activeModule?.moduleNumber,
-      activeModule?.moduleTitle,
       draft.className,
       template
     ]
