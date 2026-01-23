@@ -360,6 +360,12 @@ h1 {
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.18);
 }
 
+.student-card.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+  background: #eff6ff;
+}
+
 .student-delete-button {
   position: absolute;
   top: 8px;
