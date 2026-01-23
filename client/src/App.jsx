@@ -3574,7 +3574,6 @@ ${teacherDisplayName}
                   onChange={(event) =>
                     handleTemplateField("operationalCompetence", event.target.value)
                   }
-                  placeholder="OP1, OP2, etc."
                 />
               </label>
             </div>
