@@ -485,13 +485,10 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
       result: existingSection?.result ?? "",
       items: items.map((item) => {
         const normalizedItem = normalizeTemplateItem(item, sectionGroupEvaluation);
-        const existingItem = existingSection?.items?.find((candidate) => {
-          return (
-            (candidate?.id && normalizedItem.id && candidate.id === normalizedItem.id) ||
-            candidate.task === normalizedItem.task ||
-            candidate.label === normalizedItem.task
-          );
-        });
+        const existingItem = existingSection?.items?.find(
+          (candidate) =>
+            candidate?.id && normalizedItem.id && candidate.id === normalizedItem.id
+        );
 
         return {
           id: normalizedItem.id || crypto.randomUUID(),
