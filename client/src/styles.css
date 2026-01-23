@@ -55,6 +55,41 @@ h1 {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
+.hero-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.icon-button {
+  border: none;
+  background: #f1f5f9;
+  color: #1f2937;
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-button:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .hero-card .label {
   margin: 0;
   font-size: 12px;
@@ -1045,6 +1080,26 @@ textarea {
 .modal-actions {
   border-top: 1px solid #e2e8f0;
   padding-top: 12px;
+}
+
+.success-text {
+  color: #15803d;
+}
+
+.signature-preview {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signature-preview img {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
 }
 
 .copy-students-controls {
