@@ -546,6 +546,11 @@ h1 {
   gap: 16px;
 }
 
+.template-meta-grid {
+  display: grid;
+  gap: 16px;
+}
+
 .details-toggle-row {
   display: flex;
   justify-content: flex-start;

@@ -3502,80 +3502,89 @@ ${teacherDisplayName}
                 )}
               </div>
             </div>
-            <div className="form-grid">
-              <label className="toggle-field">
-                <span>Activer les évaluations de groupe</span>
-                <span className="toggle-switch">
+            <div className="template-meta-grid">
+              <div className="form-grid">
+                <label className="toggle-field">
+                  <span>Activer les évaluations de groupe</span>
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={template.groupFeatureEnabled}
+                      onChange={(event) =>
+                        handleTemplateField(
+                          "groupFeatureEnabled",
+                          event.target.checked
+                        )
+                      }
+                    />
+                    <span className="toggle-slider" aria-hidden="true" />
+                  </span>
+                </label>
+                <label className="toggle-field">
+                  <span>Résumé par compétences</span>
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={template.summaryByCompetencies}
+                      onChange={(event) =>
+                        handleTemplateField(
+                          "summaryByCompetencies",
+                          event.target.checked
+                        )
+                      }
+                    />
+                    <span className="toggle-slider" aria-hidden="true" />
+                  </span>
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  Classe
                   <input
-                    type="checkbox"
-                    checked={template.groupFeatureEnabled}
+                    type="text"
+                    value={template.className}
+                    onChange={(event) =>
+                      handleTemplateField("className", event.target.value)
+                    }
+                    placeholder="INFO-F12, LOG-B21..."
+                  />
+                </label>
+                <label>
+                  Date d'évaluation
+                  <input
+                    type="date"
+                    value={template.evaluationDate}
+                    onChange={(event) =>
+                      handleTemplateField("evaluationDate", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Date de coaching
+                  <input
+                    type="date"
+                    value={template.coachingDate}
+                    onChange={(event) =>
+                      handleTemplateField("coachingDate", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  Compétence opérationnelle
+                  <input
+                    type="text"
+                    value={template.operationalCompetence}
                     onChange={(event) =>
                       handleTemplateField(
-                        "groupFeatureEnabled",
-                        event.target.checked
+                        "operationalCompetence",
+                        event.target.value
                       )
                     }
                   />
-                  <span className="toggle-slider" aria-hidden="true" />
-                </span>
-              </label>
-              <label className="toggle-field">
-                <span>Résumé par compétences</span>
-                <span className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={template.summaryByCompetencies}
-                    onChange={(event) =>
-                      handleTemplateField(
-                        "summaryByCompetencies",
-                        event.target.checked
-                      )
-                    }
-                  />
-                  <span className="toggle-slider" aria-hidden="true" />
-                </span>
-              </label>
-              <label>
-                Classe
-                <input
-                  type="text"
-                  value={template.className}
-                  onChange={(event) =>
-                    handleTemplateField("className", event.target.value)
-                  }
-                  placeholder="INFO-F12, LOG-B21..."
-                />
-              </label>
-              <label>
-                Date d'évaluation
-                <input
-                  type="date"
-                  value={template.evaluationDate}
-                  onChange={(event) =>
-                    handleTemplateField("evaluationDate", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Date de coaching
-                <input
-                  type="date"
-                  value={template.coachingDate}
-                  onChange={(event) =>
-                    handleTemplateField("coachingDate", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                Compétence opérationnelle
-                <input
-                  type="text"
-                  value={template.operationalCompetence}
-                  onChange={(event) =>
-                    handleTemplateField("operationalCompetence", event.target.value)
-                  }
-                />
-              </label>
+                </label>
+              </div>
             </div>
 
             <div className="template-competency-grid">
