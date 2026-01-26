@@ -3,7 +3,7 @@ name: Build Docker images on Git tag
 on:
   push:
     tags:
-      - "v*"
+      - "*"
 
 jobs:
   build:
