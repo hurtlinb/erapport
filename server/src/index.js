@@ -57,8 +57,27 @@ const resolveTeacherName = (student, context = {}) => {
 const normalizeStudentForReport = (student, context = {}) => {
   const teacherName = resolveTeacherName(student, context);
   const signatureData = context.user?.signatureData || "";
-  if (!teacherName) return { ...student, signatureData };
-  return { ...student, teacher: teacherName, signatureData };
+  const evaluationType = student?.evaluationType;
+  let evaluationDate = student?.evaluationDate || "";
+  if (evaluationType === "E2" && student?.evaluationDateE2) {
+    evaluationDate = student.evaluationDateE2;
+  }
+  if (evaluationType === "E3" && student?.evaluationDateE3) {
+    evaluationDate = student.evaluationDateE3;
+  }
+  let coachingDate = student?.coachingDate || "";
+  if (evaluationType === "E2" && student?.coachingDateE2) {
+    coachingDate = student.coachingDateE2;
+  }
+
+  const basePayload = {
+    ...student,
+    evaluationDate,
+    coachingDate,
+    signatureData
+  };
+  if (!teacherName) return basePayload;
+  return { ...basePayload, teacher: teacherName };
 };
 
 const MAX_SIGNATURE_LENGTH = 1000000;

@@ -197,7 +197,10 @@ const defaultTemplate = {
   className: "",
   teacher: "",
   evaluationDate: "",
+  evaluationDateE2: "",
+  evaluationDateE3: "",
   coachingDate: "",
+  coachingDateE2: "",
   operationalCompetence: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
@@ -504,6 +507,17 @@ const mapTemplateCompetencies = (template, existingCompetencies = []) => {
   });
 };
 
+const getTemplateEvaluationDate = (template, evaluationType) => {
+  if (evaluationType === "E2") return template.evaluationDateE2 || "";
+  if (evaluationType === "E3") return template.evaluationDateE3 || "";
+  return template.evaluationDate || "";
+};
+
+const getTemplateCoachingDate = (template, evaluationType) => {
+  if (evaluationType === "E2") return template.coachingDateE2 || "";
+  return template.coachingDate || "";
+};
+
 const getCompetencyLabel = (item, competencyOptions = []) => {
   const option = competencyOptions.find(
     (candidate) => candidate.code === item.competencyId
@@ -618,8 +632,14 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
   className: template.className || "",
   teacher: template.teacher || "",
   teacherId: student.teacherId || teacherId || "",
-  evaluationDate: template.evaluationDate || "",
-  coachingDate: template.coachingDate || "",
+  evaluationDate: getTemplateEvaluationDate(
+    template,
+    template.evaluationType || student.evaluationType
+  ),
+  coachingDate: getTemplateCoachingDate(
+    template,
+    template.evaluationType || student.evaluationType
+  ),
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencySummaryOverrides: student.competencySummaryOverrides || {},
@@ -779,8 +799,8 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   className: template.className || "",
   teacher: template.teacher || "",
   teacherId,
-  evaluationDate: template.evaluationDate || "",
-  coachingDate: template.coachingDate || "",
+  evaluationDate: getTemplateEvaluationDate(template, template.evaluationType),
+  coachingDate: getTemplateCoachingDate(template, template.evaluationType),
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencySummaryOverrides: {},
@@ -788,12 +808,18 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   competencies: mapTemplateCompetencies(template)
 });
 
-const cloneStudentReport = (student, evaluationType) => {
+const cloneStudentReport = (student, evaluationType, template) => {
   const clonedStudent = JSON.parse(JSON.stringify(student));
-  return {
+  const nextStudent = {
     ...clonedStudent,
     id: crypto.randomUUID(),
     evaluationType
+  };
+  if (!template) return nextStudent;
+  return {
+    ...nextStudent,
+    evaluationDate: getTemplateEvaluationDate(template, evaluationType),
+    coachingDate: getTemplateCoachingDate(template, evaluationType)
   };
 };
 
@@ -1607,8 +1633,16 @@ ${teacherDisplayName}
       (student) => copyStudentSelections[student.id]
     );
     if (!selectedStudents.length) return;
+    const targetTemplate =
+      activeModule && activeSchoolYear
+        ? getModuleTemplate(
+            activeModule,
+            activeSchoolYear.label,
+            copyConfig.target
+          )
+        : null;
     const copiedStudents = selectedStudents.map((student) =>
-      cloneStudentReport(student, copyConfig.target)
+      cloneStudentReport(student, copyConfig.target, targetTemplate)
     );
     setStudents((prev) => [...prev, ...copiedStudents]);
     if (
@@ -2845,7 +2879,7 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Date d'évaluation E1
+                Date d'évaluation {draft.evaluationType || "E1"}
                 <input
                   type="date"
                   value={draft.evaluationDate}
@@ -2854,7 +2888,7 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Date de coaching E1
+                Date de coaching {draft.evaluationType || "E1"}
                 <input
                   type="date"
                   value={draft.coachingDate}
@@ -3568,6 +3602,42 @@ ${teacherDisplayName}
                     value={template.coachingDate}
                     onChange={(event) =>
                       handleTemplateField("coachingDate", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Date d'évaluation E2
+                  <input
+                    type="date"
+                    value={template.evaluationDateE2}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "evaluationDateE2",
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  Date de coaching E2
+                  <input
+                    type="date"
+                    value={template.coachingDateE2}
+                    onChange={(event) =>
+                      handleTemplateField("coachingDateE2", event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  Date d'évaluation E3
+                  <input
+                    type="date"
+                    value={template.evaluationDateE3}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "evaluationDateE3",
+                        event.target.value
+                      )
                     }
                   />
                 </label>
