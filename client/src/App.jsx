@@ -2845,7 +2845,7 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Date d'évaluation
+                Date d'évaluation E1
                 <input
                   type="date"
                   value={draft.evaluationDate}
@@ -2854,7 +2854,7 @@ ${teacherDisplayName}
                 />
               </label>
               <label>
-                Date de coaching
+                Date de coaching E1
                 <input
                   type="date"
                   value={draft.coachingDate}
@@ -3552,7 +3552,7 @@ ${teacherDisplayName}
                   />
                 </label>
                 <label>
-                  Date d'évaluation
+                  Date d'évaluation E1
                   <input
                     type="date"
                     value={template.evaluationDate}
@@ -3562,7 +3562,7 @@ ${teacherDisplayName}
                   />
                 </label>
                 <label>
-                  Date de coaching
+                  Date de coaching E1
                   <input
                     type="date"
                     value={template.coachingDate}
