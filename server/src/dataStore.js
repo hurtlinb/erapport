@@ -120,7 +120,10 @@ const defaultTemplate = {
   className: "",
   teacher: "",
   evaluationDate: "",
+  evaluationDateE2: "",
+  evaluationDateE3: "",
   coachingDate: "",
+  coachingDateE2: "",
   operationalCompetence: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
@@ -833,7 +836,10 @@ const buildTemplatePayload = (template) =>
       className: template.className || "",
       teacher: template.teacher || "",
       evaluationDate: template.evaluationDate || "",
+      evaluationDateE2: template.evaluationDateE2 || "",
+      evaluationDateE3: template.evaluationDateE3 || "",
       coachingDate: template.coachingDate || "",
+      coachingDateE2: template.coachingDateE2 || "",
       operationalCompetence: template.operationalCompetence || "",
       competencyOptions:
         template.competencyOptions || EMPTY_TEMPLATE.competencyOptions,
