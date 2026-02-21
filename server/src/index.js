@@ -2,11 +2,13 @@ import archiver from "archiver";
 import cors from "cors";
 import crypto from "crypto";
 import express from "express";
+import session from "express-session";
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
 import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
+import { Issuer, generators } from "openid-client";
 import { checkDatabaseStatus, loadState, saveState } from "./dataStore.js";
 
 const app = express();
@@ -19,8 +21,129 @@ const serverPackage = JSON.parse(
 );
 const SERVER_VERSION = serverPackage.version || "unknown";
 
-app.use(cors());
+const toBoolean = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1") return true;
+    if (normalized === "false" || normalized === "0") return false;
+  }
+  return fallback;
+};
+
+const trimTrailingSlash = (value) => {
+  if (typeof value !== "string") return "";
+  return value.replace(/\/+$/, "");
+};
+
+const OAUTH2_ENABLED = toBoolean(
+  process.env.OAUTH2_ENABLED,
+  false
+);
+const PORT_BASE_URL = trimTrailingSlash(process.env.SERVER_BASE_URL || "");
+const SERVER_BASE_URL =
+  PORT_BASE_URL || `http://localhost:${PORT}`;
+const OAUTH2_ISSUER_URL = process.env.OAUTH2_ISSUER_URL || "";
+const OAUTH2_CLIENT_ID = process.env.OAUTH2_CLIENT_ID || "";
+const OAUTH2_CLIENT_SECRET = process.env.OAUTH2_CLIENT_SECRET || "";
+const OAUTH2_REDIRECT_URL =
+  process.env.OAUTH2_REDIRECT_URL ||
+  `${SERVER_BASE_URL}/oauth2/callback`;
+const OAUTH2_POST_LOGOUT_REDIRECT_URL =
+  process.env.OAUTH2_POST_LOGOUT_REDIRECT_URL || SERVER_BASE_URL;
+const OAUTH2_SCOPES = process.env.OAUTH2_SCOPES || "openid profile email";
+const SESSION_SECRET =
+  process.env.SESSION_SECRET || "erapport-oauth2-session-secret";
+const SESSION_COOKIE_NAME =
+  process.env.SESSION_COOKIE_NAME || "erapport.sid";
+
+let oauthClient = null;
+let oauthIssuerMetadata = null;
+let oauthInitializationPromise = null;
+let oauthInitializationError = null;
+
+const ensureOAuthConfiguration = () => {
+  if (!OAUTH2_ENABLED) return false;
+  const missing = [];
+  if (!OAUTH2_ISSUER_URL) missing.push("OAUTH2_ISSUER_URL");
+  if (!OAUTH2_CLIENT_ID) missing.push("OAUTH2_CLIENT_ID");
+  if (!OAUTH2_REDIRECT_URL) missing.push("OAUTH2_REDIRECT_URL");
+  if (missing.length) {
+    oauthInitializationError = new Error(
+      `OAuth2 activé mais variables manquantes : ${missing.join(", ")}`
+    );
+    console.warn(oauthInitializationError.message);
+    return false;
+  }
+  return true;
+};
+
+const startOAuthInitialization = () => {
+  if (!OAUTH2_ENABLED || oauthInitializationPromise) {
+    return;
+  }
+  if (!ensureOAuthConfiguration()) {
+    oauthInitializationPromise = Promise.resolve();
+    return;
+  }
+  oauthInitializationPromise = (async () => {
+    try {
+      const issuer = await Issuer.discover(OAUTH2_ISSUER_URL);
+      const clientOptions = {
+        client_id: OAUTH2_CLIENT_ID,
+        redirect_uris: [OAUTH2_REDIRECT_URL],
+        response_types: ["code"]
+      };
+      if (OAUTH2_CLIENT_SECRET) {
+        clientOptions.client_secret = OAUTH2_CLIENT_SECRET;
+      } else {
+        clientOptions.token_endpoint_auth_method = "none";
+      }
+      oauthClient = new issuer.Client(clientOptions);
+      oauthIssuerMetadata = issuer.metadata;
+    } catch (error) {
+      oauthInitializationError = error;
+      console.error("Échec de l'initialisation OAuth2 :", error);
+    }
+  })();
+};
+
+startOAuthInitialization();
+
+const ensureOAuthReady = async () => {
+  if (!OAUTH2_ENABLED) return false;
+  if (!oauthInitializationPromise) {
+    startOAuthInitialization();
+  }
+  await oauthInitializationPromise;
+  return Boolean(oauthClient);
+};
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+);
 app.use(express.json({ limit: "2mb" }));
+
+if (toBoolean(process.env.TRUST_PROXY, false)) {
+  app.set("trust proxy", 1);
+}
+
+app.use(
+  session({
+    name: SESSION_COOKIE_NAME,
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax"
+    }
+  })
+);
 
 const hashPassword = (password, salt) =>
   crypto.pbkdf2Sync(password, salt, 120000, 64, "sha512").toString("hex");
@@ -121,6 +244,245 @@ const logServerEvent = (event, payload) => {
   const logFile = path.join(logsDir, "server-events.log");
   fs.appendFileSync(logFile, `${JSON.stringify(logEntry)}\n`, "utf8");
 };
+
+const normalizeEmail = (value) => {
+  if (typeof value !== "string") return "";
+  return value.trim().toLowerCase();
+};
+
+const buildDisplayNameFromProfile = (profile = {}) => {
+  if (profile.name) return profile.name.trim();
+  const nameParts = [profile.given_name, profile.family_name]
+    .map((part) => (typeof part === "string" ? part.trim() : ""))
+    .filter(Boolean);
+  if (nameParts.length) {
+    return nameParts.join(" ");
+  }
+  return profile.email ? normalizeEmail(profile.email) : "";
+};
+
+const upsertOAuthUser = async (profile) => {
+  const email = normalizeEmail(profile.email || profile.preferred_username);
+  if (!email) {
+    throw new Error("Profil OAuth2 incomplet (email manquant).");
+  }
+  const nextDisplayName = buildDisplayNameFromProfile(profile);
+  const state = await loadState();
+  const existingUser = state.users.find(
+    (entry) => normalizeEmail(entry.email) === email
+  );
+  const token = createToken();
+  if (existingUser) {
+    const updatedUser = {
+      ...existingUser,
+      name: nextDisplayName || existingUser.name,
+      email,
+      token
+    };
+    const updatedUsers = state.users.map((entry) =>
+      entry.id === updatedUser.id ? updatedUser : entry
+    );
+    const updatedState = await saveState({ ...state, users: updatedUsers });
+    return updatedState.users.find((entry) => entry.id === updatedUser.id);
+  }
+  const salt = crypto.randomBytes(16).toString("hex");
+  const passwordHash = hashPassword(
+    crypto.randomBytes(16).toString("hex"),
+    salt
+  );
+  const newUser = {
+    id: crypto.randomUUID(),
+    name: nextDisplayName || email,
+    email,
+    passwordHash,
+    salt,
+    token,
+    signatureData: ""
+  };
+  const updatedState = await saveState({
+    ...state,
+    users: [...state.users, newUser]
+  });
+  return updatedState.users.find((entry) => entry.id === newUser.id);
+};
+
+const persistOAuthSession = (req, user) => {
+  if (!req.session) return;
+  req.session.erapport = {
+    userId: user.id,
+    token: user.token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }
+  };
+};
+
+const clearOAuthSession = async (req) => {
+  const storedUserId = req.session?.erapport?.userId;
+  if (storedUserId) {
+    const state = await loadState();
+    const updatedUsers = state.users.map((entry) =>
+      entry.id === storedUserId ? { ...entry, token: "" } : entry
+    );
+    await saveState({ ...state, users: updatedUsers });
+  }
+  if (req.session) {
+    await new Promise((resolve) => req.session.destroy(() => resolve()));
+  }
+};
+
+app.get(
+  "/oauth2/login",
+  asyncHandler(async (req, res) => {
+    if (!OAUTH2_ENABLED) {
+      res.status(404).json({ error: "OAuth2 désactivé sur ce serveur." });
+      return;
+    }
+    const ready = await ensureOAuthReady();
+    if (!ready || !oauthClient) {
+      res
+        .status(503)
+        .json({ error: oauthInitializationError?.message || "OAuth2 indisponible." });
+      return;
+    }
+    const redirectTo =
+      typeof req.query.redirect === "string" && req.query.redirect.trim()
+        ? req.query.redirect
+        : SERVER_BASE_URL;
+    const codeVerifier = generators.codeVerifier();
+    const codeChallenge = generators.codeChallenge(codeVerifier);
+    const state = crypto.randomUUID();
+    const nonce = crypto.randomUUID();
+    if (req.session) {
+      req.session.oauth2 = {
+        codeVerifier,
+        state,
+        nonce,
+        redirectTo
+      };
+    }
+    const authorizationUrl = oauthClient.authorizationUrl({
+      redirect_uri: OAUTH2_REDIRECT_URL,
+      scope: OAUTH2_SCOPES,
+      state,
+      nonce,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256"
+    });
+    res.redirect(authorizationUrl);
+  })
+);
+
+app.get(
+  "/oauth2/callback",
+  asyncHandler(async (req, res) => {
+    if (!OAUTH2_ENABLED) {
+      res.status(404).json({ error: "OAuth2 désactivé sur ce serveur." });
+      return;
+    }
+    const ready = await ensureOAuthReady();
+    if (!ready || !oauthClient) {
+      res
+        .status(503)
+        .json({ error: oauthInitializationError?.message || "OAuth2 indisponible." });
+      return;
+    }
+    const sessionState = req.session?.oauth2;
+    if (!sessionState) {
+      res.status(400).json({ error: "Session OAuth introuvable." });
+      return;
+    }
+    const params = oauthClient.callbackParams(req);
+    if (params.state !== sessionState.state) {
+      res.status(400).json({ error: "Paramètre OAuth invalide." });
+      return;
+    }
+    const tokenSet = await oauthClient.callback(
+      OAUTH2_REDIRECT_URL,
+      params,
+      {
+        code_verifier: sessionState.codeVerifier,
+        state: sessionState.state,
+        nonce: sessionState.nonce
+      }
+    );
+    const claims = tokenSet.claims();
+    const userinfo = await oauthClient
+      .userinfo(tokenSet.access_token)
+      .catch(() => ({}));
+    const profile = {
+      email: userinfo.email || claims.email,
+      given_name: userinfo.given_name || claims.given_name,
+      family_name: userinfo.family_name || claims.family_name,
+      name: userinfo.name || claims.name
+    };
+    const savedUser = await upsertOAuthUser(profile);
+    persistOAuthSession(req, savedUser);
+    req.session.oauth2Tokens = {
+      id_token: tokenSet.id_token
+    };
+    req.session.oauth2 = null;
+    logServerEvent("oauth-login", {
+      userId: savedUser.id,
+      method: "oauth2"
+    });
+    const destination = sessionState.redirectTo || SERVER_BASE_URL;
+    res.redirect(destination);
+  })
+);
+
+app.get(
+  "/oauth2/session",
+  asyncHandler(async (req, res) => {
+    if (!OAUTH2_ENABLED) {
+      res.status(404).json({ error: "OAuth2 désactivé sur ce serveur." });
+      return;
+    }
+    const sessionEntry = req.session?.erapport;
+    if (!sessionEntry?.token) {
+      res.status(401).json({ error: "Non authentifié." });
+      return;
+    }
+    res.json({
+      user: sessionEntry.user,
+      token: sessionEntry.token
+    });
+  })
+);
+
+app.post(
+  "/oauth2/sign_out",
+  asyncHandler(async (req, res) => {
+    if (!OAUTH2_ENABLED) {
+      res.status(404).json({ error: "OAuth2 désactivé sur ce serveur." });
+      return;
+    }
+    const storedUserId = req.session?.erapport?.userId;
+    logServerEvent("oauth-logout", {
+      userId: storedUserId || "unknown"
+    });
+    const idTokenHint = req.session?.oauth2Tokens?.id_token;
+    let providerLogoutUrl = null;
+    await ensureOAuthReady();
+    if (oauthIssuerMetadata?.end_session_endpoint && idTokenHint) {
+      try {
+        const logoutUrl = new URL(oauthIssuerMetadata.end_session_endpoint);
+        logoutUrl.searchParams.set(
+          "post_logout_redirect_uri",
+          OAUTH2_POST_LOGOUT_REDIRECT_URL
+        );
+        logoutUrl.searchParams.set("id_token_hint", idTokenHint);
+        providerLogoutUrl = logoutUrl.toString();
+      } catch (error) {
+        console.warn("Impossible de construire l'URL de déconnexion OAuth2.", error);
+      }
+    }
+    await clearOAuthSession(req);
+    res.json({ ok: true, providerLogoutUrl });
+  })
+);
 
 const requireAuth = async (req, res, next) => {
   const token = getTokenFromRequest(req);

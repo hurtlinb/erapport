@@ -1,0 +1,2796 @@
+{
+  "schoolYears": [
+    {
+      "id": "0a015511-037c-44c5-bbed-1a126b156596",
+      "label": "2024-2025",
+      "modules": [
+        {
+          "id": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+          "title": "123 - Activer les services d'un serveur",
+          "schoolYear": "2024-2025",
+          "templates": {
+            "E1": {
+              "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+              "moduleTitle": "123 - Activer les services d'un serveur",
+              "schoolYear": "2024-2025",
+              "note": "",
+              "evaluationType": "E1",
+              "className": "",
+              "teacher": "",
+              "evaluationDate": "",
+              "coachingDate": "",
+              "operationalCompetence": "",
+              "competencyOptions": [
+                {
+                  "code": "OO1",
+                  "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+                },
+                {
+                  "code": "OO2",
+                  "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+                },
+                {
+                  "code": "OO3",
+                  "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+                }
+              ],
+              "competencies": [
+                {
+                  "category": "Active Directory",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de joindre des clients/serveurs au domaine",
+                      "competencyId": "OO3"
+                    }
+                  ]
+                },
+                {
+                  "category": "DNS",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable de configurer des zones de recherches directes et inverses",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+                      "competencyId": "OO2"
+                    }
+                  ]
+                },
+                {
+                  "category": "DHCP",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+                      "competencyId": "OO2"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "a48d6836-aa6c-435f-9205-51ae947401e3",
+      "label": "2025-2026",
+      "modules": [
+        {
+          "id": "9fc87a27-df51-463e-97eb-bedf38415569",
+          "title": "123 - Activer les services d'un serveur",
+          "schoolYear": "2025-2026",
+          "templates": {
+            "E1": {
+              "moduleId": "9fc87a27-df51-463e-97eb-bedf38415569",
+              "moduleTitle": "123 - Activer les services d'un serveur",
+              "schoolYear": "2025-2026",
+              "note": "",
+              "evaluationType": "E1",
+              "className": "",
+              "teacher": "",
+              "evaluationDate": "",
+              "coachingDate": "",
+              "operationalCompetence": "",
+              "competencyOptions": [
+                {
+                  "code": "OO1",
+                  "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+                },
+                {
+                  "code": "OO2",
+                  "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+                },
+                {
+                  "code": "OO3",
+                  "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+                }
+              ],
+              "competencies": [
+                {
+                  "category": "Active Directory",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de joindre des clients/serveurs au domaine",
+                      "competencyId": "OO3"
+                    }
+                  ]
+                },
+                {
+                  "category": "DNS",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable de configurer des zones de recherches directes et inverses",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+                      "competencyId": "OO2"
+                    }
+                  ]
+                },
+                {
+                  "category": "DHCP",
+                  "items": [
+                    {
+                      "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+                      "competencyId": "OO1"
+                    },
+                    {
+                      "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+                      "competencyId": "OO2"
+                    },
+                    {
+                      "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+                      "competencyId": "OO2"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "students": [
+    {
+      "id": "5f7c77cb-eed0-4815-8db8-13c71e2cd42a",
+      "name": "Baffic",
+      "firstname": "Shabbir",
+      "email": "Mohamed.Baffic@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "6",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "a00727d1-e15e-4417-9e39-929045c91771",
+      "name": "Beer",
+      "firstname": "Aodren",
+      "email": "Aodren.Beer@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "6",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "0e0ac0b6-3ea7-4df3-b0b1-f2b9bd55a050",
+      "name": "Borcard",
+      "firstname": "Dylan Ayoub",
+      "email": "DylanAyoub.Borcard@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "3d00c7f6-591f-46ff-b24f-0cb2b4804b74",
+      "name": "Boreggio",
+      "firstname": "Alessandro",
+      "email": "Alessandro.Boreggio@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "606b477a-f3d9-48c4-8413-4cf278a67dbe",
+      "name": "Caggiano",
+      "firstname": "Timeo",
+      "email": "Timeo.Caggiano@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "11d05380-aade-4b63-a9d6-44f408f91204",
+      "name": "da Silva Gomes",
+      "firstname": "André",
+      "email": "Andre.Gomes@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "9f78f982-e6dc-49f6-b795-62af441275ba",
+      "name": "Fugier",
+      "firstname": "Alex",
+      "email": "Alex.Fugier@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "4af72165-21fc-4da5-a30e-8cc7660fc1a7",
+      "name": "Gaspar",
+      "firstname": "Jean-Marc",
+      "email": "Jean-Marc.Gaspar@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "5ab59e16-9210-47dd-9536-a728a8f58cc1",
+      "name": "Genoud",
+      "firstname": "Robin",
+      "email": "Robin.Genoud@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "1dd121d9-e443-4b1e-9abe-62d3ced34681",
+      "name": "Goga",
+      "firstname": "Yll",
+      "email": "Yll.Goga@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "947412a8-a3de-41a2-99f3-bbfffffb1e2e",
+      "name": "Jaccoud",
+      "firstname": "Lucas",
+      "email": "Lucas.Jaccoud@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "0b13c19a-0462-4e4e-b7a3-cd951fc3eba1",
+      "name": "Jusselme",
+      "firstname": "Léon",
+      "email": "Leon.Jusselme@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "533a09fa-92fb-4613-b5e0-086c1d6ff6ca",
+      "name": "Karuna",
+      "firstname": "Gajenthiran",
+      "email": "Gajenthiran.Karuna@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "ce15dbbd-ccf5-4b11-bb04-6088b29f10de",
+      "name": "Marmier",
+      "firstname": "Lucas",
+      "email": "Lucas.Marmier@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "132bd0b6-4699-4c75-91d8-5a0a736a6450",
+      "name": "Morel",
+      "firstname": "Sébastien",
+      "email": "Sebastien.Morel@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "afd65e1b-4030-464f-9eac-e9bfb85ea8c9",
+      "name": "Nobs",
+      "firstname": "Aston",
+      "email": "Aston.Nobs@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "f09bc31f-1714-4ffa-b271-5d84c2a24787",
+      "name": "Savoy",
+      "firstname": "Hannibal",
+      "email": "Hannibal.Savoy@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "9c2b53d3-99c4-4229-97dd-905f799096fe",
+      "name": "Schneider",
+      "firstname": "Antoine",
+      "email": "Antoine.Schneider@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "437a9f05-0675-4e16-ba8c-92d210794c48",
+      "name": "Triki",
+      "firstname": "Rayan",
+      "email": "Rayan.Triki@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    },
+    {
+      "id": "3c34db87-d61f-4041-a0f9-8f68683640ff",
+      "name": "Vésy",
+      "firstname": "Nathan",
+      "email": "Nathan.Vesy@studentfr.ch",
+      "moduleId": "6ef2b005-388e-46dd-a55a-4e2ff3f31247",
+      "moduleTitle": "123 - Activer les services d'un serveur",
+      "schoolYear": "2024-2025",
+      "note": "",
+      "remarks": "",
+      "evaluationType": "E1",
+      "className": "",
+      "teacher": "",
+      "evaluationDate": "",
+      "coachingDate": "",
+      "operationalCompetence": "",
+      "competencyOptions": [
+        {
+          "code": "OO1",
+          "description": "Définir la configuration des services du serveur nécessaires (service d’annuaire, DHCP, DNS, File, Print) conformément aux directives de l’entreprise."
+        },
+        {
+          "code": "OO2",
+          "description": "Installer et configurer les services réseau en appliquant les bonnes pratiques de sécurité."
+        },
+        {
+          "code": "OO3",
+          "description": "Valider le fonctionnement des services déployés et documenter la configuration."
+        }
+      ],
+      "competencies": [
+        {
+          "category": "Active Directory",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée au service et concepts d'annuaire",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer le rôle Active Directory, de promouvoir un DC et de créer un admin du domaine",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de joindre des clients/serveurs au domaine",
+              "competencyId": "OO3",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DNS",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques, la terminologie et les outils liés aux services et concepts du DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement d'une résolution DNS",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des zones de recherches directes et inverses",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer des records dans des zones de recherches directes ou inverses et de les tester",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "DHCP",
+          "result": "",
+          "items": [
+            {
+              "task": "Connait les principes théoriques et la terminologie associée aux services et concepts du DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Connait les principes théoriques liés au déroulement de l'attribution d'un bail DHCP",
+              "competencyId": "OO1",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable d'installer, d'autoriser un service DHCP et de configurer un scope d'adresse et une réservation",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "Est capable de configurer les options d'un scope et de tester l'attribution d'un bail à un client",
+              "competencyId": "OO2",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ],
+      "teacherId": ""
+    }
+  ],
+  "users": [
+    {
+      "id": "8a804401-2ace-4998-a6ed-e401fc82efdb",
+      "name": "Blaise Hurtlin",
+      "email": "blaise.hurtlin@edufr.ch",
+      "passwordHash": "56ab968c85a89c068d45707f055382389e6c1d5851756e9aa2012769847cde1b46b61e366a17d2e1b2b9f177cb038d054554ad4938baf24606d480840ef740d5",
+      "salt": "c8453ddb37490a414e8b696f69a8b7c1",
+      "token": "ac4f6040-90ef-4bee-bc5e-3869a8bf9ec5"
+    }
+  ]
+}

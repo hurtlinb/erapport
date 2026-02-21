@@ -10,7 +10,9 @@
     "archiver": "^6.0.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-session": "^1.19.0",
     "mysql2": "^3.11.5",
+    "openid-client": "^6.8.2",
     "pdfkit": "^0.15.0"
   },
   "overrides": {

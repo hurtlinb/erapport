@@ -1,0 +1,786 @@
+{
+  "schoolYears": [
+    {
+      "id": "f80691cb-0c12-4310-b1e8-64a282db6142",
+      "label": "2024-2025",
+      "modules": []
+    },
+    {
+      "id": "5117fa8b-0abc-426f-ad11-b8b8d75880a1",
+      "label": "2025-2026",
+      "modules": [
+        {
+          "id": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+          "title": "306 - Test",
+          "schoolYear": "2025-2026",
+          "templates": {
+            "E1": {
+              "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+              "moduleTitle": "306 - Test",
+              "schoolYear": "2025-2026",
+              "note": "",
+              "evaluationType": "E1",
+              "className": "INFO-F12",
+              "teacher": "",
+              "evaluationDate": "2026-01-05",
+              "coachingDate": "2026-01-20",
+              "operationalCompetence": "",
+              "competencyOptions": [],
+              "competencies": [
+                {
+                  "category": "Individuel",
+                  "groupEvaluation": false,
+                  "items": [
+                    {
+                      "task": "New task1",
+                      "competencyId": "",
+                      "evaluationMethod": "Evaluation écrite"
+                    },
+                    {
+                      "task": "New task2",
+                      "competencyId": "",
+                      "evaluationMethod": ""
+                    }
+                  ]
+                },
+                {
+                  "category": "Projet",
+                  "groupEvaluation": true,
+                  "items": [
+                    {
+                      "task": "New task3",
+                      "competencyId": "",
+                      "evaluationMethod": ""
+                    },
+                    {
+                      "task": "New task4",
+                      "competencyId": "",
+                      "evaluationMethod": ""
+                    }
+                  ]
+                }
+              ],
+              "groupFeatureEnabled": false
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "students": [
+    {
+      "id": "ea33cd33-17aa-490b-a2b6-05627c9d5b18",
+      "name": "Bourgeois",
+      "firstname": "Gaetan",
+      "email": "Gaetan.Bourgeois@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "5",
+      "remarks": "",
+      "groupName": "1",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "OK",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "OK",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "OK",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "~",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "OK",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "~",
+              "comment": "tets"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e74f658e-1a06-4750-86fd-b5f40a562bfd",
+      "name": "Dubois",
+      "firstname": "Valentin",
+      "email": "Valentin.Dubois@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "3",
+      "remarks": "",
+      "groupName": "1",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "OK",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "OK",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "~",
+              "comment": "tets"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9a1588af-f7bd-4d30-b32a-0858909eebbc",
+      "name": "Imeraj",
+      "firstname": "Leon",
+      "email": "Leon.Imeraj@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "2",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "NOK",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "22b2915a-8c14-47e7-b691-b941168c63ba",
+      "name": "Losey",
+      "firstname": "Rémy",
+      "email": "Remy.Losey@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "2",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "NOK",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "05993dc8-3504-4699-bc97-b857b25d5e2c",
+      "name": "Marchon",
+      "firstname": "Yann",
+      "email": "Yann.Marchon@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "2",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "OK",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "12035c3a-e204-4903-b271-dcb8754538a7",
+      "name": "Nergiz",
+      "firstname": "Cem",
+      "email": "Cem.Nergiz@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "3",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2edd3b36-a8b4-425f-aac9-2175ab4861b2",
+      "name": "Oliveira",
+      "firstname": "Raphael",
+      "email": "Raphael.Oliveira@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "3",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d16f5872-2a6c-4a25-ad5a-a8405fcd255f",
+      "name": "Perez",
+      "firstname": "Anthony César",
+      "email": "Anthony.Perez@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "3",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "be20c1bc-90cf-4e89-92d8-b19f2b86d39c",
+      "name": "Prélaz",
+      "firstname": "Terry",
+      "email": "Terry.Prelaz@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "3",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ff05955b-8dbc-4c44-8054-a3f7542680e2",
+      "name": "Tinguely",
+      "firstname": "Pierre",
+      "email": "Pierre.Tinguely@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "3",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ba504417-64b7-43d7-bfbf-a173b405655e",
+      "name": "Ventura",
+      "firstname": "Patrizio",
+      "email": "Patrizio.Ventura@studentfr.ch",
+      "moduleId": "25488203-7eb2-495b-8dd3-14541cf9d3d4",
+      "moduleTitle": "306 - Test",
+      "schoolYear": "2025-2026",
+      "note": "",
+      "remarks": "",
+      "groupName": "4",
+      "evaluationType": "E1",
+      "className": "INFO-F12",
+      "teacher": "",
+      "teacherId": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "evaluationDate": "2026-01-05",
+      "coachingDate": "2026-01-20",
+      "operationalCompetence": "",
+      "competencyOptions": [],
+      "competencies": [
+        {
+          "category": "Individuel",
+          "groupEvaluation": false,
+          "result": "",
+          "items": [
+            {
+              "task": "New task1",
+              "competencyId": "",
+              "evaluationMethod": "Evaluation écrite",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task2",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "category": "Projet",
+          "groupEvaluation": true,
+          "result": "",
+          "items": [
+            {
+              "task": "New task3",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            },
+            {
+              "task": "New task4",
+              "competencyId": "",
+              "evaluationMethod": "",
+              "status": "",
+              "comment": ""
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "58ba4d1e-b5ca-4c00-8ab2-1a0442b669cf",
+      "name": "Blaise Hurtlin",
+      "email": "blaise.hurtlin@edufr.ch",
+      "passwordHash": "41a9704ec18d12a9edc7ef453cc5acbe91b8bf551636d4bb0f2098d456ba4708fd47291c39a5921544d2ab974a92e0238f377556297a6cb4d5333edd1bf9454b",
+      "salt": "7e3b4c8a4a73ecd5e61345aacef88c25",
+      "token": "528a83ea-f1ff-491f-b482-b700bb554434"
+    }
+  ]
+}

@@ -119,3 +119,21 @@ docker run --name erapport-server \
   -e MARIADB_PASSWORD=erapport \
   erapport-server
 ```
+
+## OAuth2 configuration
+
+The backend can delegate authentication to any OAuth2/OpenID Connect provider. The feature is opt-in via environment variables (similar to the database configuration) but is activated by default inside `server/Dockerfile` (`OAUTH2_ENABLED=true`).
+
+Set the following variables when you enable OAuth2:
+
+- `OAUTH2_ENABLED` – `true` to use OAuth2; the frontend builder also reads `VITE_OAUTH2_ENABLED=true` so the login form is hidden.
+- `OAUTH2_ISSUER_URL` – the provider's discovery URL (required).
+- `OAUTH2_CLIENT_ID` – the OAuth2 client identifier (required).
+- `OAUTH2_CLIENT_SECRET` – the client secret for confidential clients (omit if you rely on `token_endpoint_auth_method=none`).
+- `OAUTH2_REDIRECT_URL` – optional override for the callback URL (defaults to `http://<server>/oauth2/callback`).
+- `OAUTH2_POST_LOGOUT_REDIRECT_URL` – optional redirect after sign-out (defaults to the server base URL).
+- `OAUTH2_SCOPES` – optional scope list (default: `openid profile email`).
+- `SESSION_SECRET` / `SESSION_COOKIE_NAME` – optional overrides used for the Express session that stores the OAuth state.
+- `SERVER_BASE_URL` – optional base URL used when building redirects.
+
+When OAuth2 is active, the SPA automatically calls `/oauth2/session`. If no session exists it redirects to `/oauth2/login`, the provider calls back to `/oauth2/callback`, and the backend creates or refreshes a teacher account using the emailed profile (name/email). The "Se déconnecter" button calls `/oauth2/sign_out`, which clears the session, invalidates the token, and (if available) points to the provider's `end_session_endpoint`.

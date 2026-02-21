@@ -11,6 +11,7 @@ ENV MARIADB_PORT=3306
 ENV MARIADB_DATABASE=erapport
 ENV MARIADB_USER=erapport
 ENV MARIADB_PASSWORD=erapport
+ENV OAUTH2_ENABLED=true
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clientPackage from "../package.json";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
@@ -100,6 +100,7 @@ const TASK_EVALUATION_METHODS = [
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 const CLIENT_VERSION = clientPackage.version || "dev";
+const OAUTH2_ENABLED = import.meta.env.VITE_OAUTH2_ENABLED === "true";
 const AUTH_STORAGE_KEY = "erapport.auth";
 
 const STATUS_VALUES = {
@@ -824,8 +825,12 @@ const cloneStudentReport = (student, evaluationType, template) => {
 };
 
 function App() {
-  const [authUser, setAuthUser] = useState(() => loadStoredAuth()?.user || null);
-  const [authToken, setAuthToken] = useState(() => loadStoredAuth()?.token || "");
+  const [authUser, setAuthUser] = useState(() =>
+    OAUTH2_ENABLED ? null : loadStoredAuth()?.user || null
+  );
+  const [authToken, setAuthToken] = useState(() =>
+    OAUTH2_ENABLED ? "" : loadStoredAuth()?.token || ""
+  );
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({
     name: "",
@@ -835,6 +840,10 @@ function App() {
   });
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [oauthSessionStatus, setOauthSessionStatus] = useState(
+    OAUTH2_ENABLED ? "loading" : "idle"
+  );
+  const [oauthSessionError, setOauthSessionError] = useState("");
   const [schoolYears, setSchoolYears] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
   const [activeSchoolYearId, setActiveSchoolYearId] = useState("");
@@ -999,6 +1008,16 @@ ${teacherDisplayName}
       console.error(error);
     }
   };
+  const buildOAuthLoginUrl = useCallback(
+    () =>
+      `${API_BASE_URL}/oauth2/login?redirect=${encodeURIComponent(
+        window.location.href
+      )}`,
+    [API_BASE_URL]
+  );
+  const startOAuthLogin = useCallback(() => {
+    window.location.assign(buildOAuthLoginUrl());
+  }, [buildOAuthLoginUrl]);
   const activeSchoolYear = useMemo(
     () => schoolYears.find((year) => year.id === activeSchoolYearId) || null,
     [activeSchoolYearId, schoolYears]
@@ -1032,6 +1051,51 @@ ${teacherDisplayName}
       clearInterval(intervalId);
     };
   }, []);
+
+  useEffect(() => {
+    if (!OAUTH2_ENABLED) return undefined;
+    let isCancelled = false;
+    const fetchOAuthSession = async () => {
+      setOauthSessionStatus("loading");
+      setOauthSessionError("");
+      try {
+        const response = await fetch(`${API_BASE_URL}/oauth2/session`, {
+          credentials: "include"
+        });
+        if (isCancelled) return;
+        if (response.status === 401) {
+          startOAuthLogin();
+          return;
+        }
+        if (!response.ok) {
+          const errorPayload = await response.json().catch(() => ({}));
+          throw new Error(
+            errorPayload?.error || "Impossible de vérifier la session OAuth2."
+          );
+        }
+        const data = await response.json();
+        if (!data?.token || !data?.user) {
+          throw new Error("Session OAuth2 invalide.");
+        }
+        if (isCancelled) return;
+        setAuthUser(data.user);
+        setAuthToken(data.token);
+        setOauthSessionStatus("ready");
+        setOauthSessionError("");
+      } catch (error) {
+        if (isCancelled) return;
+        console.error(error);
+        setOauthSessionStatus("error");
+        setOauthSessionError(
+          error?.message || "Impossible de vérifier la session OAuth2."
+        );
+      }
+    };
+    fetchOAuthSession();
+    return () => {
+      isCancelled = true;
+    };
+  }, [OAUTH2_ENABLED, API_BASE_URL, startOAuthLogin]);
   useEffect(() => {
     if (!activeSchoolYearId) return;
     console.info("Active school year updated", {
@@ -1419,7 +1483,9 @@ ${teacherDisplayName}
       }
       setAuthUser(data.user);
       setAuthToken(data.token);
-      persistStoredAuth({ user: data.user, token: data.token });
+      if (!OAUTH2_ENABLED) {
+        persistStoredAuth({ user: data.user, token: data.token });
+      }
       setAuthForm({ name: "", email: "", password: "", confirmPassword: "" });
     } catch (error) {
       console.error(error);
@@ -1429,7 +1495,20 @@ ${teacherDisplayName}
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (OAUTH2_ENABLED) {
+      try {
+        await fetch(`${API_BASE_URL}/oauth2/sign_out`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+      } catch (error) {
+        console.error("Impossible de déconnecter la session OAuth2.", error);
+      }
+    }
     clearStoredAuth();
     setAuthUser(null);
     setAuthToken("");
@@ -1439,6 +1518,8 @@ ${teacherDisplayName}
     setSignatureError("");
     setSignatureStatus("");
     setIsSettingsModalOpen(false);
+    setOauthSessionStatus("idle");
+    setOauthSessionError("");
   };
 
   const handleSignatureFileChange = (event) => {
@@ -2290,6 +2371,58 @@ ${teacherDisplayName}
   );
 
   if (!isAuthenticated) {
+    if (OAUTH2_ENABLED) {
+      const oauthStatusLabel =
+        oauthSessionStatus === "error"
+          ? oauthSessionError || "Impossible de vérifier la session OAuth2."
+          : "Connexion via OAuth2 en cours, vous allez être redirigé.";
+      return (
+        <div className="app auth-page">
+          <header className="hero">
+            <div>
+              <h1>Connexion via OAuth2</h1>
+              <p className="subtitle">
+                L&apos;authentification est gérée par votre fournisseur OAuth2. Vous
+                serez redirigé.e automatiquement si une session est active.
+              </p>
+            </div>
+          </header>
+
+          <main className="layout auth-layout">
+            <section className="panel auth-panel">
+              <div className="panel-header">
+                <h2>Accès sécurisé</h2>
+                <span className="helper-text">
+                  {oauthStatusLabel}
+                </span>
+              </div>
+
+              {oauthSessionStatus === "error" && (
+                <p className="helper-text error-text" role="alert">
+                  {oauthSessionError ||
+                    "Impossible de valider votre session. Cliquez sur le bouton ci-dessous pour réessayer."}
+                </p>
+              )}
+
+              <div className="actions auth-actions">
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={startOAuthLogin}
+                  disabled={oauthSessionStatus === "loading"}
+                >
+                  {oauthSessionStatus === "loading"
+                    ? "Redirection..."
+                    : "Se connecter via OAuth2"}
+                </button>
+              </div>
+            </section>
+          </main>
+          {footer}
+        </div>
+      );
+    }
+
     return (
       <div className="app auth-page">
         <header className="hero">
