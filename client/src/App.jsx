@@ -202,6 +202,7 @@ const defaultTemplate = {
   evaluationDateE3: "",
   coachingDate: "",
   coachingDateE2: "",
+  coachingDates: [],
   operationalCompetence: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
@@ -209,7 +210,8 @@ const defaultTemplate = {
 
 const EMPTY_TEMPLATE = {
   competencyOptions: [],
-  competencies: []
+  competencies: [],
+  coachingDates: []
 };
 
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
@@ -231,6 +233,9 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
+    coachingDates: normalizeCoachingDates(
+      baseTemplate.coachingDates || defaultTemplate.coachingDates
+    ),
     competencyOptions,
     competencies
   };
@@ -457,13 +462,38 @@ const normalizeCompetencies = (competencies = []) =>
 const normalizeStudentCompetencies = (competencies = []) =>
   normalizeCompetencies(competencies);
 
+const normalizeCoachingDates = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+      .filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const formatCoachingDatesInput = (value) =>
+  Array.isArray(value) ? value.join("\n") : "";
+
+const parseCoachingDatesInput = (value) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
 const normalizeStudentRecord = (student) => {
   const baseStudent = student && typeof student === "object" ? student : {};
   return {
     ...baseStudent,
     id: String(baseStudent.id ?? crypto.randomUUID()),
     competencyOptions: normalizeCompetencyOptions(baseStudent.competencyOptions),
-    competencies: normalizeStudentCompetencies(baseStudent.competencies)
+    competencies: normalizeStudentCompetencies(baseStudent.competencies),
+    coachingDates: normalizeCoachingDates(baseStudent.coachingDates)
   };
 };
 
@@ -641,6 +671,7 @@ const applyTemplateToStudent = (template, student, teacherId = "") => ({
     template,
     template.evaluationType || student.evaluationType
   ),
+  coachingDates: template.coachingDates || [],
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencySummaryOverrides: student.competencySummaryOverrides || {},
@@ -802,6 +833,7 @@ const buildStudentFromTemplate = (template, teacherId = "") => ({
   teacherId,
   evaluationDate: getTemplateEvaluationDate(template, template.evaluationType),
   coachingDate: getTemplateCoachingDate(template, template.evaluationType),
+  coachingDates: template.coachingDates || [],
   operationalCompetence: template.operationalCompetence || "",
   summaryByCompetencies: Boolean(template.summaryByCompetencies),
   competencySummaryOverrides: {},
@@ -1432,6 +1464,8 @@ ${teacherDisplayName}
       0
     );
   }, [template.competencies]);
+
+  const coachingDatesFieldValue = formatCoachingDatesInput(template.coachingDates);
 
   const handleAuthFieldChange = (field, value) => {
     setAuthForm((prev) => ({ ...prev, [field]: value }));
@@ -3788,6 +3822,23 @@ ${teacherDisplayName}
                       )
                     }
                   />
+                </label>
+                <label>
+                  Dates de coaching
+                  <textarea
+                    rows={4}
+                    value={coachingDatesFieldValue}
+                    onChange={(event) =>
+                      handleTemplateField(
+                        "coachingDates",
+                        parseCoachingDatesInput(event.target.value)
+                      )
+                    }
+                    placeholder="Lundi 23.03 à 16h45, salle A42 (DGA)"
+                  />
+                  <p className="helper-text">
+                    Une ligne par date proposée dans la feuille de coaching.
+                  </p>
                 </label>
               </div>
             </div>

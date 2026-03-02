@@ -193,10 +193,15 @@ const normalizeStudentForReport = (student, context = {}) => {
     coachingDate = student.coachingDateE2;
   }
 
+  const coachingDates = Array.isArray(student?.coachingDates)
+    ? student.coachingDates
+    : [];
+
   const basePayload = {
     ...student,
     evaluationDate,
     coachingDate,
+    coachingDates,
     signatureData
   };
   if (!teacherName) return basePayload;
@@ -1742,9 +1747,8 @@ const renderCoachingReport = (doc, student) => {
     );
 
   cursorY = doc.y + 8;
-
-  const checkboxLabelX = coachingBoxX + coachingBoxWidth - 120;
   const checkboxSize = 10;
+  const checkboxLabelX = coachingBoxX + coachingBoxWidth - 120;
 
   doc
     .font("Helvetica-Bold")
@@ -1767,6 +1771,40 @@ const renderCoachingReport = (doc, student) => {
     .stroke(theme.text);
 
   cursorY += 32;
+  const coachingDateOptions = Array.isArray(student.coachingDates)
+    ? student.coachingDates
+        .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+        .filter(Boolean)
+    : [];
+
+  if (coachingDateOptions.length) {
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .text(
+        "Si oui, merci de choisir les dates auxquelles vous serez présent(e) :",
+        contentX,
+        cursorY,
+        { width: contentWidth }
+      );
+    cursorY = doc.y + 6;
+    const checkboxListX = contentX;
+    const entryLabelWidth = contentWidth - (checkboxSize + 6);
+
+    coachingDateOptions.forEach((entry) => {
+      const entryHeight = Math.max(
+        checkboxSize,
+        doc.heightOfString(entry, { width: entryLabelWidth })
+      );
+      doc.rect(checkboxListX, cursorY, checkboxSize, checkboxSize).stroke(theme.text);
+      doc.text(entry, checkboxListX + checkboxSize + 6, cursorY, {
+        width: entryLabelWidth
+      });
+      cursorY += entryHeight + 4;
+      doc.y = cursorY;
+    });
+    cursorY += 6;
+  }
 
   const signatureLabelWidth = 300;
   const signatureLineStart = coachingBoxX + signatureLabelWidth + 16;

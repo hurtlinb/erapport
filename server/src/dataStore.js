@@ -124,6 +124,7 @@ const defaultTemplate = {
   evaluationDateE3: "",
   coachingDate: "",
   coachingDateE2: "",
+  coachingDates: [],
   operationalCompetence: "",
   competencyOptions: DEFAULT_COMPETENCY_OPTIONS,
   competencies: DEFAULT_COMPETENCIES
@@ -131,7 +132,8 @@ const defaultTemplate = {
 
 const EMPTY_TEMPLATE = {
   competencyOptions: [],
-  competencies: []
+  competencies: [],
+  coachingDates: []
 };
 
 const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) => {
@@ -153,6 +155,9 @@ const normalizeTemplate = (template, module, schoolYearLabel, evaluationType) =>
       evaluationType || baseTemplate.evaluationType || defaultTemplate.evaluationType,
     groupFeatureEnabled: Boolean(baseTemplate.groupFeatureEnabled),
     summaryByCompetencies: Boolean(baseTemplate.summaryByCompetencies),
+    coachingDates: normalizeCoachingDates(
+      baseTemplate.coachingDates || defaultTemplate.coachingDates
+    ),
     competencyOptions,
     competencies
   };
@@ -364,6 +369,21 @@ const normalizeJsonValue = (value, fallback) => {
   return fallback;
 };
 
+const normalizeCoachingDates = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+      .filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 const normalizeStudent = (student) => {
   const baseStudent = student && typeof student === "object" ? student : {};
   return {
@@ -384,7 +404,8 @@ const normalizeStudent = (student) => {
     ),
     competencies: normalizeCompetencies(
       normalizeJsonValue(baseStudent.competencies, [])
-    )
+    ),
+    coachingDates: normalizeCoachingDates(baseStudent.coachingDates)
   };
 };
 
@@ -693,22 +714,23 @@ const ensureInitialized = async () => {
         )
       `);
       await client.query(`
-        CREATE TABLE IF NOT EXISTS students (
-          id CHAR(36) PRIMARY KEY,
-          teacher_id CHAR(36) NULL,
-          module_id CHAR(36) NOT NULL,
-          evaluation_type TEXT NOT NULL,
-          firstname TEXT,
-          name TEXT,
-          email TEXT,
-          note TEXT,
-          remarks TEXT,
-          group_name TEXT,
-          class_name TEXT,
-          teacher_name TEXT,
-          evaluation_date TEXT,
-          coaching_date TEXT,
-          operational_competence TEXT,
+      CREATE TABLE IF NOT EXISTS students (
+        id CHAR(36) PRIMARY KEY,
+        teacher_id CHAR(36) NULL,
+        module_id CHAR(36) NOT NULL,
+        evaluation_type TEXT NOT NULL,
+        firstname TEXT,
+        name TEXT,
+        email TEXT,
+        note TEXT,
+        remarks TEXT,
+        group_name TEXT,
+        class_name TEXT,
+        teacher_name TEXT,
+        evaluation_date TEXT,
+        coaching_date TEXT,
+        coaching_dates JSON,
+        operational_competence TEXT,
           summary_by_competencies TINYINT(1) NOT NULL DEFAULT 0,
           competency_summary_overrides JSON,
           competency_options JSON,
@@ -812,6 +834,10 @@ const ensureInitialized = async () => {
         ALTER TABLE students
         ADD COLUMN competency_summary_overrides JSON
       `).catch(() => {});
+      await client.query(`
+        ALTER TABLE students
+        ADD COLUMN coaching_dates JSON
+      `).catch(() => {});
       await migrateCompetencyTables(client);
       await client.commit();
     } catch (error) {
@@ -840,6 +866,7 @@ const buildTemplatePayload = (template) =>
       evaluationDateE3: template.evaluationDateE3 || "",
       coachingDate: template.coachingDate || "",
       coachingDateE2: template.coachingDateE2 || "",
+      coachingDates: template.coachingDates || [],
       operationalCompetence: template.operationalCompetence || "",
       competencyOptions:
         template.competencyOptions || EMPTY_TEMPLATE.competencyOptions,
@@ -1135,6 +1162,10 @@ export const loadState = async () => {
       teacherId: student.teacher_id || "",
       evaluationDate: student.evaluation_date || "",
       coachingDate: student.coaching_date || "",
+      coachingDates: normalizeJsonValue(
+        student.coaching_dates,
+        template.coachingDates || []
+      ),
       operationalCompetence: student.operational_competence || "",
       summaryByCompetencies: Boolean(student.summary_by_competencies),
       competencySummaryOverrides: student.competency_summary_overrides || {},
@@ -1314,6 +1345,7 @@ export const saveState = async (nextState) => {
         {}
       );
       const competencies = serializeJsonValue(student.competencies, []);
+      const coachingDatesPayload = serializeJsonValue(student.coachingDates, []);
       await client.query(
         `
           INSERT INTO students (
@@ -1331,6 +1363,7 @@ export const saveState = async (nextState) => {
             teacher_name,
             evaluation_date,
             coaching_date,
+            coaching_dates,
             operational_competence,
             summary_by_competencies,
             competency_summary_overrides,
@@ -1338,6 +1371,7 @@ export const saveState = async (nextState) => {
             competencies
           )
           VALUES (
+            ?,
             ?,
             ?,
             ?,
@@ -1372,6 +1406,7 @@ export const saveState = async (nextState) => {
             teacher_name = VALUES(teacher_name),
             evaluation_date = VALUES(evaluation_date),
             coaching_date = VALUES(coaching_date),
+            coaching_dates = VALUES(coaching_dates),
             operational_competence = VALUES(operational_competence),
             summary_by_competencies = VALUES(summary_by_competencies),
             competency_summary_overrides = VALUES(competency_summary_overrides),
@@ -1393,6 +1428,7 @@ export const saveState = async (nextState) => {
           student.teacher || "",
           student.evaluationDate || "",
           student.coachingDate || "",
+          coachingDatesPayload,
           student.operationalCompetence || "",
           student.summaryByCompetencies ? 1 : 0,
           competencySummaryOverrides,
