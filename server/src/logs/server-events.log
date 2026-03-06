@@ -2109,3 +2109,12 @@
 {"timestamp":"2026-03-06T10:26:17.200Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
 {"timestamp":"2026-03-06T10:26:17.286Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
 {"timestamp":"2026-03-06T10:26:17.357Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.365Z","event":"state-read","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.444Z","event":"state-read","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.629Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.717Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.846Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:07.916Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:15.234Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:16.939Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}
+{"timestamp":"2026-03-06T10:45:38.208Z","event":"state-write","payload":{"userId":"2f5dbc4a-b807-416f-8f0b-83da4b371878","incomingStudents":8,"totalStudents":8,"filteredStudents":8,"schoolYears":2}}

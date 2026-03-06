@@ -555,6 +555,14 @@ const getStatusStyle = (status) => {
   return theme.status.DEFAULT;
 };
 
+const shouldShowRemediationField = (student) => {
+  const numericNote = student?.note ? Number(student.note) : null;
+  if (numericNote === null || Number.isNaN(numericNote)) {
+    return false;
+  }
+  return numericNote < 4;
+};
+
 const getRemediationValue = (competencies = []) => {
   const allItems = competencies.flatMap((section) => section.items || []);
   if (allItems.length === 0) {
@@ -1325,7 +1333,9 @@ const renderStudentReport = (doc, student) => {
     cursorY += 12;
   });
 
-  const remediationValue = getRemediationValue(student.competencies);
+  const remediationValue = shouldShowRemediationField(student)
+    ? getRemediationValue(student.competencies)
+    : "-";
   const remediationHeight = 18;
   const remarksHeight = 22;
   const remarksBlockHeight = remediationHeight + remarksHeight;
