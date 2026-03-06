@@ -426,18 +426,18 @@ const buildCompetencyCategoriesFromRows = (
     category: normalizeTextValue(category.name),
     groupEvaluation: Boolean(category.group_evaluation),
     result: normalizeTextValue(category.result),
-    items: (tasksByCategory.get(category.id) || []).map((task) => ({
-      id: task.id,
-      task: normalizeTextValue(task.task),
-      competencyId: normalizeTextValue(
-        competencyIdToCode.get(task.competency_id) || task.competency_id
-      ),
-      evaluationMethod: normalizeTextValue(task.evaluation_method),
-      groupEvaluation: Boolean(task.group_evaluation),
-      status: normalizeTextValue(task.status),
-      comment: normalizeTextValue(task.comment)
-    }))
-  }));
+      items: (tasksByCategory.get(category.id) || []).map((task) => ({
+        id: task.id,
+        task: normalizeTextValue(task.task),
+        competencyId: normalizeTextValue(
+          competencyIdToCode.get(task.competency_id) || task.competency_id
+        ),
+        evaluationMethod: normalizeTextValue(task.evaluation_method),
+        groupEvaluation: Boolean(task.group_evaluation),
+        status: "",
+        comment: ""
+      }))
+    }));
 
 const normalizeUsers = (users = []) => {
   if (!Array.isArray(users)) return [];
@@ -619,38 +619,32 @@ const migrateCompetencyTables = async (client) => {
           }
           await client.query(
             `
-              INSERT INTO tasks (
-                id,
-                category_id,
-                task,
-                competency_id,
-                evaluation_method,
-                group_evaluation,
-                status,
-                comment,
-                sort_order
-              )
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-              ON DUPLICATE KEY UPDATE
-                task = VALUES(task),
-                competency_id = VALUES(competency_id),
-                evaluation_method = VALUES(evaluation_method),
-                group_evaluation = VALUES(group_evaluation),
-                status = VALUES(status),
-                comment = VALUES(comment),
-                sort_order = VALUES(sort_order)
-            `,
-            [
-              item.id,
-              category.id,
-              item.task,
-              resolvedCompetencyId,
-              item.evaluationMethod,
-              item.groupEvaluation ? 1 : 0,
-              item.status,
-              item.comment,
-              itemIndex
-            ]
+          INSERT INTO tasks (
+            id,
+            category_id,
+            task,
+            competency_id,
+            evaluation_method,
+            group_evaluation,
+            sort_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            task = VALUES(task),
+            competency_id = VALUES(competency_id),
+            evaluation_method = VALUES(evaluation_method),
+            group_evaluation = VALUES(group_evaluation),
+            sort_order = VALUES(sort_order)
+        `,
+        [
+          item.id,
+          category.id,
+          item.task,
+          resolvedCompetencyId,
+          item.evaluationMethod,
+          item.groupEvaluation ? 1 : 0,
+          itemIndex
+        ]
           );
         }
       }
@@ -769,11 +763,17 @@ const ensureInitialized = async () => {
           competency_id CHAR(36) NULL,
           evaluation_method TEXT,
           group_evaluation TINYINT(1) NOT NULL DEFAULT 0,
-          status TEXT,
-          comment TEXT,
           sort_order INT NOT NULL DEFAULT 0
         )
       `);
+      await client.query(`
+        ALTER TABLE tasks
+        DROP COLUMN status
+      `).catch(() => {});
+      await client.query(`
+        ALTER TABLE tasks
+        DROP COLUMN comment
+      `).catch(() => {});
       await client.query(`
         ALTER TABLE modules
         ADD CONSTRAINT modules_school_year_fk
@@ -966,18 +966,14 @@ const replaceStudentCompetencies = async (client, student) => {
             competency_id,
             evaluation_method,
             group_evaluation,
-            status,
-            comment,
             sort_order
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
             task = VALUES(task),
             competency_id = VALUES(competency_id),
             evaluation_method = VALUES(evaluation_method),
             group_evaluation = VALUES(group_evaluation),
-            status = VALUES(status),
-            comment = VALUES(comment),
             sort_order = VALUES(sort_order)
         `,
         [
@@ -987,8 +983,6 @@ const replaceStudentCompetencies = async (client, student) => {
           competencyIdByCode.get(item.competencyId) || null,
           item.evaluationMethod,
           item.groupEvaluation ? 1 : 0,
-          item.status,
-          item.comment,
           itemIndex
         ]
       );
@@ -1051,18 +1045,16 @@ export const loadState = async () => {
       "SELECT id, student_id, name, group_evaluation, result, sort_order FROM categories ORDER BY sort_order"
     ),
     pool.query(
-      `SELECT
-        id,
-        category_id,
-        task,
-        competency_id,
-        evaluation_method,
-        group_evaluation,
-        status,
-        comment,
-        sort_order
-      FROM tasks
-      ORDER BY sort_order`
+    `SELECT
+      id,
+      category_id,
+      task,
+      competency_id,
+      evaluation_method,
+      group_evaluation,
+      sort_order
+    FROM tasks
+    ORDER BY sort_order`
     )
   ]);
   const [yearRows] = yearResult;
@@ -1144,6 +1136,10 @@ export const loadState = async () => {
     const competencyOptionRows = competenciesByStudent[student.id];
     const categoryRowsForStudent = categoriesByStudent[student.id];
     const competencyIdToCode = competencyIdToCodeByStudent[student.id];
+    const studentCompetencies = normalizeJsonValue(
+      student.competencies,
+      []
+    );
     return normalizeStudent({
       id: student.id,
       moduleId: student.module_id,
@@ -1173,14 +1169,15 @@ export const loadState = async () => {
         competencyOptionRows?.length
           ? buildCompetencyOptionsFromRows(competencyOptionRows)
           : student.competency_options || template.competencyOptions || [],
-      competencies:
-        categoryRowsForStudent?.length
-          ? buildCompetencyCategoriesFromRows(
-              categoryRowsForStudent,
-              tasksByCategory,
-              competencyIdToCode
-            )
-          : student.competencies || template.competencies || []
+      competencies: studentCompetencies.length
+        ? studentCompetencies
+        : categoryRowsForStudent?.length
+        ? buildCompetencyCategoriesFromRows(
+            categoryRowsForStudent,
+            tasksByCategory,
+            competencyIdToCode
+          )
+        : template.competencies || []
     });
   });
 
