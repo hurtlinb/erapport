@@ -414,6 +414,26 @@ h1 {
   gap: 12px;
 }
 
+.student-list-scrollable {
+  width: 100%;
+  flex: 1;
+  min-height: 220px;
+  max-height: min(60vh, 640px);
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable both-edges;
+}
+
+.form-panel-scrollable {
+  width: 100%;
+  flex: 1;
+  min-height: 260px;
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable both-edges;
+}
+
 .student-card {
   border: 1px solid #e2e8f0;
   border-radius: 16px;

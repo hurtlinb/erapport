@@ -2723,12 +2723,13 @@ ${teacherDisplayName}
               </datalist>
             </div>
           )}
-          <ul className="student-list">
-            {moduleStudents.length === 0 && (
-              <li className="empty">
-                Aucun étudiant pour ce module. Importez une liste pour démarrer.
-              </li>
-            )}
+          <div className="student-list-scrollable">
+            <ul className="student-list">
+              {moduleStudents.length === 0 && (
+                <li className="empty">
+                  Aucun étudiant pour ce module. Importez une liste pour démarrer.
+                </li>
+              )}
             {moduleStudents.map((student) => {
               const displayName =
                 getStudentDisplayName(student) || "Étudiant sans nom";
@@ -2847,7 +2848,8 @@ ${teacherDisplayName}
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </div>
         </section>
 
         <section className="panel form-panel">
@@ -2873,12 +2875,13 @@ ${teacherDisplayName}
             </div>
           </div>
 
-          <div className="details-toggle-row">
-            <button
-              type="button"
-              className="button ghost details-toggle"
-              onClick={() => setShowDetails((prev) => !prev)}
-              aria-expanded={showDetails}
+          <div className="form-panel-scrollable">
+            <div className="details-toggle-row">
+              <button
+                type="button"
+                className="button ghost details-toggle"
+                onClick={() => setShowDetails((prev) => !prev)}
+                aria-expanded={showDetails}
             >
               {showDetails ? "Masquer les détails" : "Afficher les détails"}
             </button>
@@ -3195,6 +3198,8 @@ ${teacherDisplayName}
               </div>
             ))}
           </div>
+          </div>
+
         </section>
 
         <section className="panel class-summary-panel">
