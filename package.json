@@ -1,0 +1,26 @@
+{
+  "name": "erapport",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon --watch src/server --ignore dist --ignore node_modules --ignore .vite --delay 0.5 src/server/index.js",
+    "build": "vite build",
+    "start": "cross-env NODE_ENV=production node src/server/index.js"
+  },
+  "dependencies": {
+    "archiver": "^6.0.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.5",
+    "pdfkit": "^0.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.14",
+    "vite": "^5.4.2"
+  }
+}
