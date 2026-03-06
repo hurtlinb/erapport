@@ -1016,12 +1016,24 @@ ${teacherDisplayName}
     const nokRows = rows.filter(
       (row) => row.numericNote !== null && row.numericNote < 4
     );
+    const nokMethodTotals = TASK_EVALUATION_METHODS.reduce((acc, method) => {
+      acc[method.value] = 0;
+      return acc;
+    }, {});
+    nokRows.forEach((row) => {
+      (row.nokEvaluationMethods || []).forEach((method) => {
+        if (method in nokMethodTotals) {
+          nokMethodTotals[method] += 1;
+        }
+      });
+    });
     return {
       rows,
       successCount,
       total,
       successRate,
-      nokRows
+      nokRows,
+      nokMethodTotals
     };
   }, [moduleStudents, template.groupFeatureEnabled]);
   const selectedStudent = moduleStudents.find(
@@ -3257,36 +3269,49 @@ ${teacherDisplayName}
                           ))}
                         </tr>
                       </thead>
-                      <tbody>
-                        {classSummary.nokRows.map((row) => (
-                          <tr key={`nok-${row.id}`}>
-                            <td className="class-summary-name">
-                              <span
-                                className={`class-summary-indicator ${row.noteClass}`}
-                                aria-hidden="true"
-                              />
-                              {row.name}
+                    <tbody>
+                      {classSummary.nokRows.map((row) => (
+                        <tr key={`nok-${row.id}`}>
+                          <td className="class-summary-name">
+                            <span
+                              className={`class-summary-indicator ${row.noteClass}`}
+                              aria-hidden="true"
+                            />
+                            {row.name}
+                          </td>
+                          {TASK_EVALUATION_METHODS.map((method) => (
+                            <td
+                              key={method.value}
+                              className="class-summary-nok-method-cell"
+                            >
+                              {row.nokEvaluationMethods
+                                ? row.nokEvaluationMethods.includes(
+                                    method.value
+                                  )
+                                  ? "X"
+                                  : ""
+                                : ""}
                             </td>
-                            {TASK_EVALUATION_METHODS.map((method) => (
-                              <td
-                                key={method.value}
-                                className="class-summary-nok-method-cell"
-                              >
-                                {row.nokEvaluationMethods
-                                  ? row.nokEvaluationMethods.includes(
-                                      method.value
-                                    )
-                                    ? "X"
-                                    : ""
-                                  : ""}
-                              </td>
-                            ))}
-                          </tr>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="class-summary-nok-total-row">
+                        <td>Total</td>
+                        {TASK_EVALUATION_METHODS.map((method) => (
+                          <td
+                            key={`total-${method.value}`}
+                            className="class-summary-nok-method-cell"
+                          >
+                            {classSummary.nokMethodTotals?.[method.value] ?? 0}
+                          </td>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
               </div>
             </>
           )}
