@@ -921,6 +921,7 @@ ${teacherDisplayName}
   const [groupDraftValue, setGroupDraftValue] = useState("");
   const [draggedTask, setDraggedTask] = useState(null);
   const [dragOverTask, setDragOverTask] = useState(null);
+  const [summaryFilter, setSummaryFilter] = useState("all");
   const [serverStatus, setServerStatus] = useState({
     status: "unknown",
     version: ""
@@ -1036,6 +1037,8 @@ ${teacherDisplayName}
       nokMethodTotals
     };
   }, [moduleStudents, template.groupFeatureEnabled]);
+  const visibleSummaryRows =
+    summaryFilter === "insufficient" ? classSummary.nokRows : classSummary.rows;
   const selectedStudent = moduleStudents.find(
     (student) => student.id === selectedId
   );
@@ -1049,6 +1052,9 @@ ${teacherDisplayName}
     SERVER_STATUS_LABELS[normalizedServerStatus] || SERVER_STATUS_LABELS.unknown;
   const serverVersionLabel = serverStatus.version || "—";
   const statusIndicatorClass = `status-indicator status-indicator--${normalizedServerStatus}`;
+  const methodColumnCount = TASK_EVALUATION_METHODS.length;
+  const summaryColumnCount =
+    3 + (template.groupFeatureEnabled ? 1 : 0) + methodColumnCount;
   const logClientEvent = async (event, payload) => {
     if (!authToken) return;
     try {
@@ -3204,9 +3210,25 @@ ${teacherDisplayName}
                   {classSummary.successCount} / {classSummary.total} étudiants
                 </span>
               </div>
+              <div className="class-summary-filter-switch" role="group" aria-label="Filtrer le résumé">
+                <button
+                  type="button"
+                  className={summaryFilter === "all" ? "is-active" : ""}
+                  onClick={() => setSummaryFilter("all")}
+                >
+                  Tous les étudiants
+                </button>
+                <button
+                  type="button"
+                  className={summaryFilter === "insufficient" ? "is-active" : ""}
+                  onClick={() => setSummaryFilter("insufficient")}
+                >
+                  Etudiants insuffisants
+                </button>
+              </div>
             </div>
           </div>
-          {classSummary.rows.length === 0 ? (
+          {visibleSummaryRows.length === 0 ? (
             <p className="helper-text">
               Aucun étudiant pour cette évaluation. Importez une liste pour commencer.
             </p>
@@ -3234,7 +3256,7 @@ ${teacherDisplayName}
                   </tr>
                 </thead>
                 <tbody>
-                  {classSummary.rows.map((row) => (
+                  {visibleSummaryRows.map((row) => (
                     <tr key={row.id}>
                       <td className="class-summary-name">
                         <span
@@ -3267,6 +3289,9 @@ ${teacherDisplayName}
                   ))}
                 </tbody>
                 <tfoot>
+                  <tr className="class-summary-nok-divider-row">
+                    <td colSpan={summaryColumnCount} />
+                  </tr>
                   <tr className="class-summary-nok-total-row">
                     <td>Total</td>
                     {template.groupFeatureEnabled && <td />}
