@@ -258,6 +258,58 @@ h1 {
   box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.18);
 }
 
+.class-summary-nok-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.class-summary-table-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.class-summary-table-panel,
+.class-summary-nok-section {
+  flex: 1;
+  min-width: 280px;
+}
+
+.class-summary-nok-section h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.class-summary-nok-table {
+  margin-top: 4px;
+}
+
+.class-summary-nok-table th:not(:first-child),
+.class-summary-nok-table td:not(:first-child) {
+  text-align: center;
+}
+
+.class-summary-nok-method-header {
+  font-size: 11px;
+  text-transform: none;
+  white-space: normal;
+  letter-spacing: 0.04em;
+  color: #475569;
+}
+
+.class-summary-nok-method-cell {
+  text-align: center;
+  font-weight: 600;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
