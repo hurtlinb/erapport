@@ -3211,109 +3211,78 @@ ${teacherDisplayName}
               Aucun étudiant pour cette évaluation. Importez une liste pour commencer.
             </p>
           ) : (
-            <>
-              <div className="class-summary-table-layout">
-                <div className="class-summary-table-panel">
-                  <table className="class-summary-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Étudiant</th>
-                        {template.groupFeatureEnabled && (
-                          <th scope="col">Groupe</th>
-                        )}
-                        <th scope="col" className="class-summary-note-header">
-                          Note
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {classSummary.rows.map((row) => (
-                        <tr key={row.id}>
-                          <td className="class-summary-name">
-                            <span
-                              className={`class-summary-indicator ${row.noteClass}`}
-                              aria-hidden="true"
-                            />
-                            {row.name}
-                          </td>
-                          {template.groupFeatureEnabled && (
-                            <td className="class-summary-group">
-                              {row.groupName || "—"}
-                            </td>
-                          )}
-                          <td
-                            className={`class-summary-note ${row.noteClass}`}
-                          >
-                            {row.noteLabel}
-                          </td>
-                        </tr>
+            <div className="class-summary-table-panel">
+              <table className="class-summary-table class-summary-with-methods">
+                <thead>
+                  <tr>
+                    <th scope="col">Étudiant</th>
+                    {template.groupFeatureEnabled && (
+                      <th scope="col">Groupe</th>
+                    )}
+                    <th scope="col" className="class-summary-note-header">
+                      Note
+                    </th>
+                    {TASK_EVALUATION_METHODS.map((method) => (
+                      <th
+                        key={method.value}
+                        scope="col"
+                        className="class-summary-nok-method-header"
+                      >
+                        {method.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {classSummary.rows.map((row) => (
+                    <tr key={row.id}>
+                      <td className="class-summary-name">
+                        <span
+                          className={`class-summary-indicator ${row.noteClass}`}
+                          aria-hidden="true"
+                        />
+                        {row.name}
+                      </td>
+                      {template.groupFeatureEnabled && (
+                        <td className="class-summary-group">
+                          {row.groupName || "—"}
+                        </td>
+                      )}
+                      <td className={`class-summary-note ${row.noteClass}`}>
+                        {row.noteLabel}
+                      </td>
+                      {TASK_EVALUATION_METHODS.map((method) => (
+                        <td
+                          key={method.value}
+                          className="class-summary-nok-method-cell"
+                        >
+                          {row.nokEvaluationMethods
+                            ? row.nokEvaluationMethods.includes(method.value)
+                              ? "X"
+                              : ""
+                            : ""}
+                        </td>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                {classSummary.nokRows.length > 0 && (
-                <div className="class-summary-nok-section">
-                  <h3>Remédiations</h3>
-                    <table className="class-summary-table class-summary-nok-table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Étudiant</th>
-                          {TASK_EVALUATION_METHODS.map((method) => (
-                            <th
-                              key={method.value}
-                              scope="col"
-                              className="class-summary-nok-method-header"
-                            >
-                              {method.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                    <tbody>
-                      {classSummary.nokRows.map((row) => (
-                        <tr key={`nok-${row.id}`}>
-                          <td className="class-summary-name">
-                            <span
-                              className={`class-summary-indicator ${row.noteClass}`}
-                              aria-hidden="true"
-                            />
-                            {row.name}
-                          </td>
-                          {TASK_EVALUATION_METHODS.map((method) => (
-                            <td
-                              key={method.value}
-                              className="class-summary-nok-method-cell"
-                            >
-                              {row.nokEvaluationMethods
-                                ? row.nokEvaluationMethods.includes(
-                                    method.value
-                                  )
-                                  ? "X"
-                                  : ""
-                                : ""}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="class-summary-nok-total-row">
-                        <td>Total</td>
-                        {TASK_EVALUATION_METHODS.map((method) => (
-                          <td
-                            key={`total-${method.value}`}
-                            className="class-summary-nok-method-cell"
-                          >
-                            {classSummary.nokMethodTotals?.[method.value] ?? 0}
-                          </td>
-                        ))}
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
-              </div>
-            </>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="class-summary-nok-total-row">
+                    <td>Total</td>
+                    {template.groupFeatureEnabled && <td />}
+                    <td />
+                    {TASK_EVALUATION_METHODS.map((method) => (
+                      <td
+                        key={`total-${method.value}`}
+                        className="class-summary-nok-method-cell"
+                      >
+                        {classSummary.nokMethodTotals?.[method.value] ?? 0}
+                      </td>
+                    ))}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           )}
         </section>
       </main>
