@@ -14,5 +14,5 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/index.html ./index.html
 EXPOSE 3001
-CMD [ npm, start]
+CMD ["node", "src/server/index.js"]
 
