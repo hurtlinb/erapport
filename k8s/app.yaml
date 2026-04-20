@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erapport
+  namespace: erapport
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: erapport
+  template:
+    metadata:
+      labels:
+        app: erapport
+    spec:
+      containers:
+        - name: erapport
+          image: hurtlinb/erapport:2.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: erapport-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: DATABASE_URL
+            - name: KEYCLOAK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: KEYCLOAK_URL
+            - name: KEYCLOAK_REALM
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: KEYCLOAK_REALM
+            - name: KEYCLOAK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: KEYCLOAK_CLIENT_ID
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: KEYCLOAK_CLIENT_SECRET
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: erapport-secret
+                  key: SESSION_SECRET
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /status
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: erapport
+  namespace: erapport
+spec:
+  selector:
+    app: erapport
+  ports:
+    - port: 80
+      targetPort: http
+      name: http

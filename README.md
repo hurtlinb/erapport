@@ -26,6 +26,12 @@ Single Express+React application that lets teachers build, save and export evalu
 | `DATABASE_URL` or `MARIADB_*` | MariaDB connection as described below. |
 | `VITE_API_BASE_URL` | Optional; controls which API base the built UI talks to. When unset it uses the same origin as the page (so the frontend and backend stay together). |
 | `TRUST_PROXY` | Set to `true` when running behind a reverse proxy to enable `trust proxy` on Express. |
+| `SERVER_BASE_URL` | Public base URL of the application, used for OIDC callback/logout redirects. |
+| `KEYCLOAK_URL` | Base URL of Keycloak, for example `https://sso.example.com`. |
+| `KEYCLOAK_REALM` | Keycloak realm used by the application. |
+| `KEYCLOAK_CLIENT_ID` | OIDC client id used by the application. |
+| `KEYCLOAK_CLIENT_SECRET` | OIDC client secret for confidential-client authorization code exchange. |
+| `SESSION_SECRET` | Secret used to sign the application session cookie. |
 
 ## MariaDB configuration
 
@@ -40,6 +46,12 @@ npm run dev
 
 ```powershell
 $env:DATABASE_URL="mysql://erapport:erapport@localhost:3306/erapport"
+$env:SERVER_BASE_URL="http://localhost:3001"
+$env:KEYCLOAK_URL="https://sso.example.com"
+$env:KEYCLOAK_REALM="education"
+$env:KEYCLOAK_CLIENT_ID="erapport"
+$env:KEYCLOAK_CLIENT_SECRET="change-me-client-secret"
+$env:SESSION_SECRET="change-me-session-secret"
 npm run dev
 ```
 

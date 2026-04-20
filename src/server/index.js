@@ -2,12 +2,20 @@ import archiver from "archiver";
 import cors from "cors";
 import crypto from "crypto";
 import express from "express";
+import session from "express-session";
+import MySQLStoreFactory from "express-mysql-session";
 import fs from "fs";
+import { generators, Issuer } from "openid-client";
 import path from "path";
 import PDFDocument from "pdfkit";
 import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
-import { checkDatabaseStatus, loadState, saveState } from "./dataStore.js";
+import {
+  checkDatabaseStatus,
+  loadState,
+  saveState,
+  upsertUserIdentity
+} from "./dataStore.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,6 +50,61 @@ const trimTrailingSlash = (value) => {
 const PORT_BASE_URL = trimTrailingSlash(process.env.SERVER_BASE_URL || "");
 const SERVER_BASE_URL =
   PORT_BASE_URL || `http://localhost:${PORT}`;
+const KEYCLOAK_URL = trimTrailingSlash(process.env.KEYCLOAK_URL || "");
+const KEYCLOAK_REALM = String(process.env.KEYCLOAK_REALM || "").trim();
+const KEYCLOAK_CLIENT_ID = String(process.env.KEYCLOAK_CLIENT_ID || "").trim();
+const KEYCLOAK_CLIENT_SECRET = String(
+  process.env.KEYCLOAK_CLIENT_SECRET || ""
+).trim();
+const SESSION_SECRET = String(process.env.SESSION_SECRET || "").trim();
+const OIDC_ENABLED = Boolean(
+  KEYCLOAK_URL &&
+  KEYCLOAK_REALM &&
+  KEYCLOAK_CLIENT_ID &&
+  KEYCLOAK_CLIENT_SECRET &&
+  SESSION_SECRET
+);
+const OIDC_ISSUER = OIDC_ENABLED
+  ? `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`
+  : "";
+const OIDC_REDIRECT_URI = `${SERVER_BASE_URL}/auth/callback`;
+const MySQLStore = MySQLStoreFactory(session);
+
+const getOptionalString = (value) =>
+  typeof value === "string" && value.trim() ? value : undefined;
+
+const getSessionStoreOptions = () => {
+  const databaseUrl = getOptionalString(process.env.DATABASE_URL);
+  if (databaseUrl) {
+    const parsed = new URL(databaseUrl);
+    return {
+      host: parsed.hostname,
+      port: parsed.port ? Number(parsed.port) : 3306,
+      user: decodeURIComponent(parsed.username),
+      password: decodeURIComponent(parsed.password),
+      database: parsed.pathname.replace(/^\//, "")
+    };
+  }
+
+  return {
+    host: getOptionalString(process.env.MARIADB_HOST) || "localhost",
+    port: process.env.MARIADB_PORT ? Number(process.env.MARIADB_PORT) : 3306,
+    user: getOptionalString(process.env.MARIADB_USER),
+    password: getOptionalString(process.env.MARIADB_PASSWORD),
+    database: getOptionalString(process.env.MARIADB_DATABASE)
+  };
+};
+
+const sessionStore = new MySQLStore(
+  {
+    ...getSessionStoreOptions(),
+    createDatabaseTable: true,
+    schema: {
+      tableName: "user_sessions"
+    }
+  }
+);
+let oidcClientPromise;
 app.use(
   cors({
     origin: true,
@@ -53,6 +116,22 @@ app.use(express.json({ limit: "2mb" }));
 if (toBoolean(process.env.TRUST_PROXY, false)) {
   app.set("trust proxy", 1);
 }
+
+app.use(
+  session({
+    name: "erapport.sid",
+    secret: SESSION_SECRET || "dev-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: !isDev,
+      maxAge: 1000 * 60 * 60 * 8
+    }
+  })
+);
 
 const hashPassword = (password, salt) =>
   crypto.pbkdf2Sync(password, salt, 120000, 64, "sha512").toString("hex");
@@ -164,22 +243,200 @@ const normalizeEmail = (value) => {
   return value.trim().toLowerCase();
 };
 
+const getOidcConfig = () => ({
+  enabled: OIDC_ENABLED,
+  url: KEYCLOAK_URL,
+  realm: KEYCLOAK_REALM,
+  clientId: KEYCLOAK_CLIENT_ID
+});
+
+const buildUserIdentityFromClaims = (claims = {}) => {
+  const givenName = String(claims.given_name || "").trim();
+  const familyName = String(claims.family_name || "").trim();
+  const combinedName = [givenName, familyName].filter(Boolean).join(" ");
+  const email = normalizeEmail(claims.email || "");
+  const preferredUsername = String(claims.preferred_username || "").trim();
+  return {
+    id: String(claims.sub || "").trim(),
+    email,
+    name:
+      combinedName ||
+      String(claims.name || "").trim() ||
+      preferredUsername ||
+      email
+  };
+};
+
+const getOidcClient = async () => {
+  if (!OIDC_ENABLED) {
+    throw new Error("OIDC configuration is missing.");
+  }
+  if (!oidcClientPromise) {
+    oidcClientPromise = Issuer.discover(OIDC_ISSUER).then((issuer) => (
+      new issuer.Client({
+        client_id: KEYCLOAK_CLIENT_ID,
+        client_secret: KEYCLOAK_CLIENT_SECRET,
+        redirect_uris: [OIDC_REDIRECT_URI],
+        response_types: ["code"]
+      })
+    ));
+  }
+  return oidcClientPromise;
+};
+
+const getSessionUser = (req) =>
+  req.session?.user && typeof req.session.user === "object"
+    ? req.session.user
+    : null;
+
 const requireAuth = async (req, res, next) => {
-  const token = getTokenFromRequest(req);
-  if (!token) {
-    res.status(401).json({ error: "Jeton manquant." });
+  if (!OIDC_ENABLED) {
+    res.status(503).json({ error: "Configuration OpenID manquante." });
     return;
   }
+
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser?.id) {
+    res.status(401).json({ error: "Session manquante." });
+    return;
+  }
+
+  try {
+    await upsertUserIdentity(sessionUser);
+  } catch (error) {
+    console.error("OIDC session synchronization failed", error);
+    res.status(401).json({ error: "Session invalide." });
+    return;
+  }
+
   const state = await loadState();
-  const user = state.users.find((entry) => entry.token === token);
+  const user = state.users.find((entry) => entry.id === sessionUser.id);
   if (!user) {
-    res.status(401).json({ error: "Jeton invalide." });
+    res.status(401).json({ error: "Utilisateur introuvable." });
     return;
   }
   req.user = user;
   req.state = state;
   next();
 };
+
+app.get("/api/auth/config", (req, res) => {
+  const config = getOidcConfig();
+  if (!config.enabled) {
+    res.status(503).json({
+      ...config,
+      error: "Configuration OpenID manquante."
+    });
+    return;
+  }
+  res.json(config);
+});
+
+app.get("/api/auth/session", asyncHandler(async (req, res) => {
+  const sessionUser = getSessionUser(req);
+  if (!sessionUser?.id) {
+    res.status(401).json({ authenticated: false });
+    return;
+  }
+
+  await upsertUserIdentity(sessionUser);
+  const state = await loadState();
+  const user = state.users.find((entry) => entry.id === sessionUser.id);
+  if (!user) {
+    res.status(401).json({ authenticated: false });
+    return;
+  }
+
+  res.json({
+    authenticated: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }
+  });
+}));
+
+app.get("/auth/login", asyncHandler(async (req, res) => {
+  const client = await getOidcClient();
+  const codeVerifier = generators.codeVerifier();
+  const codeChallenge = generators.codeChallenge(codeVerifier);
+  const state = generators.state();
+  const nonce = generators.nonce();
+
+  req.session.oidcLogin = {
+    codeVerifier,
+    state,
+    nonce
+  };
+
+  const authorizationUrl = client.authorizationUrl({
+    scope: "openid profile email",
+    redirect_uri: OIDC_REDIRECT_URI,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+    state,
+    nonce
+  });
+
+  res.redirect(authorizationUrl);
+}));
+
+app.get("/auth/callback", asyncHandler(async (req, res) => {
+  const client = await getOidcClient();
+  const loginSession = req.session.oidcLogin || {};
+  const params = client.callbackParams(req);
+  const tokenSet = await client.callback(
+    OIDC_REDIRECT_URI,
+    params,
+    {
+      code_verifier: loginSession.codeVerifier,
+      state: loginSession.state,
+      nonce: loginSession.nonce
+    }
+  );
+  const identity = buildUserIdentityFromClaims(tokenSet.claims());
+  await upsertUserIdentity(identity);
+  req.session.user = identity;
+  req.session.oidc = {
+    idToken: tokenSet.id_token || ""
+  };
+  delete req.session.oidcLogin;
+  res.redirect("/");
+}));
+
+app.get("/auth/logout", asyncHandler(async (req, res) => {
+  const idTokenHint = req.session?.oidc?.idToken || "";
+  const client = OIDC_ENABLED ? await getOidcClient() : null;
+  await new Promise((resolve, reject) => {
+    req.session.destroy((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const endSessionUrl = client?.issuer?.metadata?.end_session_endpoint;
+  if (endSessionUrl && idTokenHint) {
+    res.redirect(
+      client.endSessionUrl({
+        id_token_hint: idTokenHint,
+        post_logout_redirect_uri: SERVER_BASE_URL
+      })
+    );
+    return;
+  }
+
+  res.redirect("/");
+}));
+
+app.all(["/api/auth/login", "/api/auth/register"], (req, res) => {
+  res.status(410).json({
+    error: "L'authentification locale est désactivée. Utilisez OpenID."
+  });
+});
 
 app.post("/api/auth/register", asyncHandler(async (req, res) => {
   const { name, email, password } = req.body || {};

@@ -468,6 +468,12 @@ const normalizeState = (state) => {
 const getOptionalString = (value) =>
   typeof value === "string" && value.trim() ? value : undefined;
 
+const normalizeIdentityValue = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const normalizeIdentityEmail = (value) =>
+  normalizeIdentityValue(value).toLowerCase();
+
 const databaseUrl = getOptionalString(process.env.DATABASE_URL);
 const poolConfig = databaseUrl
   ? { uri: databaseUrl }
@@ -484,6 +490,23 @@ const pool = mysql.createPool({
 });
 
 let initializationPromise;
+
+const buildUserIdentityPayload = (identity = {}) => {
+  const id = normalizeIdentityValue(identity.id);
+  const email = normalizeIdentityEmail(identity.email);
+  const fallbackEmail = id ? `${id}@users.invalid` : "";
+  const resolvedEmail = email || fallbackEmail;
+  const name =
+    normalizeIdentityValue(identity.name) ||
+    resolvedEmail ||
+    "Utilisateur";
+
+  return {
+    id,
+    email: resolvedEmail,
+    name
+  };
+};
 
 const migrateCompetencyTables = async (client) => {
   const [studentRows] = await client.query(
@@ -1014,6 +1037,89 @@ export const checkDatabaseStatus = async () => {
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error.message };
+  }
+};
+
+export const upsertUserIdentity = async (identity) => {
+  await ensureInitialized();
+  const user = buildUserIdentityPayload(identity);
+  if (!user.id) {
+    throw new Error("Missing user identity id.");
+  }
+
+  const client = await pool.getConnection();
+  try {
+    await client.beginTransaction();
+
+    const [existingByIdRows] = await client.query(
+      "SELECT id, email FROM users WHERE id = ? LIMIT 1",
+      [user.id]
+    );
+    if (existingByIdRows.length > 0) {
+      await client.query(
+        `
+          UPDATE users
+          SET name = ?, email = ?
+          WHERE id = ?
+        `,
+        [user.name, user.email, user.id]
+      );
+      await client.commit();
+      return user;
+    }
+
+    const [existingByEmailRows] = await client.query(
+      "SELECT id, signature_data FROM users WHERE email = ? LIMIT 1",
+      [user.email]
+    );
+
+    if (existingByEmailRows.length > 0) {
+      const existingUser = existingByEmailRows[0];
+      const migrationEmail = `${user.id}@migration.invalid`;
+
+      await client.query(
+        `
+          INSERT INTO users (id, name, email, password_hash, salt, token, signature_data)
+          VALUES (?, ?, ?, '', '', '', ?)
+        `,
+        [
+          user.id,
+          user.name,
+          migrationEmail,
+          existingUser.signature_data || ""
+        ]
+      );
+      await client.query(
+        "UPDATE students SET teacher_id = ? WHERE teacher_id = ?",
+        [user.id, existingUser.id]
+      );
+      await client.query("DELETE FROM users WHERE id = ?", [existingUser.id]);
+      await client.query(
+        `
+          UPDATE users
+          SET email = ?
+          WHERE id = ?
+        `,
+        [user.email, user.id]
+      );
+      await client.commit();
+      return user;
+    }
+
+    await client.query(
+      `
+        INSERT INTO users (id, name, email, password_hash, salt, token, signature_data)
+        VALUES (?, ?, ?, '', '', '', '')
+      `,
+      [user.id, user.name, user.email]
+    );
+    await client.commit();
+    return user;
+  } catch (error) {
+    await client.rollback();
+    throw error;
+  } finally {
+    client.release();
   }
 };
 

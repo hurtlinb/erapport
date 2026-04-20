@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clientPackage from "../../package.json";
 
 const DEFAULT_COMPETENCY_OPTIONS = [
@@ -108,9 +108,9 @@ const EVALUATION_TYPES = ["E1", "E2", "E3"];
 const TASK_EVALUATION_METHODS = [
   { value: "Evaluation écrite", label: "📝 Evaluation écrite" },
   { value: "Evaluation pratique", label: "🧪 Evaluation pratique" },
-  { value: "Documentation", label: "📚 Documentation" }
+  { value: "Documentation", label: "📚 Documentation" },
+  { value: "Evaluation orale", label: "🗣️👥 Evaluation orale" }
 ];
-const AUTH_STORAGE_KEY = "erapport.auth";
 
 const STATUS_VALUES = {
   OK: "OK",
@@ -146,34 +146,18 @@ const buildModuleLabel = (moduleNumber, moduleTitle) => {
   return numberValue || titleValue || "Module";
 };
 
-const loadStoredAuth = () => {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.token || !parsed?.user) return null;
-    return parsed;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
+const buildAuthUserFromToken = (tokenParsed = {}) => ({
+  id: String(tokenParsed.sub || ""),
+  name:
+    tokenParsed.name ||
+    tokenParsed.preferred_username ||
+    tokenParsed.email ||
+    "",
+  email: tokenParsed.email || tokenParsed.preferred_username || ""
+});
 
-const persistStoredAuth = (payload) => {
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const clearStoredAuth = () => {
-  try {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  } catch (error) {
-    console.error(error);
-  }
-};
+const persistStoredAuth = () => {};
+const clearStoredAuth = () => {};
 
 const getStatusClass = (status) => {
   if (status === STATUS_VALUES.OK) return "status-ok";
@@ -860,8 +844,8 @@ const cloneStudentReport = (student, evaluationType, template) => {
 };
 
 function App() {
-  const [authUser, setAuthUser] = useState(() => loadStoredAuth()?.user || null);
-  const [authToken, setAuthToken] = useState(() => loadStoredAuth()?.token || "");
+  const [authUser, setAuthUser] = useState(null);
+  const [authToken, setAuthToken] = useState("");
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({
     name: "",
@@ -870,7 +854,7 @@ function App() {
     confirmPassword: ""
   });
   const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [schoolYears, setSchoolYears] = useState([]);
   const [template, setTemplate] = useState(defaultTemplate);
   const [activeSchoolYearId, setActiveSchoolYearId] = useState("");
@@ -937,7 +921,51 @@ ${teacherDisplayName}
   const teacherName = useMemo(
     () => authUser?.name || authUser?.email || "",
     [authUser]
-  );
+  );  const getValidAccessToken = useCallback(async () => (
+    authUser ? authToken || "session" : ""
+  ), [authToken, authUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const initializeAuth = async () => {
+      setAuthLoading(true);
+      setAuthError("");
+      try {
+        const response = await fetch(buildApiUrl("/api/auth/session"));
+        if (response.status === 401) {
+          window.location.assign(buildApiUrl("/auth/login"));
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Impossible de récupérer la session OIDC.");
+        }
+        const data = await response.json();
+        if (cancelled) return;
+        setAuthUser(data.user || null);
+        setAuthToken(data.user ? "session" : "");
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setAuthError(
+            "Impossible d'initialiser l'authentification OpenID."
+          );
+          setAuthUser(null);
+          setAuthToken("");
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const fallbackMailBody = buildDefaultMailBody("Nom de l'enseignant");
     if (!mailDraftBody || mailDraftBody === fallbackMailBody) {
@@ -1055,13 +1083,14 @@ ${teacherDisplayName}
   const summaryColumnCount =
     3 + (template.groupFeatureEnabled ? 1 : 0) + methodColumnCount;
   const logClientEvent = async (event, payload) => {
-    if (!authToken) return;
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) return;
     try {
       await fetch(buildApiUrl("/api/logs"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
+          Authorization: `Bearer ${accessToken}`
         },
         body: JSON.stringify({ event, payload })
       });
@@ -1181,11 +1210,15 @@ ${teacherDisplayName}
     const loadState = async () => {
       setIsLoading(true);
       try {
+        const accessToken = await getValidAccessToken();
+        if (!accessToken) {
+          resetAppState("");
+          return;
+        }
         const response = await fetch(buildApiUrl("/api/state"), {
-          headers: { Authorization: `Bearer ${authToken}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
         if (response.status === 401) {
-          clearStoredAuth();
           setAuthUser(null);
           setAuthToken("");
           setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
@@ -1231,7 +1264,7 @@ ${teacherDisplayName}
     };
 
     loadState();
-  }, [authToken]);
+  }, [authToken, getValidAccessToken]);
 
   useEffect(() => {
     if (!authToken) {
@@ -1244,11 +1277,15 @@ ${teacherDisplayName}
 
     const loadSettings = async () => {
       try {
+        const accessToken = await getValidAccessToken();
+        if (!accessToken) {
+          setSignatureData("");
+          return;
+        }
         const response = await fetch(buildApiUrl("/api/settings"), {
-          headers: { Authorization: `Bearer ${authToken}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
         if (response.status === 401) {
-          clearStoredAuth();
           setAuthUser(null);
           setAuthToken("");
           setAuthError("Votre session a expiré. Veuillez vous reconnecter.");
@@ -1271,17 +1308,19 @@ ${teacherDisplayName}
     };
 
     loadSettings();
-  }, [authToken]);
+  }, [authToken, getValidAccessToken]);
 
   useEffect(() => {
     if (!isHydratedRef.current || !isAuthenticated) return;
     const persistState = async () => {
       try {
+        const accessToken = await getValidAccessToken();
+        if (!accessToken) return;
         await fetch(buildApiUrl("/api/state"), {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`
+            Authorization: `Bearer ${accessToken}`
           },
           body: JSON.stringify({ schoolYears, students })
         });
@@ -1291,7 +1330,7 @@ ${teacherDisplayName}
     };
 
     persistState();
-  }, [authToken, isAuthenticated, schoolYears, students]);
+  }, [getValidAccessToken, isAuthenticated, schoolYears, students]);
 
   useEffect(() => {
     if (selectedStudent) {
@@ -1456,58 +1495,13 @@ ${teacherDisplayName}
     if (event?.preventDefault) {
       event.preventDefault();
     }
+    await handleLogin();
+  };
+
+  const handleLogin = async () => {
+    setAuthLoading(true);
     setAuthError("");
-    if (!authForm.email || !authForm.password) {
-      setAuthError("Veuillez saisir votre e-mail et votre mot de passe.");
-      return;
-    }
-    if (authMode === "register") {
-      if (!authForm.name) {
-        setAuthError("Veuillez saisir votre nom.");
-        return;
-      }
-      if (authForm.password !== authForm.confirmPassword) {
-        setAuthError("Les mots de passe ne correspondent pas.");
-        return;
-      }
-    }
-
-    const payload =
-      authMode === "register"
-        ? {
-            name: authForm.name,
-            email: authForm.email,
-            password: authForm.password
-          }
-        : { email: authForm.email, password: authForm.password };
-
-    try {
-      setAuthLoading(true);
-      const response = await fetch(
-        buildApiUrl(
-          `/api/auth/${authMode === "register" ? "register" : "login"}`
-        ),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        setAuthError(data?.error || "Impossible de vous authentifier.");
-        return;
-      }
-      setAuthUser(data.user);
-      setAuthToken(data.token);
-      persistStoredAuth({ user: data.user, token: data.token });
-      setAuthForm({ name: "", email: "", password: "", confirmPassword: "" });
-    } catch (error) {
-      console.error(error);
-      setAuthError("Impossible de vous authentifier. Veuillez réessayer.");
-    } finally {
-      setAuthLoading(false);
-    }
+    window.location.assign(buildApiUrl("/auth/login"));
   };
 
   const handleLogout = async () => {
@@ -1520,6 +1514,7 @@ ${teacherDisplayName}
     setSignatureError("");
     setSignatureStatus("");
     setIsSettingsModalOpen(false);
+    window.location.assign(buildApiUrl("/auth/logout"));
   };
 
   const handleSignatureFileChange = (event) => {
@@ -1551,7 +1546,8 @@ ${teacherDisplayName}
     if (event) {
       event.preventDefault();
     }
-    if (!authToken) return;
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) return;
     setIsSavingSignature(true);
     setSignatureError("");
     setSignatureStatus("");
@@ -1560,7 +1556,7 @@ ${teacherDisplayName}
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
+          Authorization: `Bearer ${accessToken}`
         },
         body: JSON.stringify({ signatureData })
       });
@@ -1819,11 +1815,13 @@ ${teacherDisplayName}
       alert("Veuillez saisir le nom de l'étudiant.");
       return;
     }
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) return;
     const response = await fetch(buildApiUrl("/api/report"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(draft)
     });
@@ -1855,11 +1853,13 @@ ${teacherDisplayName}
       );
       return;
     }
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) return;
     const response = await fetch(buildApiUrl("/api/report/coaching"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(draft)
     });
@@ -1896,13 +1896,15 @@ ${teacherDisplayName}
       alert("Aucun étudiant à exporter.");
       return;
     }
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) return;
     setIsExporting(true);
     try {
       const response = await fetch(buildApiUrl("/api/report/export-all"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
+          Authorization: `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           students: moduleStudents,
@@ -2370,121 +2372,34 @@ ${teacherDisplayName}
   if (!isAuthenticated) {
     return (
       <div className="app auth-page">
-        <header className="hero">
-          <div>
-            <h1>Connectez-vous pour accéder aux rapports des étudiants</h1>
-            <p className="subtitle">
-              Chaque enseignant ne voit que ses propres rapports. Créez un
-              compte ou connectez-vous pour continuer.
-            </p>
-          </div>
-        </header>
-
         <main className="layout auth-layout">
           <section className="panel auth-panel">
             <div className="panel-header">
-              <h2>
-                {authMode === "login" ? "Connexion enseignant" : "Nouveau compte"}
-              </h2>
+              <h2>Authentification OpenID</h2>
               <span className="helper-text">
-                {authMode === "login"
-                  ? "Utilisez votre compte enseignant pour accéder aux rapports."
-                  : "Créez un compte enseignant pour garder les rapports privés."}
+                Redirection vers Keycloak en cours...
               </span>
             </div>
-            <form className="auth-form" onSubmit={handleAuthSubmit}>
-              {authMode === "register" && (
-                <label>
-                  Nom complet
-                  <input
-                    type="text"
-                    value={authForm.name}
-                    onChange={(event) =>
-                      handleAuthFieldChange("name", event.target.value)
-                    }
-                    placeholder="Mme Martin"
-                  />
-                </label>
-              )}
-              <label>
-                E-mail
-                <input
-                  type="email"
-                  value={authForm.email}
-                  onChange={(event) =>
-                    handleAuthFieldChange("email", event.target.value)
-                  }
-                  placeholder="enseignant@example.com"
-                />
-              </label>
-              <label>
-                Mot de passe
-                <input
-                  type="password"
-                  value={authForm.password}
-                  onChange={(event) =>
-                    handleAuthFieldChange("password", event.target.value)
-                  }
-                  placeholder="********"
-                />
-              </label>
-              {authMode === "register" && (
-                <label>
-                  Confirmer le mot de passe
-                  <input
-                    type="password"
-                    value={authForm.confirmPassword}
-                    onChange={(event) =>
-                      handleAuthFieldChange("confirmPassword", event.target.value)
-                    }
-                    placeholder="********"
-                  />
-                </label>
-              )}
+            <div className="auth-form">
               {authError && (
                 <p className="helper-text error-text" role="alert">
                   {authError}
                 </p>
               )}
-              <div className="actions auth-actions">
-                <button
-                  type="submit"
-                  className="button primary"
-                  disabled={authLoading}
-                >
-                  {authLoading
-                    ? "Veuillez patienter..."
-                    : authMode === "login"
-                      ? "Se connecter"
-                      : "Créer un compte"}
-                </button>
-                <button
-                  type="button"
-                  className="button ghost"
-                  onClick={() => {
-                    setAuthMode(authMode === "login" ? "register" : "login");
-                    setAuthError("");
-                  }}
-                >
-                  {authMode === "login"
-                    ? "Créer un nouveau compte"
-                    : "Retour à la connexion"}
-                </button>
-              </div>
-            </form>
+            </div>
           </section>
 
           <section className="panel auth-panel-info">
-            <h2>Espaces enseignants privés</h2>
+            <h2>Accès enseignant</h2>
             <p className="helper-text">
-              Votre compte garantit que vous seul pouvez voir et modifier vos
-              rapports d'étudiants. Utilisez le même identifiant sur n'importe
-              quel appareil pour reprendre où vous vous êtes arrêté.
+              L'application utilise désormais Keycloak pour l'authentification.
+              Si la redirection ne se lance pas, vérifiez la configuration du
+              client OpenID.
             </p>
             <ul className="auth-benefits">
               <li>Rapports séparés par enseignant.</li>
               <li>Filtrage automatique de votre liste d'étudiants.</li>
-              <li>Accès sécurisé pour les exports PDF.</li>
+              <li>Accès sécurisé via OpenID Connect.</li>
             </ul>
           </section>
         </main>
@@ -4036,3 +3951,4 @@ ${teacherDisplayName}
 }
 
 export default App;
+
