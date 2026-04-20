@@ -108,7 +108,8 @@ const EVALUATION_TYPES = ["E1", "E2", "E3"];
 const TASK_EVALUATION_METHODS = [
   { value: "Evaluation écrite", label: "📝 Evaluation écrite" },
   { value: "Evaluation pratique", label: "🧪 Evaluation pratique" },
-  { value: "Documentation", label: "📚 Documentation" }
+  { value: "Documentation", label: "📚 Documentation" },
+  { value: "Evaluation orale", label: "🗣️👥 Evaluation orale" }
 ];
 
 const STATUS_VALUES = {
