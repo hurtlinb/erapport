@@ -102,6 +102,24 @@ const buildApiUrl = (path) => {
   return API_BASE_URL ? `${API_BASE_URL}${normalizedPath}` : normalizedPath;
 };
 
+const getSaveFailureMessage = (error) => {
+  const fallback =
+    "Impossible d'enregistrer les données sur le serveur. Vérifiez que le serveur et la base de données sont disponibles.";
+  const message = error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    !message ||
+    normalizedMessage.includes("failed to fetch") ||
+    normalizedMessage.includes("load failed") ||
+    normalizedMessage.includes("networkerror")
+  ) {
+    return fallback;
+  }
+
+  return message;
+};
+
 const APP_VERSION = clientPackage.version || "dev";
 
 const EVALUATION_TYPES = ["E1", "E2", "E3"];
@@ -905,6 +923,8 @@ ${teacherDisplayName}
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [isRetryingSave, setIsRetryingSave] = useState(false);
   const [groupEditId, setGroupEditId] = useState("");
   const [groupDraftValue, setGroupDraftValue] = useState("");
   const [draggedTask, setDraggedTask] = useState(null);
@@ -916,6 +936,7 @@ ${teacherDisplayName}
     db: { ok: false }
   });
   const isHydratedRef = useRef(false);
+  const saveAttemptIdRef = useRef(0);
   const isAuthenticated = Boolean(authToken && authUser);
   const teacherId = authUser?.id || "";
   const teacherName = useMemo(
@@ -924,6 +945,42 @@ ${teacherDisplayName}
   );  const getValidAccessToken = useCallback(async () => (
     authUser ? authToken || "session" : ""
   ), [authToken, authUser]);
+  const persistAppState = useCallback(
+    async (nextSchoolYears, nextStudents) => {
+      const accessToken = await getValidAccessToken();
+      if (!accessToken) return null;
+
+      const response = await fetch(buildApiUrl("/api/state"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          schoolYears: nextSchoolYears,
+          students: nextStudents
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        throw new Error(
+          "Votre session a expiré. Les dernières modifications n'ont pas pu être enregistrées."
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error
+            ? `Impossible d'enregistrer les données sur le serveur. ${data.error}`
+            : `Impossible d'enregistrer les données sur le serveur. Code HTTP ${response.status}.`
+        );
+      }
+
+      return data;
+    },
+    [getValidAccessToken]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -932,13 +989,27 @@ ${teacherDisplayName}
       setAuthLoading(true);
       setAuthError("");
       try {
-        const response = await fetch(buildApiUrl("/api/auth/session"));
+        const response = await fetch(buildApiUrl("/api/auth/session"), {
+          credentials: "include"
+        });
         if (response.status === 401) {
+          const configResponse = await fetch(buildApiUrl("/api/auth/config"), {
+            credentials: "include"
+          });
+          if (!configResponse.ok) {
+            const configError = await configResponse.json().catch(() => ({}));
+            throw new Error(
+              configError.error || "Configuration OpenID indisponible."
+            );
+          }
           window.location.assign(buildApiUrl("/auth/login"));
           return;
         }
         if (!response.ok) {
-          throw new Error("Impossible de récupérer la session OIDC.");
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(
+            payload.error || "Impossible de récupérer la session OIDC."
+          );
         }
         const data = await response.json();
         if (cancelled) return;
@@ -948,7 +1019,8 @@ ${teacherDisplayName}
         console.error(error);
         if (!cancelled) {
           setAuthError(
-            "Impossible d'initialiser l'authentification OpenID."
+            error?.message ||
+              "Impossible d'initialiser l'authentification OpenID."
           );
           setAuthUser(null);
           setAuthToken("");
@@ -1198,6 +1270,8 @@ ${teacherDisplayName}
     setDraft(buildStudentFromTemplate(defaultTemplate, nextTeacherId));
     setIsEditing(false);
     setLoadError("");
+    setSaveError("");
+    setIsRetryingSave(false);
     setIsLoading(false);
   };
 
@@ -1312,25 +1386,66 @@ ${teacherDisplayName}
 
   useEffect(() => {
     if (!isHydratedRef.current || !isAuthenticated) return;
+    const saveAttemptId = ++saveAttemptIdRef.current;
     const persistState = async () => {
       try {
-        const accessToken = await getValidAccessToken();
-        if (!accessToken) return;
-        await fetch(buildApiUrl("/api/state"), {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`
-          },
-          body: JSON.stringify({ schoolYears, students })
-        });
+        await persistAppState(schoolYears, students);
+        if (saveAttemptIdRef.current !== saveAttemptId) return;
+        setSaveError("");
+        setServerStatus((prev) => ({
+          ...prev,
+          status:
+            prev.status === "offline" || prev.status === "degraded"
+              ? "ok"
+              : prev.status,
+          db: { ok: true }
+        }));
       } catch (error) {
         console.error(error);
+        if (saveAttemptIdRef.current !== saveAttemptId) return;
+        const message = getSaveFailureMessage(error);
+        setSaveError(message);
+        setServerStatus((prev) => ({
+          ...prev,
+          status: prev.status === "unknown" ? "offline" : "degraded",
+          db: { ok: false, error: message }
+        }));
       }
     };
 
     persistState();
-  }, [getValidAccessToken, isAuthenticated, schoolYears, students]);
+  }, [isAuthenticated, persistAppState, schoolYears, students]);
+
+  const handleRetrySave = async () => {
+    const saveAttemptId = ++saveAttemptIdRef.current;
+    setIsRetryingSave(true);
+
+    try {
+      await persistAppState(schoolYears, students);
+      if (saveAttemptIdRef.current !== saveAttemptId) return;
+      setSaveError("");
+      setServerStatus((prev) => ({
+        ...prev,
+        status:
+          prev.status === "offline" || prev.status === "degraded"
+            ? "ok"
+            : prev.status,
+        db: { ok: true }
+      }));
+    } catch (error) {
+      console.error(error);
+      if (saveAttemptIdRef.current !== saveAttemptId) return;
+      const message = getSaveFailureMessage(error);
+      setSaveError(message);
+      setServerStatus((prev) => ({
+        ...prev,
+        status: prev.status === "unknown" ? "offline" : "degraded",
+        db: { ok: false, error: message }
+      }));
+    } finally {
+      setIsRetryingSave(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedStudent) {
@@ -2377,7 +2492,9 @@ ${teacherDisplayName}
             <div className="panel-header">
               <h2>Authentification OpenID</h2>
               <span className="helper-text">
-                Redirection vers Keycloak en cours...
+                {authError
+                  ? "Authentification indisponible."
+                  : "Redirection vers Keycloak en cours..."}
               </span>
             </div>
             <div className="auth-form">
@@ -3939,6 +4056,54 @@ ${teacherDisplayName}
               <div className="action-row">
                 <button className="button ghost" onClick={handleAddCategory}>
                   + Ajouter un thème
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {saveError && (
+        <div
+          className="modal-backdrop modal-backdrop--critical"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="save-error-title"
+          aria-describedby="save-error-message"
+        >
+          <div className="modal modal--compact save-error-modal">
+            <div className="modal-header">
+              <div>
+                <h2 id="save-error-title">Enregistrement impossible</h2>
+                <p className="helper-text" id="save-error-message">
+                  Les dernières modifications n'ont pas pu être enregistrées.
+                  Ne continuez pas la saisie tant que la sauvegarde n'a pas
+                  réussi.
+                </p>
+              </div>
+            </div>
+            <p className="helper-text error-text" role="alert">
+              {saveError}
+            </p>
+            <div className="actions align-start modal-actions">
+              <div className="action-row">
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={handleRetrySave}
+                  disabled={isRetryingSave}
+                  autoFocus
+                >
+                  {isRetryingSave
+                    ? "Réessai en cours..."
+                    : "Réessayer l'enregistrement"}
+                </button>
+                <button
+                  type="button"
+                  className="button ghost"
+                  onClick={() => window.location.reload()}
+                  disabled={isRetryingSave}
+                >
+                  Recharger la page
                 </button>
               </div>
             </div>

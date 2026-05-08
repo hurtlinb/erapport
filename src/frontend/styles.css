@@ -1225,6 +1225,10 @@ textarea {
   z-index: 10;
 }
 
+.modal-backdrop--critical {
+  z-index: 20;
+}
+
 .modal {
   width: min(1080px, 100%);
   background: #fff;
@@ -1235,6 +1239,10 @@ textarea {
 
 .modal--compact {
   width: min(520px, 100%);
+}
+
+.save-error-modal {
+  border-top: 4px solid #dc2626;
 }
 
 .modal-header {

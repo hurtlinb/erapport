@@ -60,7 +60,7 @@ npm run dev
 Build a container that runs the unified app:
 
 ```bash
-docker build -t erapport .
+docker build -t hurtlinb/erapport:2.2.2 .
 ```
 
 Run it with a linked MariaDB container or remotely configured database:
