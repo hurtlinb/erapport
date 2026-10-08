@@ -352,38 +352,71 @@ h1 {
 }
 
 .button {
-  border: none;
-  padding: 10px 16px;
+  border: 1.5px solid transparent;
+  padding: 9px 16px;
   border-radius: 999px;
   background: #e2e8f0;
   color: #0f172a;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(0.94);
 }
 
 .button.primary {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  filter: none;
 }
 
 .button.ghost {
-  background: #e2e8f0;
+  background: transparent;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.button.ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  filter: none;
 }
 
 .button.text {
-  background: #e2e8f0;
-  color: #0f172a;
-  padding: 10px 16px;
+  background: transparent;
+  border-color: transparent;
+  color: #475569;
+  padding: 9px 16px;
+}
+
+.button.text:hover:not(:disabled) {
+  background: #f1f5f9;
+  filter: none;
 }
 
 .button.danger {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.button.danger:hover:not(:disabled) {
+  background: #fecaca;
+  border-color: #f87171;
+  filter: none;
 }
 
 .button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .module-actions {
@@ -434,6 +467,44 @@ h1 {
   scrollbar-gutter: stable both-edges;
 }
 
+.locked-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fefce8;
+  border-left: 4px solid #ca8a04;
+  color: #713f12;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.section-locked {
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
+.info-value {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 14px;
+  color: #334155;
+  font-weight: 500;
+  min-height: 40px;
+  line-height: 1.5;
+  border: 1px solid #f1f5f9;
+}
+
+.info-value:empty::before,
+.info-value[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .student-card {
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -461,8 +532,15 @@ h1 {
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.18);
 }
 
+.student-card.note-none {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.15);
+}
+
 .student-card.active {
-  background: #f1f5f9;
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
 .student-delete-button {
@@ -626,6 +704,28 @@ h1 {
   font-size: 14px;
 }
 
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.empty-state-text {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 200px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -773,13 +873,13 @@ select {
 }
 
 .module-evaluation-selector {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px 12px;
-  display: flex;
+  display: inline-flex;
+  align-self: flex-start;
   flex-wrap: nowrap;
-  gap: 12px;
-  white-space: nowrap;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
   align-items: center;
 }
 
@@ -791,19 +891,40 @@ select {
 
 .module-evaluation-option {
   display: inline-flex;
-  flex-direction: row-reverse;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 8px;
   font-size: 13px;
-  color: #0f172a;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
 }
 
-.module-evaluation-option input:disabled + span {
-  color: #94a3b8;
+.module-evaluation-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
-.module-evaluation-option input:disabled {
+.module-evaluation-option:has(input:checked) {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+.module-evaluation-option:has(input:disabled) {
+  color: #cbd5e1;
   cursor: not-allowed;
+}
+
+.module-evaluation-option:not(:has(input:disabled)):not(:has(input:checked)):hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .module-evaluations {
@@ -1011,7 +1132,8 @@ textarea {
 }
 
 .report-summary-note-row td {
-  background: #ffffff;
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
 }
 
 .summary-category {
@@ -1121,6 +1243,22 @@ textarea {
   justify-content: flex-start;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.clear-category-button {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.clear-category-button:hover:not(:disabled) {
+  color: #b91c1c;
+  border-color: #fca5a5;
+  background: #fee2e2;
+  filter: none;
 }
 
 .category-result {

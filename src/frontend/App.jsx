@@ -851,7 +851,8 @@ const cloneStudentReport = (student, evaluationType, template) => {
   const nextStudent = {
     ...clonedStudent,
     id: crypto.randomUUID(),
-    evaluationType
+    evaluationType,
+    note: ""
   };
   if (!template) return nextStudent;
   return {
@@ -887,6 +888,10 @@ function App() {
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isCopyModuleModalOpen, setIsCopyModuleModalOpen] = useState(false);
+  const [copyModuleYearId, setCopyModuleYearId] = useState("");
+  const [copyModuleYearLabel, setCopyModuleYearLabel] = useState("");
+  const [copyModuleError, setCopyModuleError] = useState("");
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
@@ -1248,6 +1253,28 @@ ${teacherDisplayName}
       ),
     [activeModuleId, students]
   );
+  const e3Students = useMemo(
+    () =>
+      students.filter(
+        (student) =>
+          student.moduleId === activeModuleId &&
+          getStudentEvaluationType(student) === "E3"
+      ),
+    [activeModuleId, students]
+  );
+  const isLocked = useMemo(() => {
+    const evalType = getStudentEvaluationType(draft);
+    if (evalType === "E1") return e2Students.length > 0;
+    if (evalType === "E2") return e3Students.length > 0;
+    return false;
+  }, [draft, e2Students, e3Students]);
+  const lockedNoticeText = useMemo(() => {
+    const evalType = getStudentEvaluationType(draft);
+    if (evalType === "E1") return "Ce rapport E1 a été copié en E2 et n'est plus modifiable.";
+    if (evalType === "E2") return "Ce rapport E2 a été copié en E3 et n'est plus modifiable.";
+    return "";
+  }, [draft]);
+
   const copySourceStudents = useMemo(
     () =>
       students.filter(
@@ -1768,6 +1795,24 @@ ${teacherDisplayName}
       competencies: (student.competencies || []).map((section, sIndex) =>
         sIndex === sectionIndex ? { ...section, result: value } : section
       )
+    }));
+  };
+
+  const clearCategoryResults = (sectionIndex) => {
+    persistDraftChanges((student) => ({
+      ...student,
+      competencies: (student.competencies || []).map((section, sIndex) => {
+        if (sIndex !== sectionIndex) return section;
+        return {
+          ...section,
+          result: "",
+          items: (section.items || []).map((item) => ({
+            ...item,
+            status: "",
+            comment: ""
+          }))
+        };
+      })
     }));
   };
 
@@ -2369,6 +2414,53 @@ ${teacherDisplayName}
     setActiveEvaluationType(EVALUATION_TYPES[0]);
   };
 
+  const handleOpenCopyModule = () => {
+    if (!activeModule || !activeSchoolYear) return;
+    const match = activeSchoolYear.label.match(/^(\d{4})\s*[-–/]\s*(\d{4})$/);
+    const nextLabel = match ? `${Number(match[1]) + 1}-${Number(match[2]) + 1}` : "";
+    const nextYear = schoolYears.find((year) => year.label === nextLabel);
+    setCopyModuleYearId(nextYear?.id || "");
+    setCopyModuleYearLabel(nextLabel);
+    setCopyModuleError("");
+    setIsCopyModuleModalOpen(true);
+  };
+
+  const handleCopyModule = (event) => {
+    event.preventDefault();
+    if (!activeModule || !activeSchoolYear) return;
+    let targetYear = schoolYears.find((year) => year.id === copyModuleYearId);
+    if (!copyModuleYearId) {
+      const match = copyModuleYearLabel.trim().match(/^(\d{4})\s*[-–/]\s*(\d{4})$/);
+      if (!match || Number(match[2]) !== Number(match[1]) + 1) {
+        setCopyModuleError("Indiquez une année scolaire valide, par exemple 2026-2027.");
+        return;
+      }
+      const label = `${match[1]}-${match[2]}`;
+      targetYear = schoolYears.find((year) => year.label === label) || {
+        id: crypto.randomUUID(), label, modules: []
+      };
+    }
+    if (!targetYear || targetYear.id === activeSchoolYearId) {
+      setCopyModuleError("Choisissez une autre année scolaire que celle du module source.");
+      return;
+    }
+    const copiedModule = {
+      ...structuredClone(activeModule),
+      id: crypto.randomUUID(),
+      schoolYear: targetYear.label
+    };
+    copiedModule.templates = normalizeModuleTemplates(copiedModule, targetYear.label);
+    setSchoolYears((prev) => {
+      const years = prev.some((year) => year.id === targetYear.id)
+        ? prev : [...prev, targetYear];
+      return years.map((year) => year.id === targetYear.id
+        ? { ...year, modules: [...year.modules, copiedModule] } : year);
+    });
+    setActiveSchoolYearId(targetYear.id);
+    setActiveModuleId(copiedModule.id);
+    setIsCopyModuleModalOpen(false);
+  };
+
   const handleModuleFieldChange = (moduleId, field, value) => {
     setSchoolYears((prev) =>
       prev.map((year) =>
@@ -2732,6 +2824,14 @@ ${teacherDisplayName}
                 <button className="button primary" onClick={handleAddModule}>
                   Nouveau module
                 </button>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={handleOpenCopyModule}
+                  disabled={!activeModule}
+                >
+                  Copier module
+                </button>
               </div>
             </div>
           </div>
@@ -2762,8 +2862,11 @@ ${teacherDisplayName}
           <div className="student-list-scrollable">
             <ul className="student-list">
               {moduleStudents.length === 0 && (
-                <li className="empty">
-                  Aucun étudiant pour ce module. Importez une liste pour démarrer.
+                <li className="empty-state">
+                  <span className="empty-state-icon" aria-hidden="true">👤</span>
+                  <span className="empty-state-text">
+                    Aucun étudiant pour ce module.<br />Importez une liste pour démarrer.
+                  </span>
                 </li>
               )}
             {moduleStudents.map((student) => {
@@ -2781,7 +2884,7 @@ ${teacherDisplayName}
                   key={student.id}
                   className={[
                     "student-card",
-                    getStudentNoteClass(student.note),
+                    getStudentNoteClass(student.note) || "note-none",
                     selectedId === student.id ? "active" : ""
                   ]
                     .filter(Boolean)
@@ -2911,6 +3014,12 @@ ${teacherDisplayName}
             </div>
           </div>
 
+          {isLocked && (
+            <div className="locked-notice" role="status">
+              <span aria-hidden="true">🔒</span>
+              {lockedNoticeText}
+            </div>
+          )}
           <div className="form-panel-scrollable">
             <div className="details-toggle-row">
               <button
@@ -2919,114 +3028,54 @@ ${teacherDisplayName}
                 onClick={() => setShowDetails((prev) => !prev)}
                 aria-expanded={showDetails}
             >
-              {showDetails ? "Masquer les détails" : "Afficher les détails"}
+              {showDetails ? "Masquer les informations" : "Afficher les informations"}
             </button>
           </div>
           {showDetails && (
             <div className="form-grid details-grid">
               <label>
                 Nom
-                <input
-                  type="text"
-                  value={draft.name}
-                  readOnly
-                  placeholder="Dupont"
-                />
+                <span className="info-value" data-placeholder="Dupont" data-empty={!draft.name}>{draft.name}</span>
               </label>
               <label>
                 Prénom
-                <input
-                  type="text"
-                  value={draft.firstname}
-                  readOnly
-                  placeholder="Jeanne"
-                />
+                <span className="info-value" data-placeholder="Jeanne" data-empty={!draft.firstname}>{draft.firstname}</span>
               </label>
               <label>
                 E-mail
-                <input
-                  type="email"
-                  value={draft.email}
-                  readOnly
-                  placeholder="student@example.com"
-                />
+                <span className="info-value" data-placeholder="student@example.com" data-empty={!draft.email}>{draft.email}</span>
               </label>
               <label>
                 Année scolaire
-                <input
-                  type="text"
-                  value={draft.schoolYear}
-                  readOnly
-                  disabled
-                  placeholder="2024-2025"
-                />
+                <span className="info-value" data-placeholder="2024-2025" data-empty={!draft.schoolYear}>{draft.schoolYear}</span>
               </label>
               <label>
                 Type d'évaluation
-                <input
-                  type="text"
-                  value={draft.evaluationType}
-                  readOnly
-                  disabled
-                  placeholder="E1, E2 ou E3"
-                />
+                <span className="info-value" data-placeholder="E1, E2 ou E3" data-empty={!draft.evaluationType}>{draft.evaluationType}</span>
               </label>
               <label>
                 Classe
-                <input
-                  type="text"
-                  value={draft.className}
-                  readOnly
-                  disabled
-                  placeholder="Classe définie dans le modèle"
-                />
+                <span className="info-value" data-placeholder="Définie dans le modèle" data-empty={!draft.className}>{draft.className}</span>
               </label>
               <label>
                 Enseignant
-                <input
-                  type="text"
-                  value={draft.teacher || teacherName}
-                  readOnly
-                  disabled
-                  placeholder="Enseignant défini dans le modèle"
-                />
+                <span className="info-value" data-placeholder="Défini dans le modèle" data-empty={!(draft.teacher || teacherName)}>{draft.teacher || teacherName}</span>
               </label>
               <label>
                 Date d'évaluation {draft.evaluationType || "E1"}
-                <input
-                  type="date"
-                  value={draft.evaluationDate}
-                  readOnly
-                  disabled
-                />
+                <span className="info-value" data-placeholder="—" data-empty={!draft.evaluationDate}>{draft.evaluationDate}</span>
               </label>
               <label>
                 Date de coaching {draft.evaluationType || "E1"}
-                <input
-                  type="date"
-                  value={draft.coachingDate}
-                  readOnly
-                  disabled
-                />
+                <span className="info-value" data-placeholder="—" data-empty={!draft.coachingDate}>{draft.coachingDate}</span>
               </label>
               <label>
                 Module
-                <input
-                  type="text"
-                  value={buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}
-                  readOnly
-                  disabled
-                />
+                <span className="info-value" data-placeholder="—" data-empty={!draft.moduleNumber && !draft.moduleTitle}>{buildModuleLabel(draft.moduleNumber, draft.moduleTitle)}</span>
               </label>
               <label>
                 Compétence opérationnelle
-                <input
-                  type="text"
-                  value={draft.operationalCompetence}
-                  readOnly
-                  disabled
-                  placeholder="Définie dans le modèle"
-                />
+                <span className="info-value" data-placeholder="Définie dans le modèle" data-empty={!draft.operationalCompetence}>{draft.operationalCompetence}</span>
               </label>
             </div>
           )}
@@ -3041,16 +3090,14 @@ ${teacherDisplayName}
                   handleStudentField("remarks", event.target.value)
                 }
                 placeholder="Notes supplémentaires, plan de remédiation, etc."
+                disabled={isLocked}
               />
             </label>
           </div>
 
-          <div className="report-summary">
+          <div className={isLocked ? "section-locked" : ""}>
             <div className="report-summary-header">
               <h3>Résumé</h3>
-              <p className="helper-text">
-                Aperçu des thèmes et des résultats (lecture seule).
-              </p>
             </div>
             {(draft.competencies || []).length ? (
               <table className="report-summary-table">
@@ -3089,6 +3136,7 @@ ${teacherDisplayName}
                                 )
                               }
                               aria-label={`Résultat de ${row.label}`}
+                              disabled={isLocked}
                             >
                               <option value="">
                                 {`Auto (calculé : ${row.result || "—"})`}
@@ -3123,6 +3171,7 @@ ${teacherDisplayName}
                           handleStudentField("note", event.target.value)
                         }
                         aria-label="Note du module"
+                        disabled={isLocked}
                       >
                         <option value="">Sélectionner une note</option>
                         {[6, 5, 4, 3, 2, 1].map((value) => (
@@ -3140,7 +3189,7 @@ ${teacherDisplayName}
             )}
           </div>
 
-          <div className="competency-grid">
+          <div className={`competency-grid${isLocked ? " section-locked" : ""}`}>
             {(draft.competencies || []).map((section, sectionIndex) => (
               <div
                 key={section.id || section.category || sectionIndex}
@@ -3155,6 +3204,7 @@ ${teacherDisplayName}
                       onChange={(event) =>
                         updateCategoryResult(sectionIndex, event.target.value)
                       }
+                      disabled={isLocked}
                     >
                       <option value="">Sélectionner un résultat</option>
                       <option value={STATUS_VALUES.OK}>OK</option>
@@ -3163,6 +3213,16 @@ ${teacherDisplayName}
                     </select>
                   </label>
                   <h3>{section.category}</h3>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      className="button ghost clear-category-button"
+                      title="Effacer les résultats et commentaires de ce thème"
+                      onClick={() => clearCategoryResults(sectionIndex)}
+                    >
+                      ↺ Effacer
+                    </button>
+                  )}
                 </div>
                 <div className="competency-table">
                   {(section.items || []).map((item, itemIndex) => {
@@ -3208,6 +3268,7 @@ ${teacherDisplayName}
                               )
                             }
                             placeholder="Commentaire facultatif"
+                            readOnly={isLocked}
                           />
                         </div>
                         <select
@@ -3221,6 +3282,7 @@ ${teacherDisplayName}
                               event.target.value
                             )
                           }
+                          disabled={isLocked}
                         >
                           <option value="">Sélectionner un statut</option>
                           <option value={STATUS_VALUES.OK}>OK</option>
@@ -3352,6 +3414,50 @@ ${teacherDisplayName}
           )}
         </section>
       </main>
+
+      {isCopyModuleModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="copy-module-title">
+          <div className="modal modal--compact">
+            <div className="modal-header">
+              <div>
+                <h2 id="copy-module-title">Copier module</h2>
+                <p className="helper-text">
+                  Copier {buildModuleLabel(activeModule?.moduleNumber, activeModule?.moduleTitle)} et ses modèles de rapport, sans les étudiants.
+                </p>
+              </div>
+              <button className="button ghost" onClick={() => setIsCopyModuleModalOpen(false)}>Fermer</button>
+            </div>
+            <form onSubmit={handleCopyModule}>
+              <label>
+                Année scolaire cible
+                <select autoFocus value={copyModuleYearId} onChange={(event) => {
+                  setCopyModuleYearId(event.target.value);
+                  setCopyModuleError("");
+                }}>
+                  {schoolYears.filter((year) => year.id !== activeSchoolYearId).map((year) => (
+                    <option key={year.id} value={year.id}>{year.label}</option>
+                  ))}
+                  <option value="">Créer une nouvelle année scolaire</option>
+                </select>
+              </label>
+              {!copyModuleYearId && (
+                <label>
+                  Nouvelle année scolaire
+                  <input required value={copyModuleYearLabel} placeholder="2026-2027" onChange={(event) => {
+                    setCopyModuleYearLabel(event.target.value);
+                    setCopyModuleError("");
+                  }} />
+                </label>
+              )}
+              {copyModuleError && <p className="helper-text error-text" role="alert">{copyModuleError}</p>}
+              <div className="actions align-start modal-actions">
+                <button type="button" className="button ghost" onClick={() => setIsCopyModuleModalOpen(false)}>Annuler</button>
+                <button type="submit" className="button primary">Copier module</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isImportStudentModalOpen && (
         <div className="modal-backdrop" role="dialog" aria-modal="true">

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: erapport
-          image: hurtlinb/erapport:2.2.2
+          image: hurtlinb/erapport:2.3.2-copy-module-20261008
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
