@@ -1235,6 +1235,23 @@ ${teacherDisplayName}
       ),
     [activeSchoolYear]
   );
+  const modulesByClass = useMemo(() => {
+    const groups = new Map();
+    activeModules.forEach((module) => {
+      const templates = normalizeModuleTemplates(module, activeSchoolYear?.label);
+      const className = [
+        templates[activeEvaluationType]?.className,
+        ...Object.values(templates).map((item) => item.className)
+      ].map((value) => String(value || "").trim()).find(Boolean) || "";
+      if (!groups.has(className)) groups.set(className, []);
+      groups.get(className).push(module);
+    });
+    return [...groups.entries()].sort(([left], [right]) => {
+      if (!left) return 1;
+      if (!right) return -1;
+      return left.localeCompare(right, "fr", { numeric: true });
+    });
+  }, [activeModules, activeSchoolYear?.label, activeEvaluationType]);
   const e1Students = useMemo(
     () =>
       students.filter(
@@ -2714,17 +2731,15 @@ ${teacherDisplayName}
                   value={activeModuleId}
                   onChange={(event) => setActiveModuleId(event.target.value)}
                 >
-                  {activeModules.map((module) => {
-                    const title = buildModuleLabel(
-                      module.moduleNumber,
-                      module.moduleTitle
-                    );
-                    return (
-                      <option key={module.id} value={module.id}>
-                        {title}
-                      </option>
-                    );
-                  })}
+                  {modulesByClass.map(([className, modules]) => (
+                    <optgroup key={className} label={className || "Classe non renseignée"}>
+                      {modules.map((module) => (
+                        <option key={module.id} value={module.id}>
+                          {buildModuleLabel(module.moduleNumber, module.moduleTitle)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
                 </select>
               </label>
               <div className="module-evaluation-group">
