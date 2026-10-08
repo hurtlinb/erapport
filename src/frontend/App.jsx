@@ -892,6 +892,7 @@ function App() {
   const [copyModuleYearId, setCopyModuleYearId] = useState("");
   const [copyModuleYearLabel, setCopyModuleYearLabel] = useState("");
   const [copyModuleError, setCopyModuleError] = useState("");
+  const [copyModuleClassName, setCopyModuleClassName] = useState("");
   const [isImportStudentModalOpen, setIsImportStudentModalOpen] = useState(false);
   const [isCopyStudentsModalOpen, setIsCopyStudentsModalOpen] = useState(false);
   const [isMailDraftModalOpen, setIsMailDraftModalOpen] = useState(false);
@@ -942,6 +943,8 @@ ${teacherDisplayName}
   });
   const isHydratedRef = useRef(false);
   const saveAttemptIdRef = useRef(0);
+  const saveQueueRef = useRef(Promise.resolve());
+  const hasUnsavedChangesRef = useRef(false);
   const isAuthenticated = Boolean(authToken && authUser);
   const teacherId = authUser?.id || "";
   const teacherName = useMemo(
@@ -951,7 +954,8 @@ ${teacherDisplayName}
     authUser ? authToken || "session" : ""
   ), [authToken, authUser]);
   const persistAppState = useCallback(
-    async (nextSchoolYears, nextStudents) => {
+    (nextSchoolYears, nextStudents) => {
+      const operation = saveQueueRef.current.then(async () => {
       const accessToken = await getValidAccessToken();
       if (!accessToken) return null;
 
@@ -983,6 +987,9 @@ ${teacherDisplayName}
       }
 
       return data;
+      });
+      saveQueueRef.current = operation.catch(() => {});
+      return operation;
     },
     [getValidAccessToken]
   );
@@ -1430,11 +1437,13 @@ ${teacherDisplayName}
 
   useEffect(() => {
     if (!isHydratedRef.current || !isAuthenticated) return;
+    hasUnsavedChangesRef.current = true;
     const saveAttemptId = ++saveAttemptIdRef.current;
     const persistState = async () => {
       try {
         await persistAppState(schoolYears, students);
         if (saveAttemptIdRef.current !== saveAttemptId) return;
+        hasUnsavedChangesRef.current = false;
         setSaveError("");
         setServerStatus((prev) => ({
           ...prev,
@@ -1457,16 +1466,29 @@ ${teacherDisplayName}
       }
     };
 
-    persistState();
+    const timer = setTimeout(persistState, 600);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, persistAppState, schoolYears, students]);
 
+  useEffect(() => {
+    const warnBeforeUnload = (event) => {
+      if (!hasUnsavedChangesRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, []);
+
   const handleRetrySave = async () => {
+    hasUnsavedChangesRef.current = true;
     const saveAttemptId = ++saveAttemptIdRef.current;
     setIsRetryingSave(true);
 
     try {
       await persistAppState(schoolYears, students);
       if (saveAttemptIdRef.current !== saveAttemptId) return;
+      hasUnsavedChangesRef.current = false;
       setSaveError("");
       setServerStatus((prev) => ({
         ...prev,
@@ -2435,8 +2457,9 @@ ${teacherDisplayName}
     if (!activeModule || !activeSchoolYear) return;
     const match = activeSchoolYear.label.match(/^(\d{4})\s*[-–/]\s*(\d{4})$/);
     const nextLabel = match ? `${Number(match[1]) + 1}-${Number(match[2]) + 1}` : "";
-    const nextYear = schoolYears.find((year) => year.label === nextLabel);
-    setCopyModuleYearId(nextYear?.id || "");
+
+    setCopyModuleYearId(activeSchoolYear.id);
+    setCopyModuleClassName(activeModule.templates?.[activeEvaluationType]?.className || "");
     setCopyModuleYearLabel(nextLabel);
     setCopyModuleError("");
     setIsCopyModuleModalOpen(true);
@@ -2457,8 +2480,8 @@ ${teacherDisplayName}
         id: crypto.randomUUID(), label, modules: []
       };
     }
-    if (!targetYear || targetYear.id === activeSchoolYearId) {
-      setCopyModuleError("Choisissez une autre année scolaire que celle du module source.");
+    if (!targetYear) {
+      setCopyModuleError("Choisissez une année scolaire cible.");
       return;
     }
     const copiedModule = {
@@ -2467,6 +2490,9 @@ ${teacherDisplayName}
       schoolYear: targetYear.label
     };
     copiedModule.templates = normalizeModuleTemplates(copiedModule, targetYear.label);
+    Object.values(copiedModule.templates).forEach((template) => {
+      template.className = copyModuleClassName.trim();
+    });
     setSchoolYears((prev) => {
       const years = prev.some((year) => year.id === targetYear.id)
         ? prev : [...prev, targetYear];
@@ -3449,7 +3475,7 @@ ${teacherDisplayName}
                   setCopyModuleYearId(event.target.value);
                   setCopyModuleError("");
                 }}>
-                  {schoolYears.filter((year) => year.id !== activeSchoolYearId).map((year) => (
+                  {schoolYears.map((year) => (
                     <option key={year.id} value={year.id}>{year.label}</option>
                   ))}
                   <option value="">Créer une nouvelle année scolaire</option>
@@ -3464,6 +3490,12 @@ ${teacherDisplayName}
                   }} />
                 </label>
               )}
+              <label>
+                Classe de la copie
+                <input value={copyModuleClassName} placeholder="Par exemple INFO-FI32" onChange={(event) => {
+                  setCopyModuleClassName(event.target.value);
+                }} />
+              </label>
               {copyModuleError && <p className="helper-text error-text" role="alert">{copyModuleError}</p>}
               <div className="actions align-start modal-actions">
                 <button type="button" className="button ghost" onClick={() => setIsCopyModuleModalOpen(false)}>Annuler</button>

@@ -488,7 +488,7 @@ app.post("/api/auth/register", asyncHandler(async (req, res) => {
   await saveState({
     ...state,
     users: [...state.users, newUser]
-  });
+  }, state);
 
   res.json({
     user: { id: newUser.id, name: newUser.name, email: newUser.email },
@@ -523,7 +523,7 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
   const updatedUsers = state.users.map((entry) =>
     entry.id === user.id ? { ...entry, token } : entry
   );
-  await saveState({ ...state, users: updatedUsers });
+  await saveState({ ...state, users: updatedUsers }, state);
 
   res.json({
     user: { id: user.id, name: user.name, email: user.email },
@@ -553,7 +553,18 @@ app.get("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
   res.json({ schoolYears: state.schoolYears, students: filteredStudents });
 }));
 
-app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
+let stateWriteQueue = Promise.resolve();
+app.put("/api/state", (req, res, next) => {
+  const operation = stateWriteQueue.then(async () => {
+    await requireAuth(req, res, () => {});
+    if (!req.user) return;
+    await writeAppState(req, res);
+  });
+  stateWriteQueue = operation.catch(() => {});
+  operation.catch(next);
+});
+const writeAppState = async (req, res) => {
+  const startedAt = Date.now();
   const { state, user } = req;
   const teacherId = user.id;
   const incomingStudents = Array.isArray(req.body.students)
@@ -571,11 +582,12 @@ app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
     schoolYears: req.body.schoolYears || state.schoolYears,
     students: [...otherStudents, ...normalizedStudents]
   };
-  const updatedState = await saveState(nextState);
+  const updatedState = await saveState(nextState, state);
   const filteredStudents = updatedState.students.filter(
     (student) => student.teacherId === teacherId
   );
   logServerEvent("state-write", {
+    durationMs: Date.now() - startedAt,
     userId: user.id,
     incomingStudents: incomingStudents.length,
     totalStudents: updatedState.students.length,
@@ -583,7 +595,7 @@ app.put("/api/state", asyncHandler(requireAuth), asyncHandler(async (req, res) =
     schoolYears: (updatedState.schoolYears || []).length
   });
   res.json({ schoolYears: updatedState.schoolYears, students: filteredStudents });
-}));
+};
 
 app.get("/api/settings", asyncHandler(requireAuth), asyncHandler(async (req, res) => {
   res.json({ signatureData: req.user?.signatureData || "" });
@@ -615,7 +627,7 @@ app.put("/api/settings", asyncHandler(requireAuth), asyncHandler(async (req, res
   const updatedUsers = (state.users || []).map((entry) =>
     entry.id === user.id ? { ...entry, signatureData } : entry
   );
-  const updatedState = await saveState({ ...state, users: updatedUsers });
+  const updatedState = await saveState({ ...state, users: updatedUsers }, state);
   const updatedUser = updatedState.users.find((entry) => entry.id === user.id);
   logServerEvent("settings-update", {
     userId: user.id,

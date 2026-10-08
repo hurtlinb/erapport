@@ -1304,19 +1304,21 @@ export const loadState = async () => {
   });
 };
 
-export const saveState = async (nextState) => {
+export const saveState = async (nextState, previousState) => {
   await ensureInitialized();
   const normalizedState = normalizeState(nextState);
+  const previous = normalizeState(previousState || await loadState());
+  const changed = (entries, oldEntries) => {
+    const old = new Map(oldEntries.map((entry) => [entry.id, JSON.stringify(entry)]));
+    return entries.filter((entry) => old.get(entry.id) !== JSON.stringify(entry));
+  };
   const client = await pool.getConnection();
-  const deleteWhereNotIn = async (table, idColumn, ids) => {
-    if (ids.length === 0) {
-      await client.query(`DELETE FROM ${table}`);
-      return;
-    }
-    const placeholders = ids.map(() => "?").join(", ");
+  const deleteWhereNotIn = async (table, idColumn, ids, oldEntries) => {
+    const retained = new Set(ids);
+    const removed = oldEntries.map((entry) => entry.id).filter((id) => !retained.has(id));
+    if (!removed.length) return;
     await client.query(
-      `DELETE FROM ${table} WHERE ${idColumn} NOT IN (${placeholders})`,
-      ids
+      `DELETE FROM ${table} WHERE ${idColumn} IN (${removed.map(() => "?").join(", ")})`, removed
     );
   };
 
@@ -1325,8 +1327,8 @@ export const saveState = async (nextState) => {
 
     const users = normalizedState.users;
     const userIds = users.map((user) => user.id);
-    await deleteWhereNotIn("users", "id", userIds);
-    for (const user of users) {
+    await deleteWhereNotIn("users", "id", userIds, previous.users);
+    for (const user of changed(users, previous.users)) {
       await client.query(
         `
           INSERT INTO users (id, name, email, password_hash, salt, token, signature_data)
@@ -1353,8 +1355,8 @@ export const saveState = async (nextState) => {
 
     const schoolYears = normalizedState.schoolYears;
     const schoolYearIds = schoolYears.map((year) => year.id);
-    await deleteWhereNotIn("school_years", "id", schoolYearIds);
-    for (const year of schoolYears) {
+    await deleteWhereNotIn("school_years", "id", schoolYearIds, previous.schoolYears);
+    for (const year of changed(schoolYears, previous.schoolYears)) {
       await client.query(
         `
           INSERT INTO school_years (id, label)
@@ -1371,9 +1373,12 @@ export const saveState = async (nextState) => {
         schoolYearId: year.id
       }))
     );
+    const previousModules = previous.schoolYears.flatMap((year) =>
+      (year.modules || []).map((module) => ({ ...module, schoolYearId: year.id }))
+    );
     const moduleIds = modules.map((module) => module.id);
-    await deleteWhereNotIn("modules", "id", moduleIds);
-    for (const module of modules) {
+    await deleteWhereNotIn("modules", "id", moduleIds, previousModules);
+    for (const module of changed(modules, previousModules)) {
       await client.query(
         `
           INSERT INTO modules (id, school_year_id, title, module_number)
@@ -1401,24 +1406,23 @@ export const saveState = async (nextState) => {
       }));
     });
 
-    if (templateEntries.length === 0) {
-      await client.query("DELETE FROM module_templates");
-    } else {
-      const templateValues = templateEntries.flatMap((entry) => [
-        entry.moduleId,
-        entry.evaluationType
-      ]);
-      const placeholders = templateEntries.map(() => "(?, ?)").join(", ");
-      await client.query(
-        `
-          DELETE FROM module_templates
-          WHERE (module_id, evaluation_type) NOT IN (${placeholders})
-        `,
-        templateValues
-      );
+    const previousTemplates = previousModules.flatMap((module) =>
+      Object.entries(module.templates || {}).map(([evaluationType, template]) => ({
+        moduleId: module.id, evaluationType, template: buildTemplatePayload(template)
+      }))
+    );
+    const templateKey = (entry) => JSON.stringify([entry.moduleId, entry.evaluationType]);
+    const retainedTemplates = new Set(templateEntries.map(templateKey));
+    for (const entry of previousTemplates) {
+      if (!retainedTemplates.has(templateKey(entry))) {
+        await client.query("DELETE FROM module_templates WHERE module_id = ? AND evaluation_type = ?",
+          [entry.moduleId, entry.evaluationType]);
+      }
     }
+    const oldTemplates = new Map(previousTemplates.map((entry) => [templateKey(entry), entry.template]));
 
     for (const template of templateEntries) {
+      if (oldTemplates.get(templateKey(template)) === template.template) continue;
       await client.query(
         `
           INSERT INTO module_templates (id, module_id, evaluation_type, template)
@@ -1436,9 +1440,10 @@ export const saveState = async (nextState) => {
     }
 
     const students = normalizedState.students;
+    const previousStudents = new Map(previous.students.map((student) => [student.id, student]));
     const studentIds = students.map((student) => student.id);
-    await deleteWhereNotIn("students", "id", studentIds);
-    for (const student of students) {
+    await deleteWhereNotIn("students", "id", studentIds, previous.students);
+    for (const student of changed(students, previous.students)) {
       const competencyOptions = serializeJsonValue(
         student.competencyOptions,
         []
@@ -1539,7 +1544,12 @@ export const saveState = async (nextState) => {
           competencies
         ]
       );
-      await replaceStudentCompetencies(client, student);
+      const oldStudent = previousStudents.get(student.id);
+      if (!oldStudent ||
+          JSON.stringify(oldStudent.competencyOptions) !== JSON.stringify(student.competencyOptions) ||
+          JSON.stringify(oldStudent.competencies) !== JSON.stringify(student.competencies)) {
+        await replaceStudentCompetencies(client, student);
+      }
     }
 
     await client.commit();

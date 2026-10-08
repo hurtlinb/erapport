@@ -4,3 +4,4 @@ dist
 src/server/logs
 .env
 
+src/server/data.json*
