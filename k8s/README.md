@@ -27,14 +27,14 @@ Ce dossier contient un déploiement de base pour :
 1. Construire et publier l'image :
 
 ```powershell
-docker build -t hurtlinb/erapport:2.2.0 .
-docker push hurtlinb/erapport:2.2.0
+docker build -t hurtlinb/erapport:2.2.2 .
+docker push hurtlinb/erapport:2.2.2
 ```
 
 2. L'image configurée dans `app.yaml` est :
 
 ```yaml
-image: hurtlinb/erapport:2.2.0
+image: hurtlinb/erapport:2.2.2
 ```
 
 3. Créer un fichier de secrets séparé à partir de `secrets.example.yaml`, puis ajuster :

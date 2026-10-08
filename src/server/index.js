@@ -250,6 +250,13 @@ const getOidcConfig = () => ({
   clientId: KEYCLOAK_CLIENT_ID
 });
 
+const sendOidcConfigurationError = (res) => {
+  res.status(503).json({
+    ...getOidcConfig(),
+    error: "Configuration OpenID manquante."
+  });
+};
+
 const buildUserIdentityFromClaims = (claims = {}) => {
   const givenName = String(claims.given_name || "").trim();
   const familyName = String(claims.family_name || "").trim();
@@ -272,14 +279,19 @@ const getOidcClient = async () => {
     throw new Error("OIDC configuration is missing.");
   }
   if (!oidcClientPromise) {
-    oidcClientPromise = Issuer.discover(OIDC_ISSUER).then((issuer) => (
-      new issuer.Client({
-        client_id: KEYCLOAK_CLIENT_ID,
-        client_secret: KEYCLOAK_CLIENT_SECRET,
-        redirect_uris: [OIDC_REDIRECT_URI],
-        response_types: ["code"]
-      })
-    ));
+    oidcClientPromise = Issuer.discover(OIDC_ISSUER)
+      .then((issuer) => (
+        new issuer.Client({
+          client_id: KEYCLOAK_CLIENT_ID,
+          client_secret: KEYCLOAK_CLIENT_SECRET,
+          redirect_uris: [OIDC_REDIRECT_URI],
+          response_types: ["code"]
+        })
+      ))
+      .catch((error) => {
+        oidcClientPromise = undefined;
+        throw error;
+      });
   }
   return oidcClientPromise;
 };
@@ -321,18 +333,19 @@ const requireAuth = async (req, res, next) => {
 };
 
 app.get("/api/auth/config", (req, res) => {
-  const config = getOidcConfig();
-  if (!config.enabled) {
-    res.status(503).json({
-      ...config,
-      error: "Configuration OpenID manquante."
-    });
+  if (!OIDC_ENABLED) {
+    sendOidcConfigurationError(res);
     return;
   }
-  res.json(config);
+  res.json(getOidcConfig());
 });
 
 app.get("/api/auth/session", asyncHandler(async (req, res) => {
+  if (!OIDC_ENABLED) {
+    sendOidcConfigurationError(res);
+    return;
+  }
+
   const sessionUser = getSessionUser(req);
   if (!sessionUser?.id) {
     res.status(401).json({ authenticated: false });
@@ -358,6 +371,11 @@ app.get("/api/auth/session", asyncHandler(async (req, res) => {
 }));
 
 app.get("/auth/login", asyncHandler(async (req, res) => {
+  if (!OIDC_ENABLED) {
+    sendOidcConfigurationError(res);
+    return;
+  }
+
   const client = await getOidcClient();
   const codeVerifier = generators.codeVerifier();
   const codeChallenge = generators.codeChallenge(codeVerifier);
@@ -859,9 +877,8 @@ const competencyTable = {
   headerHeight: 18,
   baseRowHeight: 18,
   columnWidths: {
-    indicator: 16,
     code: 40,
-    task: 250,
+    task: 266,
     comment: 155,
     status: 54
   }
@@ -1105,22 +1122,14 @@ const drawCompetencyRow = (doc, task, code, status, comment, y, rowHeight) => {
   const statusStyle = getStatusStyle(status);
   const columns = competencyTable.columnWidths;
   const columnPositions = {
-    indicator: competencyTable.x,
-    code: competencyTable.x + columns.indicator,
-    task: competencyTable.x + columns.indicator + columns.code,
-    comment:
-      competencyTable.x + columns.indicator + columns.code + columns.task,
+    code: competencyTable.x,
+    task: competencyTable.x + columns.code,
+    comment: competencyTable.x + columns.code + columns.task,
     status:
-      competencyTable.x +
-      columns.indicator +
-      columns.code +
-      columns.task +
-      columns.comment
+      competencyTable.x + columns.code + columns.task + columns.comment
   };
 
   doc
-    .rect(columnPositions.indicator, y, columns.indicator, rowHeight)
-    .fillAndStroke(theme.competencyAccent, theme.text)
     .rect(columnPositions.code, y, columns.code, rowHeight)
     .stroke(theme.text)
     .rect(columnPositions.task, y, columns.task, rowHeight)
