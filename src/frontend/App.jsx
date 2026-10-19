@@ -2611,6 +2611,15 @@ ${teacherDisplayName}
   );
   const footer = (
     <footer className="app-footer">
+      {isAuthenticated && (
+        <div className="footer-session">
+          <span className="session-avatar" aria-hidden="true">{(authUser?.name || authUser?.email || "?").split(/[\s.@_-]+/).filter(Boolean).slice(0, 3).map(part => part[0]).join("").toUpperCase()}</span>
+          <span className="session-name">{authUser?.name || authUser?.email}</span>
+          <button type="button" className="icon-button session-logout" onClick={handleLogout} aria-label="Se déconnecter" title="Se déconnecter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H4V3h5M14 7l5 5-5 5M8 12h11" /></svg>
+          </button>
+        </div>
+      )}
       <div className="footer-item">
         <span className={dbStatusIndicatorClass} aria-hidden="true" />
         <span>{dbStatusLabel}</span>
@@ -2673,38 +2682,19 @@ ${teacherDisplayName}
 
   return (
     <div className="app">
-      <header className="hero">
-        <div>
-          <h1>Générateur de rapports d'évaluation</h1>
-        </div>
-        <div className="hero-card">
-          <div className="hero-card-header">
-            <div>
-              <p className="label">Connecté en tant que</p>
-              <p className="value">{authUser?.name || authUser?.email}</p>
-            </div>
-            <button
-              type="button"
-              className="icon-button"
-              onClick={() => setIsSettingsModalOpen(true)}
-              aria-label="Ouvrir les paramètres"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.4">
-                <circle cx="12" cy="12" r="3" />
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <button className="button ghost" onClick={handleLogout}>
-            Se déconnecter
+      <header className="app-header">
+        <div className="app-header-inner">
+          <a className="app-brand" href="#" aria-label="eRapport, accueil">
+            <span className="app-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 3H6v18h12V7zM14 3v5h4M9 12h6M9 16h6" /></svg></span>
+            eRapport
+          </a>
+          <span className="app-section">Rapports d'évaluation</span>
+          <button type="button" className="icon-button header-settings" onClick={() => setIsSettingsModalOpen(true)} aria-label="Ouvrir les paramètres" title="Paramètres">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 7h16M4 17h16M9 4v6M15 14v6" /></svg>
           </button>
         </div>
       </header>
-
+      <div className="page-heading"><h1>Rapports d'évaluation</h1><p>Préparez vos évaluations et suivez les résultats de vos étudiants.</p></div>
       <main className="layout">
         {loadError && (
           <p className="helper-text error-text" role="alert">
@@ -2878,7 +2868,7 @@ ${teacherDisplayName}
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel student-panel">
           <div className="panel-header">
             <h2>Liste des étudiants</h2>
             <div className="actions">
@@ -3781,11 +3771,11 @@ ${teacherDisplayName}
       )}
 
       {isTemplateModalOpen && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal">
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="template-editor-title">
+          <div className="modal template-editor">
             <div className="modal-header">
               <div>
-                <h2>Modifier le modèle</h2>
+                <h2 id="template-editor-title">Modifier le modèle</h2>
                 <p className="helper-text">
                   Modifiez les informations du module et les compétences par défaut pour les nouveaux rapports.
                 </p>
@@ -3798,6 +3788,7 @@ ${teacherDisplayName}
               </button>
             </div>
 
+            <div className="template-editor-body">
             <div className="template-competency-grid">
               <div className="template-competency">
                 <div className="template-competency-header">
@@ -3859,7 +3850,8 @@ ${teacherDisplayName}
                 )}
               </div>
             </div>
-            <div className="template-meta-grid">
+            <div className="template-meta-grid template-editor-section">
+              <h3>Paramètres du rapport</h3>
               <div className="form-grid">
                 <label className="toggle-field">
                   <span className="toggle-switch">
@@ -4023,6 +4015,7 @@ ${teacherDisplayName}
                     >
                       <input
                         type="text"
+                        aria-label="Code de la compétence"
                         value={option.code}
                         onChange={(event) =>
                           handleCompetencyOptionChange(
@@ -4035,6 +4028,7 @@ ${teacherDisplayName}
                       />
                       <textarea
                         rows="2"
+                        aria-label="Description de la compétence"
                         value={option.description}
                         onChange={(event) =>
                           handleCompetencyOptionChange(
@@ -4070,6 +4064,7 @@ ${teacherDisplayName}
                       <input
                         type="text"
                         className="category-input"
+                        aria-label="Nom du thème"
                         value={section.category}
                         onChange={(event) =>
                           handleTemplateCategoryChange(
@@ -4107,6 +4102,8 @@ ${teacherDisplayName}
                         >
                           <input
                             type="text"
+                            aria-label="Intitulé de la tâche"
+                            placeholder="Intitulé de la tâche"
                             value={normalizedItem.task}
                             onChange={(event) =>
                               handleTemplateTaskFieldChange(
@@ -4118,6 +4115,7 @@ ${teacherDisplayName}
                             }
                           />
                           <select
+                            aria-label="Compétence associée"
                             value={normalizedItem.competencyId}
                             onChange={(event) =>
                               handleTemplateTaskFieldChange(
@@ -4136,6 +4134,7 @@ ${teacherDisplayName}
                             ))}
                           </select>
                           <select
+                            aria-label="Méthode d’évaluation"
                             value={normalizedItem.evaluationMethod}
                             onChange={(event) =>
                               handleTemplateTaskFieldChange(
@@ -4205,12 +4204,14 @@ ${teacherDisplayName}
               ))}
             </div>
 
+            </div>
             <div className="actions align-start modal-actions">
               <div className="action-row">
                 <button className="button ghost" onClick={handleAddCategory}>
                   + Ajouter un thème
                 </button>
               </div>
+              <button type="button" className="button primary" onClick={() => setIsTemplateModalOpen(false)}>Terminer</button>
             </div>
           </div>
         </div>

@@ -384,6 +384,20 @@ const normalizeCoachingDates = (value) => {
   return [];
 };
 
+// Remove the obsolete label introduced by the module 187 Excel import.
+// Normalizing on both reads and writes prevents stale browser autosaves restoring it.
+const cleanImportedThemeComments = (student, sections) => {
+  if (student.moduleId !== "1edb8f4e-7059-447f-ae06-19728b2a1fdc" ||
+      (student.evaluationType || "E1") !== "E1") return sections;
+  return sections.map(section => ({
+    ...section,
+    items: section.items.map(item => ({
+      ...item,
+      comment: item.comment.replace(/^Remarques du th\u00e8me : /gm, "")
+    }))
+  }));
+};
+
 const normalizeStudent = (student) => {
   const baseStudent = student && typeof student === "object" ? student : {};
   return {
@@ -402,9 +416,9 @@ const normalizeStudent = (student) => {
     competencyOptions: normalizeCompetencyOptions(
       normalizeJsonValue(baseStudent.competencyOptions, [])
     ),
-    competencies: normalizeCompetencies(
+    competencies: cleanImportedThemeComments(baseStudent, normalizeCompetencies(
       normalizeJsonValue(baseStudent.competencies, [])
-    ),
+    )),
     coachingDates: normalizeCoachingDates(baseStudent.coachingDates)
   };
 };

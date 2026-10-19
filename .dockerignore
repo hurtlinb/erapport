@@ -5,3 +5,7 @@ src/server/logs
 .env
 
 src/server/data.json*
+
+.git
+k8s/secrets*.yaml
+.env.*
